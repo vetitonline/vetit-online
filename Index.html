@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vetit-online | Marketplace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="vetit-online">
+        <span class="brand-icon">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <path d="M20 3C9.9 3 2 10.9 2 20s7.9 17 18 17 18-7.9 18-17S30.1 3 20 3z" fill="none" stroke="currentColor" stroke-width="2"></path>
+            <path d="M14 21c2.8-6.6 8.9-8.7 13-4.5 2.3 2.3 2.5 6.1.5 8.5-2.4 2.9-6.5 3.3-9 1.2-1.9-1.7-2.4-2.9-4.5-5.2z" fill="currentColor" opacity=".95"></path>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">vetit</span><span class="brand-subtitle">online</span>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="active" href="#">Marketplace</a>
+        <a href="#">Pet Care</a>
+        <a href="#">Livestock</a>
+        <a href="#">Services</a>
+        <a href="#">How it works</a>
+      </nav>
+
+      <div class="header-actions">
+        <a class="login-link" href="#">Log in</a>
+        <a class="button button-primary small-button" href="#">Join free</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-section">
+        <section class="hero-copy">
+          <div class="section-label">
+            <span></span>
+            AI-powered marketplace
+          </div>
+          <h1>Care, commerce, and services for every animal journey.</h1>
+          <p class="hero-text">Shop smarter for pets and livestock, discover trusted services, and get AI-powered guidance for every animal journey.</p>
+
+          <form class="marketplace-search" role="search">
+            <label class="sr-only" for="marketplace-search">Search the marketplace</label>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+            <input id="marketplace-search" type="search" placeholder="Search products, care or services" />
+            <button class="search-button" type="submit">Search</button>
+          </form>
+
+          <div class="hero-cta">
+            <a class="button button-primary" href="#">
+              <span>Find trusted services</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14M13 3l9 9-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </a>
+            <a class="button button-secondary" href="#">
+              <span>Explore the marketplace</span>
+            </a>
+          </div>
+
+          <div class="hero-proof">
+            <div>
+              <span class="proof-number">12k+</span>
+              <span class="proof-label">care providers</span>
+            </div>
+            <div>
+              <span class="proof-number">36k+</span>
+              <span class="proof-label">trusted bookings</span>
+            </div>
+            <div>
+              <span class="proof-number">24/7</span>
+              <span class="proof-label">AI guidance</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="hero-panel" aria-label="Marketplace summary">
+          <div class="floating-card panel-top">
+            <div class="panel-header">
+              <span>
+                <span class="panel-kicker">Marketplace Health</span>
+                <span class="panel-date">Today, 09:42</span>
+              </span>
+              <span class="status-dot">
+                <span></span>
+                Live
+              </span>
+            </div>
+
+            <div class="match-score">
+              <div>
+                <span class="score-label">Care Match</span>
+                <span class="score-value">96%</span>
+              </div>
+              <div class="score-bars" aria-hidden="true">
+                <span class="bar bar-1"></span>
+                <span class="bar bar-2"></span>
+                <span class="bar bar-3"></span>
+                <span class="bar bar-4"></span>
+                <span class="bar bar-5"></span>
+              </div>
+            </div>
+
+            <div class="service-list">
+              <div class="service-row">
+                <span class="service-icon pet-icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a7 7 0 0 0-6.7 4.2 6.8 6.8 0 0 0 2.2 8.4 7 7 0 0 0 8.8-.8A7 7 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2"></path><circle cx="8" cy="9" r="2" fill="currentColor"></circle><circle cx="16" cy="9" r="2" fill="currentColor"></circle><path d="M9.5 13.5c1.2 1.1 3.8 1.1 5 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+                </span>
+                <span class="service-detail">
+                  <span class="service-title">Pet Care</span>
+                  <span class="service-meta">12 nearby experts</span>
+                </span>
+                <span class="service-arrow">↗</span>
+              </div>
+
+              <div class="service-row">
+                <span class="service-icon livestock-icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18c4-3 6-7 8-12 2 4 4 7 8 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><path d="M5 18h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+                </span>
+                <span class="service-detail">
+                  <span class="service-title">Livestock Health</span>
+                  <span class="service-meta">4 vets available</span>
+                </span>
+                <span class="service-arrow">↗</span>
+              </div>
+
+              <div class="service-row">
+                <span class="service-icon service-icon">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16h7l3-8 3 6h4l-3 5H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path></svg>
+                </span>
+                <span class="service-detail">
+                  <span class="service-title">Home Services</span>
+                  <span class="service-meta">27 providers</span>
+                </span>
+                <span class="service-arrow">↗</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="floating-card mini-card card-one">
+            <span class="mini-card-title">AI Consultation</span>
+            <span class="mini-card-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 14c2-4 5-6 8-6s5 2 7 5" fill="none" stroke="currentColor" stroke-width="2"></path>
+                <path d="M6 18c2-2 4-4 9-4" fill="none" stroke="currentColor" stroke-width="2"></path>
+              </svg>
+            </span>
+            <span class="mini-card-copy">Needs triage</span>
+          </div>
+
+          <div class="floating-card mini-card card-two">
+            <span class="mini-card-title">Farm Plan</span>
+            <span class="mini-card-copy positive">+3 care visits</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="partners-strip">
+        <span>Trusted by communities</span>
+        <div class="strip-icons">
+          <span class="strip-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h6l3-7 3 14 3-7h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            Animal Care Network
+          </span>
+          <span class="strip-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19L12 3l8 16H4z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
+            Livestock Connect
+          </span>
+          <span class="strip-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 2 3 6 3 11c0 4 3 8 9 11 6-3 9-7 9-11 0-5-4-9-9-9z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
+            Care Local
+          </span>
+        </div>
+      </section>
+
+      <section class="section categories-section">
+        <div class="section-heading centered">
+          <span class="section-label dark-label"><span></span>Marketplace categories</span>
+          <h2>Better support for every kind of care.</h2>
+        </div>
+        <div class="category-grid">
+          <article class="category-card">
+            <span class="category-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c2-6 5-9 8-9s5 3 7 9" fill="none" stroke="currentColor" stroke-width="2"></path><circle cx="12" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="2"></circle></svg>
+            </span>
+            <span class="category-title">Pet wellness</span>
+            <span class="category-copy">Veterinary care, grooming, nutrition, walking and companionship.</span>
+            <a href="#" class="category-link">Find pet services <span>→</span></a>
+          </article>
+          <article class="category-card">
+            <span class="category-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18c4-6 7-7 11-7 2 3 3 5 4 7" fill="none" stroke="currentColor" stroke-width="2"></path><path d="M8 8c1-3 3-4 5-4 2 0 4 2 4 4" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
+            </span>
+            <span class="category-title">Livestock care</span>
+            <span class="category-copy">Farm health planning, pasture advice, vaccination and daily care.</span>
+            <a href="#" class="category-link">Book livestock help <span>→</span></a>
+          </article>
+          <article class="category-card">
+            <span class="category-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17h16M6 17V9m6 8V7m6 10V5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+            </span>
+            <span class="category-title">Home services</span>
+            <span class="category-copy">Pet sitting, farmside support, transport and trusted local experts.</span>
+            <a href="#" class="category-link">Explore home care <span>→</span></a>
+          </article>
+          <article class="category-card category-card-accent">
+            <span class="category-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v13H4zM7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" fill="none" stroke="currentColor" stroke-width="2"></path><path d="M8 12h8m-4-3v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+            </span>
+            <span class="category-title">Animal products</span>
+            <span class="category-copy">Quality feed, farm equipment, wellness essentials and everyday pet supplies.</span>
+            <a href="#" class="category-link">Shop products <span>→</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section featured-section">
+        <div class="section-heading">
+          <span class="section-label dark-label"><span></span>Popular right now</span>
+          <h2>Fresh finds for pets, farms, and family routines.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card feature-card-large">
+            <div class="feature-badge">Best seller</div>
+            <div class="feature-copy">
+              <span class="feature-label">Pet wellness</span>
+              <h3>Smart care kits for healthier everyday routines.</h3>
+              <p>Nutrition bundles, preventive treatments, and wellness supplies curated by local veterinarians.</p>
+            </div>
+            <div class="feature-metrics">
+              <span>4.9 rating</span>
+              <span>2.4k orders</span>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-badge orange">Farm ready</div>
+            <div class="feature-copy">
+              <span class="feature-label">Livestock</span>
+              <h3>Seasonal herd health plans.</h3>
+            </div>
+            <ul class="feature-list">
+              <li>Vaccination support</li>
+              <li>Pasture planning</li>
+              <li>Daily care check-ins</li>
+            </ul>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-badge light">Local care</div>
+            <div class="feature-copy">
+              <span class="feature-label">Services</span>
+              <h3>Trusted sitters and mobile visits.</h3>
+            </div>
+            <ul class="feature-list">
+              <li>Same-day bookings</li>
+              <li>Verified providers</li>
+              <li>AI triage matching</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="seller-section">
+        <div class="seller-mark">For sellers &amp; providers</div>
+        <div class="seller-content">
+          <div>
+            <h2>Put your animal business in front of the right people.</h2>
+            <p>List products, offer services, and grow with intelligent tools built for the animal care community.</p>
+          </div>
+          <a class="button button-light" href="#">Start selling <span>↗</span></a>
+        </div>
+        <div class="seller-points">
+          <span><b>01</b> Reach more customers</span>
+          <span><b>02</b> Manage everything in one place</span>
+          <span><b>03</b> Grow with AI insights</span>
+        </div>
+      </section>
+
+      <section class="section workflow-section">
+        <div class="workflow-grid">
+          <div class="workflow-copy">
+            <span class="section-label dark-label"><span></span>How it works</span>
+            <h2>From discovery to care, designed around the animals you love.</h2>
+            <p>Search local providers, compare needs, and get recommendations supported by intelligent routing and trusted service details.</p>
+            <div class="workflow-list">
+              <div class="workflow-step">
+                <span class="workflow-number">01</span>
+                <div>
+                  <span class="workflow-title">Describe the need</span>
+                  <span class="workflow-text">Tell the platform what your pet, herd, or property needs.</span>
+                </div>
+              </div>
+              <div class="workflow-step">
+                <span class="workflow-number">02</span>
+                <div>
+                  <span class="workflow-title">Get matched</span>
+                  <span class="workflow-text">Our marketplace uses service history and local availability.</span>
+                </div>
+              </div>
+              <div class="workflow-step">
+                <span class="workflow-number">03</span>
+                <div>
+                  <span class="workflow-title">Book with confidence</span>
+                  <span class="workflow-text">Connect with verified providers and manage care online.</span>
+                </div>
+              </div>
+            </div>
+            <a class="button button-secondary dark-button" href="#">
+              <span>Start a care request</span>
+            </a>
+          </div>
+
+          <div class="workflow-panel">
+            <div class="workflow-card">
+              <div class="workflow-card-top">
+                <span class="workflow-card-title">Care Request</span>
+                <span class="workflow-card-status">
+                  <span></span>
+                  Active
+                </span>
+              </div>
+
+              <div class="request-detail">
+                <span class="request-label">Need</span>
+                <span class="request-value">Pet health check</span>
+              </div>
+
+              <div class="request-detail">
+                <span class="request-label">Location</span>
+                <span class="request-value">Greenfield District</span>
+              </div>
+
+              <div class="request-progress">
+                <div class="progress-top">
+                  <span>Provider match</span>
+                  <span class="progress-percent">78%</span>
+                </div>
+                <div class="progress-bar">
+                  <span class="progress-fill"></span>
+                </div>
+              </div>
+
+              <div class="provider-grid">
+                <div class="provider-card">
+                  <span class="provider-avatar">AV</span>
+                  <span class="provider-name">Avery Veterinary</span>
+                  <span class="provider-meta">12 min away</span>
+                </div>
+                <div class="provider-card selected">
+                  <span class="provider-avatar">LK</span>
+                  <span class="provider-name">Livestock Care</span>
+                  <span class="provider-meta">Farm specialist</span>
+                </div>
+              </div>
+
+              <div class="request-actions">
+                <a class="button button-primary small-button" href="#">Confirm booking</a>
+                <a class="button button-ghost small-button" href="#">Compare options</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section stats-section">
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span class="stat-number">18k+</span>
+            <span class="stat-label">Verified service providers</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-number">42k+</span>
+            <span class="stat-label">Animal care requests</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-number">96%</span>
+            <span class="stat-label">Care satisfaction</span>
+          </article>
+          <article class="stat-card">
+            <span class="stat-number">8 min</span>
+            <span class="stat-label">Average first response</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section cta-section">
+        <div class="cta-card">
+          <div>
+            <span class="section-label dark-label"><span></span>Join the network</span>
+            <h2>Build a healthier future for every animal.</h2>
+            <p>For local providers, farmers, pet parents, and communities building healthier animal care journeys.</p>
+          </div>
+          <div class="cta-actions">
+            <a class="button button-primary" href="#">Create provider profile</a>
+            <a class="button button-secondary dark-button" href="#">Request marketplace access</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <a class="brand" href="#" aria-label="vetit-online">
+          <span class="brand-icon">
+            <svg viewBox="0 0 40 40" aria-hidden="true">
+              <path d="M20 3C9.9 3 2 10.9 2 20s7.9 17 18 17 18-7.9 18-17S30.1 3 20 3z" fill="none" stroke="currentColor" stroke-width="2"></path>
+              <path d="M14 21c2.8-6.6 8.9-8.7 13-4.5 2.3 2.3 2.5 6.1.5 8.5-2.4 2.9-6.5 3.3-9 1.2-1.9-1.7-2.4-2.9-4.5-5.2z" fill="currentColor" opacity=".95"></path>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-title">vetit</span><span class="brand-subtitle">online</span>
+          </span>
+        </a>
+        <span class="footer-copy">AI-powered pet, livestock and services marketplace</span>
+      </div>
+      <nav class="footer-links">
+        <a href="#">Marketplace</a>
+        <a href="#">Care services</a>
+        <a href="#">Livestock</a>
+        <a href="#">Providers</a>
+        <a href="#">Insights</a>
+      </nav>
+      <a class="footer-social" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 8-8 8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8z" fill="none" stroke="currentColor" stroke-width="2"></path><path d="M8 12h8m-4-4v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+      </a>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
