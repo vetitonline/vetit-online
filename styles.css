@@ -94,6 +94,7 @@ body::before {
   width: 88px;
   height: 88px;
   color: var(--green-700);
+  transform: scale(1.25);
 }
 
 .brand-text {
