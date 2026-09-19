@@ -91,10 +91,10 @@ body::before {
 }
 
 .brand-icon svg {
-  width: 88px;
-  height: 88px;
+  width: 40px;
+  height: 40px;
   color: var(--green-700);
-  transform: scale(1.5);
+  transform: scale(1);
 }
 
 .brand-text {
@@ -274,7 +274,7 @@ body::before {
   max-width: 640px;
   color: var(--text-soft);
   font-size: 22px;
-  line-height: 1;
+  line-height: 1.58;
 }
 
 .hero-cta {
