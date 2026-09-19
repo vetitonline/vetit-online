@@ -79,8 +79,8 @@ body::before {
 }
 
 .brand-icon {
-  width: 96px;
-  height: 96px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   background: var(--sage-pale);
   border: 1px solid var(--sage-line);
