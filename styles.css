@@ -90,9 +90,9 @@ body::before {
   box-shadow: 0 10px 30px var(--shadow);
 }
 
-.brand-icon svg {
-  width: 40px;
-  height: 40px;
+.brand-icon img {
+  width: 20px;
+  height: 20px;
   color: var(--green-700);
   transform: scale(1);
 }
