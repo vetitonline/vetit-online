@@ -91,8 +91,8 @@ body::before {
 }
 
 .brand-icon svg {
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   color: var(--green-700);
 }
 
