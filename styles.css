@@ -61,9 +61,9 @@ body::before {
 }
 .site-header > img {
 
-  width: 360px;
+  width: 220px;
 
-  max-width: 42vw;
+  max-width: 24vw;
 
   height: auto;
 
@@ -128,14 +128,14 @@ body::before {
 
 .brand-title {
   font-weight: 800;
-  font-size: 31px;
+  font-size: 24px;
   line-height: 1;
   letter-spacing: -0.04em;
 }
 
 .brand-subtitle {
   font-weight: 700;
-  font-size: 25px;
+  font-size: 14px;
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--green-600);
