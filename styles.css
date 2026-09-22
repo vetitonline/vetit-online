@@ -79,7 +79,8 @@ body::before {
     max-width: 78vw;
 
     height: auto;
-    
+ 
+}   
 }
 
 .site-header {
