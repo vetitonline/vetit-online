@@ -68,7 +68,7 @@ body::before {
   height: auto;
 
   display: block;
-  auto;
+  
 }
   @media (max-width: 760px) {
 
@@ -79,7 +79,7 @@ body::before {
     max-width: 78vw;
 
     height: auto;
-    auto;
+    
 }
 
 .site-header {
