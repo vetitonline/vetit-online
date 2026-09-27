@@ -2376,3 +2376,76 @@ main {
   }
 
 }
+/* FINAL MOBILE PRODUCT LAYOUT */
+
+@media (max-width: 760px) {
+
+  .product-heading {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+
+  }
+
+  .product-grid {
+
+    display: flex;
+
+    gap: 14px;
+
+    overflow-x: auto;
+
+    padding: 0 2px 12px;
+
+    scroll-snap-type: x mandatory;
+
+    -webkit-overflow-scrolling: touch;
+
+  }
+
+  .product-card {
+
+    flex: 0 0 82vw;
+
+    max-width: 330px;
+
+    scroll-snap-align: start;
+
+  }
+
+  .product-image-wrap {
+
+    aspect-ratio: 1 / 0.58;
+
+  }
+
+  .product-info {
+
+    padding: 15px;
+
+  }
+
+  .product-info h3 {
+
+    margin: 7px 0 12px;
+
+    font-size: 18px;
+
+  }
+
+  .product-bottom button {
+
+    width: 36px;
+
+    height: 36px;
+
+    font-size: 22px;
+
+  }
+
+}
