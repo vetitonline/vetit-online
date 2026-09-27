@@ -1700,7 +1700,7 @@ body::before {
   .seller-content {
     align-items: flex-start;
     flex-direction: column;
-  
+  }
 
   .seller-points {
     align-items: flex-start;
