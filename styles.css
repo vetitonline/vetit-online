@@ -1539,8 +1539,14 @@ body::before {
   }
 
   .header-actions {
-    flex-wrap: wrap;
-  }
+
+  flex-wrap: nowrap;
+
+  align-items: center;
+
+  gap: 14px;
+
+}
 
   .hero-section {
     padding-top: 24px;
