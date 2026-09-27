@@ -194,7 +194,7 @@ body::before {
   white-space: nowrap;
 
 }
-
+.cart-link {
   position: relative;
 
   display: flex;
