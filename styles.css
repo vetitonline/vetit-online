@@ -2449,3 +2449,36 @@ main {
   }
 
 }
+  .product-grid {
+
+    display: flex;
+
+    gap: 12px;
+
+    overflow-x: auto;
+
+    padding: 0 2px 12px;
+
+    scroll-snap-type: x mandatory;
+
+    -webkit-overflow-scrolling: touch;
+
+  }
+
+  .product-card {
+
+    flex: 0 0 72%;
+
+    min-width: 0;
+
+    scroll-snap-align: start;
+
+  }
+
+  .product-card img {
+
+    height: 180px;
+
+    object-fit: cover;
+
+  }
