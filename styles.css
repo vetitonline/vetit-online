@@ -1521,6 +1521,7 @@ body::before {
   width: 100%;
 
   overflow-x: auto;
+    }
   .cart-link {
 
     width: 46px;
