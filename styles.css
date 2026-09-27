@@ -1510,6 +1510,17 @@ body::before {
 
   }
 
+  .main-nav {
+
+  flex-wrap: nowrap;
+
+  gap: 12px;
+
+  justify-content: center;
+
+  width: 100%;
+
+  overflow-x: auto;
   .cart-link {
 
     width: 46px;
