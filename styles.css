@@ -144,7 +144,7 @@ body::before {
 
 .main-nav {
   display: flex;
-  gap: 30px;
+  gap: 16px;
   align-items: center;
 }
 
