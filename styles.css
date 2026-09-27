@@ -184,6 +184,67 @@ body::before {
   align-items: center;
   gap: 16px;
 }
+.cart-link {
+
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 42px;
+
+  height: 42px;
+
+  color: var(--green-900);
+
+  text-decoration: none;
+
+}
+
+.cart-icon {
+
+  font-size: 23px;
+
+  line-height: 1;
+
+}
+
+.cart-count {
+
+  position: absolute;
+
+  top: -3px;
+
+  right: -3px;
+
+  min-width: 18px;
+
+  height: 18px;
+
+  padding: 0 5px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: var(--orange);
+
+  color: #fff;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  line-height: 1;
+
+}
 
 .login-link {
   color: var(--text-soft);
