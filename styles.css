@@ -1804,6 +1804,19 @@ body::before {
     gap: 15px;
     }
    } 
+main {
+
+  display: flex;
+
+  flex-direction: column;
+
+}
+
+.product-showcase {
+
+  order: -1;
+
+}
 /* Featured Products */
 
 .product-showcase {
