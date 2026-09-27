@@ -1485,6 +1485,41 @@ body::before {
 }
 
 @media (max-width: 760px) {
+    .site-header {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+  }
+
+  .header-actions {
+
+    margin-left: auto;
+
+  }
+
+  .cart-link {
+
+    width: 46px;
+
+    height: 46px;
+
+    border: 1px solid var(--sage-line);
+
+    border-radius: 50%;
+
+    background: var(--cream);
+
+  }
+
+  .cart-icon {
+
+    font-size: 24px;
+
+  }
   .page-shell {
     width: min(100vw, calc(100vw - 30px));
   }
