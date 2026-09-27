@@ -180,11 +180,20 @@ body::before {
 }
 
 .header-actions {
+
   display: flex;
+
   align-items: center;
-  gap: 16px;
+
+  justify-content: flex-end;
+
+  gap: 18px;
+
+  height: 42px;
+
+  white-space: nowrap;
+
 }
-.cart-link {
 
   position: relative;
 
