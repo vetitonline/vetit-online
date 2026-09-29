@@ -2392,11 +2392,11 @@ main {
 
   }
 
-  .product-grid {
+    .product-grid {
 
     display: flex;
 
-    gap: 14px;
+    gap: 12px;
 
     overflow-x: auto;
 
@@ -2410,9 +2410,9 @@ main {
 
   .product-card {
 
-    flex: 0 0 82vw;
+    flex: 0 0 72%;
 
-    max-width: 330px;
+    min-width: 0;
 
     scroll-snap-align: start;
 
@@ -2420,21 +2420,21 @@ main {
 
   .product-image-wrap {
 
-    aspect-ratio: 1 / 0.58;
+    aspect-ratio: 1 / 0.65;
 
   }
 
   .product-info {
 
-    padding: 15px;
+    padding: 12px;
 
   }
 
   .product-info h3 {
 
-    margin: 7px 0 12px;
+    margin: 6px 0 10px;
 
-    font-size: 18px;
+    font-size: 16px;
 
   }
 
@@ -2447,6 +2447,5 @@ main {
     font-size: 22px;
 
   }
-
-}
- 
+  
+ }
