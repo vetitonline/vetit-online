@@ -30,17 +30,17 @@
       
         <div class="header-actions">
 
-  <a class="cart-link" href="#cart" aria-label="Shopping cart">
+  <span class="cart-link" role="img" aria-label="Shopping cart is not available yet" title="Shopping cart is not available yet">
 
     <span class="cart-icon">🛒</span>
 
     <span class="cart-count">0</span>
 
-  </a>
+  </span>
 
-  <a class="login-link" href="#">Log in</a>
+  <span class="login-link" aria-disabled="true" title="Account access is not available yet">Log in</span>
         
-        <a class="button button-primary small-button" href="#">Join free</a>
+        <span class="button button-primary small-button" aria-disabled="true" title="Account registration is not available yet">Join free</span>
       </div>
     </header>
 
@@ -59,16 +59,17 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
             <input id="marketplace-search" type="search" placeholder="Search products, care or services" />
             <button class="search-button" type="submit">Search</button>
+            <p class="search-status" data-search-status role="status" aria-live="polite" hidden></p>
           </form>
 
           <div class="hero-cta">
-            <a class="button button-primary" href="#">
+            <a class="button button-primary" href="#home-services">
               <span>Find trusted services</span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 3l9 9-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
             </a>
-            <a class="button button-secondary" href="#">
+            <a class="button button-secondary" href="#featured-products">
               <span>Explore the marketplace</span>
             </a>
           </div>
@@ -87,8 +88,6 @@
               <span class="proof-label">AI guidance</span>
             </div>
           </div>
-    </section>
-
         <aside class="hero-panel" aria-label="Marketplace summary">
           <div class="floating-card panel-top">
             <div class="panel-header">
@@ -183,7 +182,7 @@
 
           </div>
 
-          <a class="product-view-all" href="#animal-products">View all products <span>→</span></a>
+          <span class="product-view-all" aria-disabled="true" title="Only featured products are available on this page">View all products <span>→</span></span>
 
         </div>
 
@@ -209,7 +208,7 @@
 
                 <strong>From ₹899</strong>
 
-                <button type="button">+</button>
+              <button type="button" disabled aria-label="Add Premium dog nutrition to cart is not available yet" title="Cart is not available yet">+</button>
 
               </div>
 
@@ -237,7 +236,7 @@
 
                 <strong>From ₹499</strong>
 
-                <button type="button">+</button>
+              <button type="button" disabled aria-label="Add Cat wellness essentials to cart is not available yet" title="Cart is not available yet">+</button>
 
               </div>
 
@@ -265,7 +264,7 @@
 
                 <strong>From ₹299</strong>
 
-                <button type="button">+</button>
+              <button type="button" disabled aria-label="Add Playtime favourites to cart is not available yet" title="Cart is not available yet">+</button>
 
               </div>
 
@@ -293,7 +292,7 @@
 
                 <strong>Shop farm supplies</strong>
 
-                <button type="button">+</button>
+              <button type="button" disabled aria-label="Add Livestock essentials to cart is not available yet" title="Cart is not available yet">+</button>
 
               </div>
 
@@ -334,7 +333,7 @@
             </span>
             <span class="category-title">Pet wellness</span>
             <span class="category-copy">Veterinary care, grooming, nutrition, walking and companionship.</span>
-            <a href="#pet-care" class="category-link">Find pet services <span>→</span></a>
+            <span class="category-link" aria-disabled="true" title="Pet service listings are not available yet">Find pet services <span>→</span></span>
           </article>
           <article class="category-card" id="livestock">
             <span class="category-icon">
@@ -342,7 +341,7 @@
             </span>
             <span class="category-title">Livestock care</span>
             <span class="category-copy">Farm health planning, pasture advice, vaccination and daily care.</span>
-            <a href="#livestock" class="category-link">Book livestock help <span>→</span></a>
+            <span class="category-link" aria-disabled="true" title="Livestock bookings are not available yet">Book livestock help <span>→</span></span>
           </article>
           <article class="category-card" id="home-services">
             <span class="category-icon">
@@ -350,7 +349,7 @@
             </span>
             <span class="category-title">Home services</span>
             <span class="category-copy">Pet sitting, farmside support, transport and trusted local experts.</span>
-           <a href="#home-services" class="category-link">Explore home care <span>→</span></a>
+           <span class="category-link" aria-disabled="true" title="Home service listings are not available yet">Explore home care <span>→</span></span>
           </article>
           <article class="category-card category-card-accent" id="animal-products">
             <span class="category-icon">
@@ -358,12 +357,12 @@
             </span>
             <span class="category-title">Animal products</span>
             <span class="category-copy">Quality feed, farm equipment, wellness essentials and everyday pet supplies.</span>
-            <a href="#animal-products" class="category-link">Shop products <span>→</span></a>
+            <a href="#featured-products" class="category-link">Shop products <span>→</span></a>
           </article>
         </div>
       </section>
 
-      <section class="section featured-section">
+      <section class="section featured-section" id="insights">
         <div class="section-heading">
           <span class="section-label dark-label"><span></span>Popular right now</span>
           <h2>Fresh finds for pets, farms, and family routines.</h2>
@@ -411,14 +410,14 @@
         </div>
       </section>
 
-      <section class="seller-section">
+      <section class="seller-section" id="seller">
         <div class="seller-mark">For sellers &amp; providers</div>
         <div class="seller-content">
           <div>
             <h2>Put your animal business in front of the right people.</h2>
             <p>List products, offer services, and grow with intelligent tools built for the animal care community.</p>
           </div>
-          <a class="button button-light" href="#">Start selling <span>↗</span></a>
+          <span class="button button-light" aria-disabled="true" title="Seller registration is not available yet">Start selling <span>↗</span></span>
         </div>
         <div class="seller-points">
           <span><b>01</b> Reach more customers</span>
@@ -456,9 +455,9 @@
                 </div>
               </div>
             </div>
-            <a class="button button-secondary dark-button" href="#">
+            <span class="button button-secondary dark-button" aria-disabled="true" title="Care requests are not available yet">
               <span>Start a care request</span>
-            </a>
+            </span>
           </div>
 
           <div class="workflow-panel">
@@ -505,8 +504,8 @@
               </div>
 
               <div class="request-actions">
-                <a class="button button-primary small-button" href="#">Confirm booking</a>
-                <a class="button button-ghost small-button" href="#">Compare options</a>
+                <span class="button button-primary small-button" aria-disabled="true" title="Bookings are not available yet">Confirm booking</span>
+                <span class="button button-ghost small-button" aria-disabled="true" title="Provider comparison is not available yet">Compare options</span>
               </div>
             </div>
           </div>
@@ -542,8 +541,8 @@
             <p>For local providers, farmers, pet parents, and communities building healthier animal care journeys.</p>
           </div>
           <div class="cta-actions">
-            <a class="button button-primary" href="#">Create provider profile</a>
-            <a class="button button-secondary dark-button" href="#">Request marketplace access</a>
+            <span class="button button-primary" aria-disabled="true" title="Provider profiles are not available yet">Create provider profile</span>
+            <span class="button button-secondary dark-button" aria-disabled="true" title="Marketplace access requests are not available yet">Request marketplace access</span>
           </div>
         </div>
       </section>
@@ -551,7 +550,7 @@
 
     <footer class="site-footer">
       <div class="footer-brand">
-        <a class="brand" href="#" aria-label="vetit-online">
+        <a class="brand" href="#marketplace" aria-label="Vetit Online home">
           <span class="brand-icon">
             <svg viewBox="0 0 40 40" aria-hidden="true">
               <path d="M20 3C9.9 3 2 10.9 2 20s7.9 17 18 17 18-7.9 18-17S30.1 3 20 3z" fill="none" stroke="currentColor" stroke-width="2"></path>
@@ -565,15 +564,15 @@
         <span class="footer-copy">AI-powered pet, livestock and services marketplace</span>
       </div>
       <nav class="footer-links">
-        <a href="#">Marketplace</a>
-        <a href="#">Care services</a>
-        <a href="#">Livestock</a>
-        <a href="#">Providers</a>
-        <a href="#">Insights</a>
+        <a href="#marketplace">Marketplace</a>
+        <a href="#home-services">Care services</a>
+        <a href="#livestock">Livestock</a>
+        <a href="#seller">Providers</a>
+        <a href="#insights">Insights</a>
       </nav>
-      <a class="footer-social" href="#">
+      <span class="footer-social" role="img" aria-label="Vetit social link is not available yet" title="Vetit social link is not available yet">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 8-8 8 8 0 0 1 8 8 8 8 0 0 1-8 8 8 8 0 0 1-8-8z" fill="none" stroke="currentColor" stroke-width="2"></path><path d="M8 12h8m-4-4v8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-      </a>
+      </span>
     </footer>
   </div>
     

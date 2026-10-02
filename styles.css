@@ -120,6 +120,12 @@ body::before {
   transform: scale(1);
 }
 
+.brand-icon svg {
+  width: 34px;
+  height: 34px;
+  color: var(--green-700);
+}
+
 .brand-text {
   display: flex;
   align-items: center;
@@ -311,6 +317,14 @@ body::before {
 
 .button:hover {
   transform: translateY(-2px);
+}
+
+.button[aria-disabled="true"] {
+  cursor: default;
+}
+
+.button[aria-disabled="true"]:hover {
+  transform: none;
 }
 
 .small-button {
@@ -859,6 +873,14 @@ body::before {
 
 .category-link:hover span {
   transform: translateX(4px);
+}
+
+.category-link[aria-disabled="true"] {
+  cursor: default;
+}
+
+.category-link[aria-disabled="true"]:hover span {
+  transform: none;
 }
 
 .featured-section {
@@ -1665,6 +1687,22 @@ body::before {
   color: var(--text-muted);
 }
 
+.search-status {
+  flex: 0 0 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0 12px 8px;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.product-card[hidden],
+.category-card[hidden],
+.feature-card[hidden] {
+  display: none !important;
+}
+
 .search-button {
   min-height: 46px;
   padding: 0 22px;
@@ -1832,26 +1870,16 @@ body::before {
     }
    } 
 main {
-
   display: flex;
-
   flex-direction: column;
-
 }
 
-.product-showcase {
-
-  order: -1;
-
-}
 /* Featured Products */
 
 .product-showcase {
-
+  order: -1;
   padding: 60px 0;
-
   border-bottom: 1px solid var(--sage-line);
-
 }
 
 .product-heading {
@@ -2046,6 +2074,10 @@ main {
 
 }
 
+.product-bottom button:disabled {
+  cursor: default;
+}
+
 @media (max-width: 1120px) {
 
   .product-grid {
@@ -2056,35 +2088,6 @@ main {
 
 }
 
-@media (max-width: 760px) {
-
-  .product-heading {
-
-    align-items: flex-start;
-
-    flex-direction: column;
-
-  }
-
-  .product-grid {
-
-    display: flex;
-
-     gap: 14px;
-
-    overflow-x: auto;
-
-    padding-bottom: 12px;
-
-  }
-
-  .product-card {
-
-    flex: 0 0 calc(100vw - 40px);
-
-  }
-
-}
 .mobile-bottom-nav {
 
   display: none;
@@ -2375,81 +2378,15 @@ main {
 
   }
 
+  .card-one {
+    left: 0;
+  }
+
+  .card-two {
+    right: 0;
+  }
+
 }
-/* FINAL MOBILE PRODUCT LAYOUT */
-
-@media (max-width: 760px) {
-
-  .product-heading {
-
-    align-items: flex-start;
-
-    flex-direction: column;
-
-    gap: 14px;
-
-    margin-bottom: 22px;
-
-  }
-
-    .product-grid {
-
-    display: flex;
-
-    gap: 12px;
-
-    overflow-x: auto;
-
-    padding: 0 2px 12px;
-
-    scroll-snap-type: x mandatory;
-
-    -webkit-overflow-scrolling: touch;
-
-  }
-
-  .product-card {
-
-    flex: 0 0 72%;
-
-    min-width: 0;
-
-    scroll-snap-align: start;
-
-  }
-
-  .product-image-wrap {
-
-    aspect-ratio: 1 / 0.65;
-
-  }
-
-  .product-info {
-
-    padding: 12px;
-
-  }
-
-  .product-info h3 {
-
-    margin: 6px 0 10px;
-
-    font-size: 16px;
-
-  }
-
-  .product-bottom button {
-
-    width: 36px;
-
-    height: 36px;
-
-    font-size: 22px;
-
-  }
-  
- }
-
 /* =========================================================
 
    VETIT MOBILE MARKETPLACE PRODUCT GRID
