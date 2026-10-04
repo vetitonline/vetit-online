@@ -1,6 +1,9 @@
 ---
 import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
+import { formatPrice, getFeaturedProducts } from '../lib/marketplace/featured-products';
+
+const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -191,6 +194,25 @@ import '../../styles.css';
 
         <div class="product-grid">
 
+          {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
+            <article class="product-card" data-listing-id={product.id}>
+              <div class="product-image-wrap">
+                <img src={product.imageUrl} alt={product.title} loading="lazy">
+                <span class="product-tag">{product.category}</span>
+              </div>
+              <div class="product-info">
+                <span class="product-seller">{product.sellerName}</span>
+                <h3>{product.title}</h3>
+                <div class="product-bottom">
+                  <strong>{formatPrice(product.pricePaise)}</strong>
+                  <button type="button" disabled aria-label={`Add ${product.title} to cart is not available yet`} title="Cart is not available yet">+</button>
+                </div>
+              </div>
+            </article>
+          ))}
+
+          {featuredProductsResult.state === 'unconfigured' && <>
+
           <article class="product-card">
 
             <div class="product-image-wrap">
@@ -302,6 +324,16 @@ import '../../styles.css';
             </div>
 
           </article>
+
+          </>}
+
+          {featuredProductsResult.state === 'available' && featuredProductsResult.products.length === 0 && (
+            <p class="product-empty-state">New products from verified Vetit sellers are on the way.</p>
+          )}
+
+          {featuredProductsResult.state === 'error' && (
+            <p class="product-empty-state">Featured products are temporarily unavailable. Please check back soon.</p>
+          )}
 
         </div>
 

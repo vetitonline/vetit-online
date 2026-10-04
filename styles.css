@@ -1944,6 +1944,16 @@ main {
 
 }
 
+.product-empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 28px 20px;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  color: var(--text-soft);
+  text-align: center;
+}
+
 .product-card {
 
   overflow: hidden;
