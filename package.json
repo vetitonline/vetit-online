@@ -9,6 +9,11 @@
     "preview": "astro preview"
   },
   "devDependencies": {
+    "@astrojs/vercel": "^11.0.11",
     "astro": "^7.3.5"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2"
   }
 }
