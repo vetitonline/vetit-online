@@ -1,5 +1,6 @@
 ---
-import logo from '../../vetit-online.jpeg';
+import logo from '../../Vetit-online-transparent.png';
+import heroImage from '../../vetit-online.jpeg';
 import '../../styles.css';
 import { formatPrice, getFeaturedProducts } from '../lib/marketplace/featured-products';
 
@@ -95,6 +96,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             </div>
           </div>
         <aside class="hero-panel" aria-label="Marketplace summary">
+          <img class="hero-image" src={heroImage.src} alt="Vetit Online animal care marketplace" />
           <div class="floating-card panel-top">
             <div class="panel-header">
               <span>
