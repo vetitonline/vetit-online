@@ -211,7 +211,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             </article>
           ))}
 
-          {featuredProductsResult.state === 'unconfigured' && <>
+          {featuredProductsResult.products.length === 0 && <>
 
           <article class="product-card">
 
@@ -326,14 +326,6 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
           </article>
 
           </>}
-
-          {featuredProductsResult.state === 'available' && featuredProductsResult.products.length === 0 && (
-            <p class="product-empty-state">New products from verified Vetit sellers are on the way.</p>
-          )}
-
-          {featuredProductsResult.state === 'error' && (
-            <p class="product-empty-state">Featured products are temporarily unavailable. Please check back soon.</p>
-          )}
 
         </div>
 
