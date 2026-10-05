@@ -36,17 +36,17 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
       
         <div class="header-actions">
 
-  <span class="cart-link" role="img" aria-label="Shopping cart is not available yet" title="Shopping cart is not available yet">
+  <a class="cart-link" href="/cart" aria-label="Shopping cart, 0 items" title="View your cart">
 
     <span class="cart-icon">🛒</span>
 
     <span class="cart-count">0</span>
 
-  </span>
+  </a>
 
-  <span class="login-link" aria-disabled="true" title="Account access is not available yet">Log in</span>
+  <a class="login-link" href="/login">Log in</a>
         
-        <span class="button button-primary small-button" aria-disabled="true" title="Account registration is not available yet">Join free</span>
+        <a class="button button-primary small-button" href="/login?mode=join">Join free</a>
       </div>
     </header>
 
@@ -188,14 +188,14 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           </div>
 
-          <span class="product-view-all" aria-disabled="true" title="Only featured products are available on this page">View all products <span>→</span></span>
+          <a class="product-view-all" href="/products">View all products <span>→</span></a>
 
         </div>
 
         <div class="product-grid">
 
           {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
-            <article class="product-card" data-listing-id={product.id}>
+            <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
               <div class="product-image-wrap">
                 <img src={product.imageUrl} alt={product.title} loading="lazy">
                 <span class="product-tag">{product.category}</span>
@@ -205,7 +205,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
                 <h3>{product.title}</h3>
                 <div class="product-bottom">
                   <strong>{formatPrice(product.pricePaise)}</strong>
-                  <button type="button" disabled aria-label={`Add ${product.title} to cart is not available yet`} title="Cart is not available yet">+</button>
+                  <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
                 </div>
               </div>
             </article>
@@ -213,7 +213,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           {featuredProductsResult.products.length === 0 && <>
 
-          <article class="product-card">
+          <article class="product-card" data-cart-product data-product-id="sample-premium-dog-nutrition" data-product-title="Premium dog nutrition" data-product-category="Pet food" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80" data-product-price-paise="89900">
 
             <div class="product-image-wrap">
 
@@ -233,7 +233,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
                 <strong>From ₹899</strong>
 
-              <button type="button" disabled aria-label="Add Premium dog nutrition to cart is not available yet" title="Cart is not available yet">+</button>
+              <button type="button" data-add-to-cart aria-label="Add Premium dog nutrition to cart" title="Add Premium dog nutrition to cart">+</button>
 
               </div>
 
@@ -241,7 +241,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           </article>
 
-          <article class="product-card">
+          <article class="product-card" data-cart-product data-product-id="sample-cat-wellness-essentials" data-product-title="Cat wellness essentials" data-product-category="Cat care" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" data-product-price-paise="49900">
 
             <div class="product-image-wrap">
 
@@ -261,7 +261,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
                 <strong>From ₹499</strong>
 
-              <button type="button" disabled aria-label="Add Cat wellness essentials to cart is not available yet" title="Cart is not available yet">+</button>
+              <button type="button" data-add-to-cart aria-label="Add Cat wellness essentials to cart" title="Add Cat wellness essentials to cart">+</button>
 
               </div>
 
@@ -269,7 +269,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           </article>
 
-          <article class="product-card">
+          <article class="product-card" data-cart-product data-product-id="sample-playtime-favourites" data-product-title="Playtime favourites" data-product-category="Toys" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80" data-product-price-paise="29900">
 
             <div class="product-image-wrap">
 
@@ -289,7 +289,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
                 <strong>From ₹299</strong>
 
-              <button type="button" disabled aria-label="Add Playtime favourites to cart is not available yet" title="Cart is not available yet">+</button>
+              <button type="button" data-add-to-cart aria-label="Add Playtime favourites to cart" title="Add Playtime favourites to cart">+</button>
 
               </div>
 
@@ -297,7 +297,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           </article>
 
-          <article class="product-card">
+          <article class="product-card" data-cart-product data-product-id="sample-livestock-essentials" data-product-title="Livestock essentials" data-product-category="Livestock" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80" data-product-price-paise="">
 
             <div class="product-image-wrap">
 
@@ -317,7 +317,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
                 <strong>Shop farm supplies</strong>
 
-              <button type="button" disabled aria-label="Add Livestock essentials to cart is not available yet" title="Cart is not available yet">+</button>
+              <button type="button" data-add-to-cart aria-label="Add Livestock essentials to cart" title="Add Livestock essentials to cart">+</button>
 
               </div>
 
@@ -328,6 +328,8 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
           </>}
 
         </div>
+
+        <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
 
       </section>
       <section class="partners-strip">

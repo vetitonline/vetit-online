@@ -42,9 +42,10 @@ function imageForCategory(category: string): string {
   return categoryImages.find(({ match }) => match.test(category))?.imageUrl ?? defaultProductImage;
 }
 
-/** Fetch public, moderation-approved product listings for the homepage. */
-export async function getFeaturedProducts(
+/** Fetch public, moderation-approved India product listings. */
+export async function getMarketplaceProducts(
   cookies: AstroCookies,
+  requestedLimit = 100,
 ): Promise<FeaturedProductsResult> {
   if (!getSupabasePublicConfig()) {
     return { state: "unconfigured", products: [] };
@@ -59,7 +60,7 @@ export async function getFeaturedProducts(
       .eq("status", "published")
       .eq("country_code", "IN")
       .order("published_at", { ascending: false })
-      .limit(4);
+      .limit(Math.min(100, Math.max(1, Math.floor(requestedLimit))));
 
     if (error) {
       throw error;
@@ -102,6 +103,11 @@ export async function getFeaturedProducts(
     );
     return { state: "error", products: [] };
   }
+}
+
+/** Fetch the small set used by the homepage. */
+export function getFeaturedProducts(cookies: AstroCookies): Promise<FeaturedProductsResult> {
+  return getMarketplaceProducts(cookies, 4);
 }
 
 export function formatPrice(pricePaise: number | null): string {

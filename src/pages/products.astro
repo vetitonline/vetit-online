@@ -1,0 +1,82 @@
+---
+import logo from '../../Vetit-online-transparent.png';
+import '../../styles.css';
+import { formatPrice, getMarketplaceProducts } from '../lib/marketplace/featured-products';
+
+const result = await getMarketplaceProducts(Astro.cookies);
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products | Vetit Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <img src={logo.src} alt="Vetit Online">
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/#marketplace">Marketplace</a>
+        <a href="/#pet-care">Pet Care</a>
+        <a href="/#livestock">Livestock</a>
+        <a href="/#home-services">Services</a>
+        <a href="/#how-it-works">How it works</a>
+      </nav>
+      <div class="header-actions">
+        <a class="cart-link" href="/cart" aria-label="Shopping cart, 0 items" title="View your cart">
+          <span class="cart-icon">🛒</span>
+          <span class="cart-count">0</span>
+        </a>
+        <a class="login-link" href="/login">Log in</a>
+        <a class="button button-primary small-button" href="/login?mode=join">Join free</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="product-showcase" id="all-products">
+        <div class="product-heading">
+          <div>
+            <span class="section-label dark-label"><span></span>Marketplace</span>
+            <h1>Shop what your animals need.</h1>
+            <p>Products from verified Vetit sellers across India.</p>
+          </div>
+        </div>
+
+        <div class="product-grid">
+          {result.state === 'available' && result.products.map((product) => (
+            <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
+              <div class="product-image-wrap">
+                <img src={product.imageUrl} alt={product.title} loading="lazy">
+                <span class="product-tag">{product.category}</span>
+              </div>
+              <div class="product-info">
+                <span class="product-seller">{product.sellerName}</span>
+                <h2>{product.title}</h2>
+                <div class="product-bottom">
+                  <strong>{formatPrice(product.pricePaise)}</strong>
+                  <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
+                </div>
+              </div>
+            </article>
+          ))}
+
+          {result.products.length === 0 && (
+            <p class="product-empty-state">
+              {result.state === 'error'
+                ? 'The marketplace is temporarily unavailable. Please try again later.'
+                : 'There are no published products yet.'}
+              {' '}<a href="/#featured-products">Browse featured products</a>
+            </p>
+          )}
+        </div>
+        <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
+      </section>
+    </main>
+  </div>
+  <script src="../../script.js"></script>
+</body>
+</html>

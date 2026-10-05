@@ -1,0 +1,59 @@
+---
+import logo from '../../Vetit-online-transparent.png';
+import '../../styles.css';
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your cart | Vetit Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <img src={logo.src} alt="Vetit Online">
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/#marketplace">Marketplace</a>
+        <a href="/#pet-care">Pet Care</a>
+        <a href="/#livestock">Livestock</a>
+        <a href="/#home-services">Services</a>
+        <a href="/#how-it-works">How it works</a>
+      </nav>
+      <div class="header-actions">
+        <a class="cart-link" href="/cart" aria-label="Shopping cart, 0 items" title="View your cart">
+          <span class="cart-icon">🛒</span>
+          <span class="cart-count">0</span>
+        </a>
+        <a class="login-link" href="/login">Log in</a>
+        <a class="button button-primary small-button" href="/login?mode=join">Join free</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="product-showcase cart-page" data-cart-page>
+        <div class="product-heading">
+          <div>
+            <span class="section-label dark-label"><span></span>Your basket</span>
+            <h1>Your cart</h1>
+            <p>Review items saved in this browser.</p>
+          </div>
+        </div>
+        <div class="cart-items" data-cart-items></div>
+        <p class="product-empty-state" data-cart-empty hidden>Your cart is empty. <a href="/products">Browse products</a>.</p>
+        <div class="cart-summary" data-cart-summary hidden>
+          <p data-cart-subtotal></p>
+          <p class="cart-checkout-note">Online checkout is not enabled yet. No order or payment will be placed from this cart.</p>
+          <button class="button button-secondary small-button" type="button" data-cart-clear>Clear cart</button>
+        </div>
+        <a class="button button-secondary cart-continue" href="/products">Continue shopping</a>
+        <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
+      </section>
+    </main>
+  </div>
+  <script src="../../script.js"></script>
+</body>
+</html>
