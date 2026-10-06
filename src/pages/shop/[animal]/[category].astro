@@ -9,7 +9,7 @@ import { findAnimal, findCategory } from '../../../lib/marketplace/product-taxon
 const animal = findAnimal(Astro.params.animal ?? '');
 const category = animal && findCategory(animal, Astro.params.category ?? '');
 if (!animal || !category) return Astro.redirect('/shop', 302);
-const result = await getMarketplaceProducts(Astro.cookies);
+const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const products = filterMarketplaceProducts(result.products, { animal: animal.slug, category: category.slug });
 ---
 <!DOCTYPE html>

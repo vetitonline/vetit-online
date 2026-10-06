@@ -17,7 +17,7 @@ if (!getSupabasePublicConfig()) {
   loadError = true;
 } else {
   try {
-    const supabase = createSupabaseServerClient({ cookies: Astro.cookies });
+    const supabase = createSupabaseServerClient({ request: Astro.request, cookies: Astro.cookies });
     const { data: foundProfile, error: profileError } = await supabase
       .from('provider_profiles')
       .select('business_id, slug, provider_type, biography, public_email, public_phone, website_url, professional_verification_status')

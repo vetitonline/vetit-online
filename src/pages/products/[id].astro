@@ -4,7 +4,7 @@ import '../../../styles.css';
 import { formatPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
 
 const productId = Astro.params.id ?? '';
-const result = await getMarketplaceProduct(Astro.cookies, productId);
+const result = await getMarketplaceProduct(Astro.request, Astro.cookies, productId);
 const product = result.product;
 ---
 <!DOCTYPE html>

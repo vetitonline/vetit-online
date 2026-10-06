@@ -6,7 +6,7 @@ import { getMarketplaceProducts } from '../lib/marketplace/featured-products';
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
 import { PRODUCT_ANIMALS } from '../lib/marketplace/product-taxonomy';
 
-const result = await getMarketplaceProducts(Astro.cookies);
+const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const params = Astro.url.searchParams;
 const query = params.get('q')?.trim() ?? '';
 const animal = params.get('animal')?.trim() ?? '';

@@ -43,14 +43,14 @@ function searchPattern(value: string): string {
   return `%${value.trim().slice(0, 100)}%`;
 }
 
-export async function getServiceCategories(cookies: AstroCookies): Promise<{
+export async function getServiceCategories(request: Request, cookies: AstroCookies): Promise<{
   state: ServicesResult["state"];
   categories: ServiceCategory[];
 }> {
   if (!getSupabasePublicConfig()) return { state: "unconfigured", categories: [] };
 
   try {
-    const supabase = createSupabaseServerClient({ cookies });
+    const supabase = createSupabaseServerClient({ request, cookies });
     const { data, error } = await supabase
       .from("service_categories")
       .select("slug, name, parent_slug, requires_professional_verification, requires_legal_review")
@@ -74,11 +74,11 @@ export async function getServiceCategories(cookies: AstroCookies): Promise<{
 }
 
 /** Fetch only real, published services from verified providers. */
-export async function getPublicServices(cookies: AstroCookies, filters: ServiceSearch = {}): Promise<ServicesResult> {
+export async function getPublicServices(request: Request, cookies: AstroCookies, filters: ServiceSearch = {}): Promise<ServicesResult> {
   if (!getSupabasePublicConfig()) return { state: "unconfigured", services: [], categories: [] };
 
   try {
-    const supabase = createSupabaseServerClient({ cookies });
+    const supabase = createSupabaseServerClient({ request, cookies });
     const buildListingQuery = () => supabase
       .from("listings")
       .select("id, business_id, title, description, category, service_category_slug, service_mode, provider_location_id, service_city, service_locality, price_paise, service_duration_minutes, published_at")
@@ -102,7 +102,7 @@ export async function getPublicServices(cookies: AstroCookies, filters: ServiceS
 
     const [{ data: directListings, error }, { categories, state: categoryState }, locationResult] = await Promise.all([
       directQuery,
-      getServiceCategories(cookies),
+      getServiceCategories(request, cookies),
       filters.city?.trim() || filters.locality?.trim()
         ? locationQuery
         : Promise.resolve({ data: [], error: null }),

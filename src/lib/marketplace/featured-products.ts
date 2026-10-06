@@ -45,6 +45,7 @@ function imageForCategory(category: string): string {
 
 /** Fetch public, moderation-approved India product listings. */
 export async function getMarketplaceProducts(
+  request: Request,
   cookies: AstroCookies,
   requestedLimit = 1000,
 ): Promise<FeaturedProductsResult> {
@@ -53,7 +54,7 @@ export async function getMarketplaceProducts(
   }
 
   try {
-    const supabase = createSupabaseServerClient({ cookies });
+    const supabase = createSupabaseServerClient({ request, cookies });
     const { data: listings, error } = await supabase
       .from("listings")
       .select("id, business_id, title, description, category, price_paise")
@@ -109,19 +110,20 @@ export async function getMarketplaceProducts(
 }
 
 /** Fetch the small set used by the homepage. */
-export function getFeaturedProducts(cookies: AstroCookies): Promise<FeaturedProductsResult> {
-  return getMarketplaceProducts(cookies, 4);
+export function getFeaturedProducts(request: Request, cookies: AstroCookies): Promise<FeaturedProductsResult> {
+  return getMarketplaceProducts(request, cookies, 4);
 }
 
 /** Fetch a single real published India product for the customer detail route. */
 export async function getMarketplaceProduct(
+  request: Request,
   cookies: AstroCookies,
   productId: string,
 ): Promise<{ state: "unconfigured" | "available" | "error"; product: FeaturedProduct | null }> {
   if (!getSupabasePublicConfig()) return { state: "unconfigured", product: null };
 
   try {
-    const supabase = createSupabaseServerClient({ cookies });
+    const supabase = createSupabaseServerClient({ request, cookies });
     const { data: listing, error } = await supabase
       .from("listings")
       .select("id, business_id, title, description, category, price_paise")

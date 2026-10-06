@@ -1,14 +1,15 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { AstroCookies } from "astro";
 import { getSupabasePublicConfig } from "./config";
 import type { Database } from "./database.types";
 
 type SupabaseServerOptions = {
+  request: Request;
   cookies: AstroCookies;
 };
 
 /** Create a request-scoped Supabase client and persist refreshed auth cookies. */
-export function createSupabaseServerClient({ cookies }: SupabaseServerOptions) {
+export function createSupabaseServerClient({ request, cookies }: SupabaseServerOptions) {
   const config = getSupabasePublicConfig();
   if (!config) {
     throw new Error(
@@ -18,7 +19,7 @@ export function createSupabaseServerClient({ cookies }: SupabaseServerOptions) {
 
   return createServerClient<Database>(config.url, config.publishableKey, {
     cookies: {
-      getAll: () => cookies.getAll(),
+      getAll: () => parseCookieHeader(request.headers.get("Cookie") ?? ""),
       setAll: (values) => {
         for (const { name, value, options } of values) {
           cookies.set(name, value, options);

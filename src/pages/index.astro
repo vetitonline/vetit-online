@@ -3,7 +3,7 @@ import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
 import { formatPrice, getFeaturedProducts } from '../lib/marketplace/featured-products';
 
-const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
+const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.cookies);
 ---
 <!DOCTYPE html>
 <html lang="en">

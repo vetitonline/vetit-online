@@ -8,7 +8,7 @@ import { findAnimal } from '../../../lib/marketplace/product-taxonomy';
 
 const animal = findAnimal(Astro.params.animal ?? '');
 if (!animal) return Astro.redirect('/shop', 302);
-const result = await getMarketplaceProducts(Astro.cookies);
+const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const products = filterMarketplaceProducts(result.products, { animal: animal.slug });
 ---
 <!DOCTYPE html>

@@ -7,7 +7,7 @@ import { getPublicServices } from '../lib/marketplace/services';
 const category = Astro.url.searchParams.get('category')?.trim() ?? '';
 const city = Astro.url.searchParams.get('city')?.trim() ?? '';
 const locality = Astro.url.searchParams.get('locality')?.trim() ?? '';
-const result = await getPublicServices(Astro.cookies, { category, city, locality });
+const result = await getPublicServices(Astro.request, Astro.cookies, { category, city, locality });
 const selectedCategory = result.categories.find((item) => item.slug === category);
 const serviceShortcuts = [
   ['Veterinary clinics', 'veterinary-clinic'], ['Veterinarians / doctors', 'veterinarian'],
