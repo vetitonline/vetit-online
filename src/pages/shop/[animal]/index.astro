@@ -1,0 +1,39 @@
+---
+import logo from '../../../../Vetit-online-transparent.png';
+import '../../../../styles.css';
+import ProductCard from '../../../components/marketplace/ProductCard.astro';
+import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
+import { getMarketplaceProducts } from '../../../lib/marketplace/featured-products';
+import { findAnimal } from '../../../lib/marketplace/product-taxonomy';
+
+const animal = findAnimal(Astro.params.animal ?? '');
+if (!animal) return Astro.redirect('/shop', 302);
+const result = await getMarketplaceProducts(Astro.cookies);
+const products = filterMarketplaceProducts(result.products, { animal: animal.slug });
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{animal.label} products | Vetit Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body><div class="page-shell">
+  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/products">Marketplace</a><a href="/shop/dogs">Dogs</a><a href="/shop/cats">Cats</a><a href="/shop/livestock">Livestock</a><a href="/services">Services</a></nav><div class="header-actions"><a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <main><section class="product-showcase">
+    <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All animals</a> / {animal.label}</span><h1>{animal.label} products</h1><p>Browse categories and real published listings.</p></div><a class="product-view-all" href={`/products?animal=${animal.slug}`}>View all {animal.label.toLocaleLowerCase()} products →</a></div>
+    <nav class="subcategory-links" aria-label={`${animal.label} product categories`}>
+      {animal.categories.map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
+      {animal.categories.flatMap((category) => category.children ?? []).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
+    </nav>
+    <h2 class="catalog-section-title">Available listings</h2>
+    <div class="product-grid">
+      {result.state === 'available' && products.map((product) => <ProductCard product={product} />)}
+      {result.state === 'error' && <p class="product-empty-state">The marketplace is temporarily unavailable. Please try again later.</p>}
+      {result.state === 'unconfigured' && <p class="product-empty-state">Marketplace listings are not connected yet. No products are being shown.</p>}
+      {result.state === 'available' && products.length === 0 && <p class="product-empty-state">No products in this category yet. <a href="/services">Explore animal services</a>.</p>}
+    </div>
+  </section></main>
+</div><script src="../../../../script.js"></script></body>
+</html>

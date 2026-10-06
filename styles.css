@@ -2782,7 +2782,171 @@ main {
   margin-top: 20px;
 }
 
+/* Service discovery uses the marketplace's existing violet/orange component language. */
+.site-header > a:first-child img {
+  width: 220px;
+  max-width: 24vw;
+  height: auto;
+  display: block;
+}
+
+.service-marketplace {
+  padding: 60px 0;
+  border-bottom: 1px solid var(--sage-line);
+}
+
+.service-search {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr auto;
+  align-items: end;
+  gap: 14px;
+  margin: 26px 0 36px;
+  padding: 20px;
+  border: 1px solid var(--sage-line);
+  border-radius: 20px;
+  background: var(--cream);
+  box-shadow: 0 12px 35px var(--shadow);
+}
+
+.service-search label {
+  display: grid;
+  gap: 8px;
+  color: var(--green-900);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.service-search input,
+.service-search select {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: white;
+  color: var(--text);
+  font: inherit;
+}
+
+.service-results > h2,
+.provider-information h2 {
+  color: var(--green-950);
+  font-family: var(--font-display);
+}
+
+.service-listings {
+  display: grid;
+  gap: 16px;
+}
+
+.service-listing-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  background: var(--cream);
+  box-shadow: 0 8px 24px var(--shadow);
+}
+
+.service-listing-card h2,
+.service-listing-card h3 {
+  margin: 10px 0 8px;
+  color: var(--green-950);
+  font-family: var(--font-display);
+}
+
+.service-listing-card p {
+  margin: 6px 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.service-provider-name {
+  color: var(--green-800) !important;
+  font-weight: 800;
+}
+
+.service-location-line {
+  font-size: 13px;
+}
+
+.service-listing-meta {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 10px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.service-listing-meta strong {
+  color: var(--green-950);
+  font-size: 18px;
+}
+
+.service-listing-meta a {
+  white-space: nowrap;
+}
+
+.service-booking-note {
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--orange);
+  background: var(--sage-light);
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.provider-information {
+  margin: 28px 0;
+}
+
+.provider-information > p,
+.provider-biography,
+.provider-hours p {
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.provider-hours {
+  margin-top: 14px;
+}
+
+@media (max-width: 1120px) {
+  .service-search {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
+  .site-header > a:first-child img {
+    width: 180px;
+    max-width: 78vw;
+  }
+
+  .service-marketplace {
+    padding: 38px 0;
+  }
+
+  .service-search {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .service-listing-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .service-listing-meta {
+    justify-items: start;
+  }
+
   .auth-page {
     padding: 28px 0 48px;
   }
@@ -2805,5 +2969,303 @@ main {
 
   .cart-line-content h2 {
     font-size: 16px;
+  }
+}
+
+/* Customer marketplace routes */
+.catalog-animal-links,
+.subcategory-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 22px;
+}
+
+.catalog-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--sage-line);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--green-900);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.catalog-chip:hover,
+.catalog-chip.active {
+  border-color: var(--green-600);
+  background: var(--sage-light);
+}
+
+.catalog-filters {
+  display: grid;
+  grid-template-columns: minmax(190px, 2fr) repeat(5, minmax(110px, 1fr)) auto auto;
+  align-items: end;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 18px;
+  border: 1px solid var(--sage-line);
+  border-radius: 18px;
+  background: var(--cream);
+}
+
+.catalog-filters label {
+  display: grid;
+  gap: 6px;
+  color: var(--green-900);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.catalog-filters input,
+.catalog-filters select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--sage-line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.catalog-clear {
+  padding: 12px 5px;
+  color: var(--green-800);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.catalog-data-note,
+.catalog-count {
+  margin: 10px 0 18px;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.catalog-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin: 24px 0 8px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.catalog-section-title {
+  margin: 24px 0 14px;
+  color: var(--green-950);
+  font-family: var(--font-display);
+}
+
+.product-card-image-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.product-title-link,
+.product-info h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.product-title-link:hover,
+.product-info h2 a:hover {
+  color: var(--green-700);
+}
+
+.product-brand {
+  display: block;
+  margin: 0 0 6px;
+  color: var(--green-800);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.product-card h2 {
+  margin: 8px 0 16px;
+  color: var(--green-950);
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+.animal-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.animal-category-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 230px;
+  padding: 24px;
+  border: 1px solid var(--sage-line);
+  border-radius: 22px;
+  background: var(--cream);
+  box-shadow: 0 12px 35px var(--shadow);
+  color: inherit;
+  text-decoration: none;
+}
+
+.animal-category-card h2 {
+  margin: 0;
+  color: var(--green-950);
+  font-family: var(--font-display);
+}
+
+.animal-category-card p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.animal-category-card .category-link {
+  margin-top: auto;
+  color: var(--green-800);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.product-detail-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.product-breadcrumb {
+  margin: 0 0 18px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.product-breadcrumb a,
+.product-heading .section-label a {
+  color: var(--green-800);
+}
+
+.product-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  gap: clamp(24px, 5vw, 64px);
+  align-items: start;
+}
+
+.product-detail-image {
+  position: relative;
+  min-height: 340px;
+  overflow: hidden;
+  border: 1px solid var(--sage-line);
+  border-radius: 24px;
+  background: var(--sage-light);
+}
+
+.product-detail-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 0.85;
+  object-fit: cover;
+}
+
+.product-detail-image .product-tag {
+  position: absolute;
+}
+
+.product-detail-copy h1 {
+  margin: 12px 0;
+  color: var(--green-950);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4vw, 46px);
+}
+
+.product-detail-seller,
+.product-detail-availability {
+  color: var(--text-soft);
+}
+
+.product-detail-price {
+  margin: 18px 0;
+  color: var(--green-900);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.product-description {
+  padding: 16px 0;
+  border-top: 1px solid var(--sage-line);
+  border-bottom: 1px solid var(--sage-line);
+}
+
+.product-description h2 {
+  color: var(--green-950);
+  font-family: var(--font-display);
+  font-size: 18px;
+}
+
+.product-description p {
+  color: var(--text-soft);
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.product-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.product-not-found {
+  max-width: 620px;
+  margin: 60px auto;
+  padding: 32px;
+  border: 1px solid var(--sage-line);
+  border-radius: 22px;
+  background: var(--cream);
+  text-align: center;
+}
+
+.product-not-found h1 {
+  color: var(--green-950);
+  font-family: var(--font-display);
+}
+
+@media (max-width: 1000px) {
+  .catalog-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .catalog-search-label {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .catalog-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px;
+  }
+  .catalog-search-label {
+    grid-column: 1 / -1;
+  }
+  .catalog-filters > button,
+  .catalog-filters > a {
+    justify-self: start;
+  }
+  .animal-category-grid {
+    grid-template-columns: 1fr;
+  }
+  .product-detail-layout {
+    grid-template-columns: 1fr;
+  }
+  .product-detail-image {
+    min-height: 0;
   }
 }

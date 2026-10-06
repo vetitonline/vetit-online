@@ -1,0 +1,118 @@
+---
+import logo from '../../Vetit-online-transparent.png';
+import '../../styles.css';
+import { formatPrice } from '../lib/marketplace/featured-products';
+import { getPublicServices } from '../lib/marketplace/services';
+
+const category = Astro.url.searchParams.get('category')?.trim() ?? '';
+const city = Astro.url.searchParams.get('city')?.trim() ?? '';
+const locality = Astro.url.searchParams.get('locality')?.trim() ?? '';
+const result = await getPublicServices(Astro.cookies, { category, city, locality });
+const selectedCategory = result.categories.find((item) => item.slug === category);
+const serviceShortcuts = [
+  ['Veterinary clinics', 'veterinary-clinic'], ['Veterinarians / doctors', 'veterinarian'],
+  ['Veterinary surgeries', 'veterinary-surgery'], ['Grooming', 'dog-grooming'],
+  ['Daycare', 'dog-daycare'], ['Boarding', 'boarding-kennels-catteries'],
+  ['Training', 'training-behaviour'], ['Dog walking', 'dog-walking'],
+  ['Pet sitting', 'pet-sitting'], ['Pet transport', 'pet-transport'],
+  ['Livestock veterinary', 'livestock-veterinary'], ['Farm services', 'farm-services'],
+];
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pet & livestock services | Vetit Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="site-header">
+      <a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/#marketplace">Marketplace</a><a href="/#pet-care">Pet Care</a><a href="/#livestock">Livestock</a>
+        <a href="/services" aria-current="page">Services</a><a href="/#how-it-works">How it works</a>
+      </nav>
+      <div class="header-actions">
+        <a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a>
+        <a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="service-marketplace">
+        <div class="product-heading">
+          <div>
+            <span class="section-label dark-label"><span></span>Local animal care</span>
+            <h1>Find trusted services.</h1>
+            <p>Discover verified pet, veterinary and livestock providers by service and location.</p>
+          </div>
+        </div>
+
+        <form class="service-search" method="get" action="/services" role="search">
+          <label>Service type
+            <select name="category">
+              <option value="">All service types</option>
+              {result.categories.map((item) => (
+                <option value={item.slug} selected={item.slug === category}>{item.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>City
+            <input name="city" value={city} maxlength="100" placeholder="e.g. Mumbai">
+          </label>
+          <label>Area or locality
+            <input name="locality" value={locality} maxlength="100" placeholder="e.g. Bandra">
+          </label>
+          <button class="button button-primary" type="submit">Search services</button>
+        </form>
+
+        <nav class="service-category-shortcuts" aria-label="Browse service categories">
+          {serviceShortcuts.map(([label, slug]) => <a class="catalog-chip" href={`/services?category=${slug}`}>{label}</a>)}
+        </nav>
+
+        <div class="service-results" aria-live="polite">
+          {result.state === 'unconfigured' ? (
+            <p class="product-empty-state">Service discovery is not connected yet. No provider listings are being shown.</p>
+          ) : result.state === 'error' ? (
+            <p class="product-empty-state">Services could not be loaded right now. Please try again later.</p>
+          ) : result.services.length ? (
+            <>
+              <h2>{selectedCategory?.name ?? 'Animal care services'}{city ? ` in ${city}` : ''}{locality ? `, ${locality}` : ''}</h2>
+              <div class="service-listings">
+                {result.services.map((service) => (
+                  <article class="service-listing-card">
+                    <div>
+                      <span class="section-label dark-label"><span></span>{service.categoryName}</span>
+                      <h2>{service.title}</h2>
+                      <p class="service-provider-name">{service.providerName}</p>
+                      <p>{service.description}</p>
+                      <p class="service-location-line">{[service.locality, service.city].filter(Boolean).join(', ') || 'Location details not listed'}</p>
+                    </div>
+                    <div class="service-listing-meta">
+                      <strong>{formatPrice(service.pricePaise)}</strong>
+                      {service.durationMinutes && <span>{service.durationMinutes} min</span>}
+                      {service.providerSlug ? <a class="button button-secondary small-button" href={`/providers/${service.providerSlug}`}>View provider</a> : <span>Provider profile coming soon</span>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p class="product-empty-state">
+              {category || city || locality
+                ? 'No published services match these filters yet.'
+                : 'No service providers have published listings yet. Verified providers will appear here when they are approved.'}
+            </p>
+          )}
+        </div>
+        <p class="service-booking-note">Appointment requests and live availability are not enabled yet. No booking is created from this page.</p>
+      </section>
+    </main>
+  </div>
+  <script src="../../script.js"></script>
+</body>
+</html>

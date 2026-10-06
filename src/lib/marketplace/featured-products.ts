@@ -7,6 +7,7 @@ export type FeaturedProduct = {
   title: string;
   description: string;
   category: string;
+  brand: string | null;
   sellerName: string;
   pricePaise: number | null;
   imageUrl: string;
@@ -45,7 +46,7 @@ function imageForCategory(category: string): string {
 /** Fetch public, moderation-approved India product listings. */
 export async function getMarketplaceProducts(
   cookies: AstroCookies,
-  requestedLimit = 100,
+  requestedLimit = 1000,
 ): Promise<FeaturedProductsResult> {
   if (!getSupabasePublicConfig()) {
     return { state: "unconfigured", products: [] };
@@ -60,7 +61,7 @@ export async function getMarketplaceProducts(
       .eq("status", "published")
       .eq("country_code", "IN")
       .order("published_at", { ascending: false })
-      .limit(Math.min(100, Math.max(1, Math.floor(requestedLimit))));
+      .range(0, Math.min(999, Math.max(0, Math.floor(requestedLimit) - 1)));
 
     if (error) {
       throw error;
@@ -91,6 +92,8 @@ export async function getMarketplaceProducts(
         title: listing.title,
         description: listing.description,
         category: listing.category,
+        // Brand and product-image columns are not part of the current production schema.
+        brand: null,
         sellerName: sellerNames.get(listing.business_id) ?? "Verified Vetit seller",
         pricePaise: listing.price_paise,
         imageUrl: imageForCategory(listing.category),
@@ -108,6 +111,52 @@ export async function getMarketplaceProducts(
 /** Fetch the small set used by the homepage. */
 export function getFeaturedProducts(cookies: AstroCookies): Promise<FeaturedProductsResult> {
   return getMarketplaceProducts(cookies, 4);
+}
+
+/** Fetch a single real published India product for the customer detail route. */
+export async function getMarketplaceProduct(
+  cookies: AstroCookies,
+  productId: string,
+): Promise<{ state: "unconfigured" | "available" | "error"; product: FeaturedProduct | null }> {
+  if (!getSupabasePublicConfig()) return { state: "unconfigured", product: null };
+
+  try {
+    const supabase = createSupabaseServerClient({ cookies });
+    const { data: listing, error } = await supabase
+      .from("listings")
+      .select("id, business_id, title, description, category, price_paise")
+      .eq("id", productId)
+      .eq("kind", "product")
+      .eq("status", "published")
+      .eq("country_code", "IN")
+      .maybeSingle();
+    if (error) throw error;
+    if (!listing) return { state: "available", product: null };
+
+    const { data: business, error: businessError } = await supabase
+      .from("businesses")
+      .select("display_name")
+      .eq("id", listing.business_id)
+      .maybeSingle();
+    if (businessError) throw businessError;
+
+    return {
+      state: "available",
+      product: {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        category: listing.category,
+        brand: null,
+        sellerName: business?.display_name ?? "Verified Vetit seller",
+        pricePaise: listing.price_paise,
+        imageUrl: imageForCategory(listing.category),
+      },
+    };
+  } catch (error) {
+    console.error("[marketplace] Could not load product detail.", error instanceof Error ? error.message : "Unknown Supabase error");
+    return { state: "error", product: null };
+  }
 }
 
 export function formatPrice(pricePaise: number | null): string {

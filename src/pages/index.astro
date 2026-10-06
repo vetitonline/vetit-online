@@ -55,10 +55,10 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
         <section class="hero-section" id="marketplace">
           <div class="section-label">
             <span></span>
-            AI-powered marketplace
+            Marketplace for every animal journey
           </div>
           <h1>Care, commerce, and services for every animal journey.</h1>
-          <p class="hero-text">Shop smarter for pets and livestock, discover trusted services, and get AI-powered guidance for every animal journey.</p>
+          <p class="hero-text">Shop for pets and livestock, discover animal-care services, and find useful support for every animal journey.</p>
 
           <form class="marketplace-search" role="search">
             <label class="sr-only" for="marketplace-search">Search the marketplace</label>
@@ -82,35 +82,35 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           <div class="hero-proof">
             <div>
-              <span class="proof-number">12k+</span>
-              <span class="proof-label">care providers</span>
+              <span class="proof-number">India</span>
+              <span class="proof-label">first launch market</span>
             </div>
             <div>
-              <span class="proof-number">36k+</span>
-              <span class="proof-label">trusted bookings</span>
+              <span class="proof-number">Pets</span>
+              <span class="proof-label">and livestock</span>
             </div>
             <div>
-              <span class="proof-number">24/7</span>
-              <span class="proof-label">AI guidance</span>
+              <span class="proof-number">Local</span>
+              <span class="proof-label">service discovery</span>
             </div>
           </div>
         <aside class="hero-panel" aria-label="Marketplace summary">
           <div class="floating-card panel-top">
             <div class="panel-header">
               <span>
-                <span class="panel-kicker">Marketplace Health</span>
-                <span class="panel-date">Today, 09:42</span>
+                <span class="panel-kicker">Marketplace preview</span>
+                <span class="panel-date">Products &amp; services</span>
               </span>
               <span class="status-dot">
                 <span></span>
-                Live
+                Preview
               </span>
             </div>
 
             <div class="match-score">
               <div>
-                <span class="score-label">Care Match</span>
-                <span class="score-value">96%</span>
+                <span class="score-label">Discovery</span>
+                <span class="score-value">India</span>
               </div>
               <div class="score-bars" aria-hidden="true">
                 <span class="bar bar-1"></span>
@@ -128,7 +128,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
                 </span>
                 <span class="service-detail">
                   <span class="service-title">Pet Care</span>
-                  <span class="service-meta">12 nearby experts</span>
+                  <span class="service-meta">Find pet services</span>
                 </span>
                 <span class="service-arrow">↗</span>
               </div>
@@ -139,7 +139,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
                 </span>
                 <span class="service-detail">
                   <span class="service-title">Livestock Health</span>
-                  <span class="service-meta">4 vets available</span>
+                  <span class="service-meta">Veterinary care</span>
                 </span>
                 <span class="service-arrow">↗</span>
               </div>
@@ -150,7 +150,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
                 </span>
                 <span class="service-detail">
                   <span class="service-title">Home Services</span>
-                  <span class="service-meta">27 providers</span>
+                  <span class="service-meta">Local providers</span>
                 </span>
                 <span class="service-arrow">↗</span>
               </div>
@@ -158,19 +158,19 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
           </div>
 
           <div class="floating-card mini-card card-one">
-            <span class="mini-card-title">AI Consultation</span>
+            <span class="mini-card-title">Pet profiles</span>
             <span class="mini-card-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 14c2-4 5-6 8-6s5 2 7 5" fill="none" stroke="currentColor" stroke-width="2"></path>
                 <path d="M6 18c2-2 4-4 9-4" fill="none" stroke="currentColor" stroke-width="2"></path>
               </svg>
             </span>
-            <span class="mini-card-copy">Needs triage</span>
+            <span class="mini-card-copy">Coming soon</span>
           </div>
 
           <div class="floating-card mini-card card-two">
             <span class="mini-card-title">Farm Plan</span>
-            <span class="mini-card-copy positive">+3 care visits</span>
+            <span class="mini-card-copy positive">Coming soon</span>
           </div>
         </aside>
       </section>
@@ -196,13 +196,13 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
           {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
             <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
-              <div class="product-image-wrap">
+              <a class="product-card-image-link" href={`/products/${encodeURIComponent(product.id)}`} aria-label={`View ${product.title}`}><div class="product-image-wrap">
                 <img src={product.imageUrl} alt={product.title} loading="lazy">
                 <span class="product-tag">{product.category}</span>
-              </div>
+              </div></a>
               <div class="product-info">
                 <span class="product-seller">{product.sellerName}</span>
-                <h3>{product.title}</h3>
+                <h3><a class="product-title-link" href={`/products/${encodeURIComponent(product.id)}`}>{product.title}</a></h3>
                 <div class="product-bottom">
                   <strong>{formatPrice(product.pricePaise)}</strong>
                   <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
@@ -217,7 +217,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
             <div class="product-image-wrap">
 
-              <img src="https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80" alt="Dog food and pet supplies">
+              <a class="product-card-image-link" href="/shop/dogs" aria-label="Shop dog products"><img src="https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80" alt="Dog food and pet supplies"></a>
 
               <span class="product-tag">Pet food</span>
 
@@ -227,7 +227,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
               <span class="product-seller">Featured seller</span>
 
-              <h3>Premium dog nutrition</h3>
+              <h3><a class="product-title-link" href="/shop/dogs">Premium dog nutrition</a></h3>
 
               <div class="product-bottom">
 
@@ -245,7 +245,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
             <div class="product-image-wrap">
 
-              <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" alt="Cat care and wellness">
+              <a class="product-card-image-link" href="/shop/cats" aria-label="Shop cat products"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" alt="Cat care and wellness"></a>
 
               <span class="product-tag">Cat care</span>
 
@@ -255,7 +255,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
               <span class="product-seller">Featured seller</span>
 
-              <h3>Cat wellness essentials</h3>
+              <h3><a class="product-title-link" href="/shop/cats">Cat wellness essentials</a></h3>
 
               <div class="product-bottom">
 
@@ -273,7 +273,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
             <div class="product-image-wrap">
 
-              <img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80" alt="Pet toys and accessories">
+              <a class="product-card-image-link" href="/shop/dogs/toys" aria-label="Shop pet toys"><img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80" alt="Pet toys and accessories"></a>
 
               <span class="product-tag">Toys</span>
 
@@ -283,7 +283,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
               <span class="product-seller">Featured seller</span>
 
-              <h3>Playtime favourites</h3>
+              <h3><a class="product-title-link" href="/shop/dogs/toys">Playtime favourites</a></h3>
 
               <div class="product-bottom">
 
@@ -301,7 +301,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
             <div class="product-image-wrap">
 
-              <img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80" alt="Livestock and farm">
+              <a class="product-card-image-link" href="/shop/livestock" aria-label="Shop livestock products"><img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80" alt="Livestock and farm"></a>
 
               <span class="product-tag">Livestock</span>
 
@@ -311,7 +311,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
               <span class="product-seller">Featured seller</span>
 
-              <h3>Livestock essentials</h3>
+              <h3><a class="product-title-link" href="/shop/livestock">Livestock essentials</a></h3>
 
               <div class="product-bottom">
 
@@ -333,19 +333,19 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
       </section>
       <section class="partners-strip">
-        <span>Trusted by communities</span>
+        <span>For animal-care communities</span>
         <div class="strip-icons">
           <span class="strip-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h6l3-7 3 14 3-7h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-            Animal Care Network
+            Pet care
           </span>
           <span class="strip-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19L12 3l8 16H4z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
-            Livestock Connect
+            Livestock care
           </span>
           <span class="strip-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C7 2 3 6 3 11c0 4 3 8 9 11 6-3 9-7 9-11 0-5-4-9-9-9z" fill="none" stroke="currentColor" stroke-width="2"></path></svg>
-            Care Local
+            Local services
           </span>
         </div>
       </section>
@@ -362,7 +362,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             </span>
             <span class="category-title">Pet wellness</span>
             <span class="category-copy">Veterinary care, grooming, nutrition, walking and companionship.</span>
-            <span class="category-link" aria-disabled="true" title="Pet service listings are not available yet">Find pet services <span>→</span></span>
+            <a class="category-link" href="/services">Find pet services <span>→</span></a>
           </article>
           <article class="category-card" id="livestock">
             <span class="category-icon">
@@ -370,7 +370,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             </span>
             <span class="category-title">Livestock care</span>
             <span class="category-copy">Farm health planning, pasture advice, vaccination and daily care.</span>
-            <span class="category-link" aria-disabled="true" title="Livestock bookings are not available yet">Book livestock help <span>→</span></span>
+            <a class="category-link" href="/services?category=livestock-veterinary">Find livestock care <span>→</span></a>
           </article>
           <article class="category-card" id="home-services">
             <span class="category-icon">
@@ -378,7 +378,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             </span>
             <span class="category-title">Home services</span>
             <span class="category-copy">Pet sitting, farmside support, transport and trusted local experts.</span>
-           <span class="category-link" aria-disabled="true" title="Home service listings are not available yet">Explore home care <span>→</span></span>
+           <a class="category-link" href="/services">Explore home care <span>→</span></a>
           </article>
           <article class="category-card category-card-accent" id="animal-products">
             <span class="category-icon">
@@ -431,9 +431,9 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
               <h3>Trusted sitters and mobile visits.</h3>
             </div>
             <ul class="feature-list">
-              <li>Same-day bookings</li>
+              <li>Appointments coming soon</li>
               <li>Verified providers</li>
-              <li>AI triage matching</li>
+              <li>AI care tools coming soon</li>
             </ul>
           </article>
         </div>
@@ -444,14 +444,14 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
         <div class="seller-content">
           <div>
             <h2>Put your animal business in front of the right people.</h2>
-            <p>List products, offer services, and grow with intelligent tools built for the animal care community.</p>
+            <p>List products, offer services, and grow with marketplace tools built for the animal care community.</p>
           </div>
           <span class="button button-light" aria-disabled="true" title="Seller registration is not available yet">Start selling <span>↗</span></span>
         </div>
         <div class="seller-points">
           <span><b>01</b> Reach more customers</span>
           <span><b>02</b> Manage everything in one place</span>
-          <span><b>03</b> Grow with AI insights</span>
+          <span><b>03</b> Marketplace insights planned</span>
         </div>
       </section>
 
@@ -460,7 +460,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
           <div class="workflow-copy">
             <span class="section-label dark-label"><span></span>How it works</span>
             <h2>From discovery to care, designed around the animals you love.</h2>
-            <p>Search local providers, compare needs, and get recommendations supported by intelligent routing and trusted service details.</p>
+            <p>Search published services by category, city and locality. Provider recommendations and distance search are planned for a later phase.</p>
             <div class="workflow-list">
               <div class="workflow-step">
                 <span class="workflow-number">01</span>
@@ -473,29 +473,29 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
                 <span class="workflow-number">02</span>
                 <div>
                   <span class="workflow-title">Get matched</span>
-                  <span class="workflow-text">Our marketplace uses service history and local availability.</span>
+                  <span class="workflow-text">Provider opening hours and appointment availability will appear as providers publish them.</span>
                 </div>
               </div>
               <div class="workflow-step">
                 <span class="workflow-number">03</span>
                 <div>
                   <span class="workflow-title">Book with confidence</span>
-                  <span class="workflow-text">Connect with verified providers and manage care online.</span>
+                  <span class="workflow-text">Provider discovery is available. Appointment requests and care management are coming soon.</span>
                 </div>
               </div>
             </div>
             <span class="button button-secondary dark-button" aria-disabled="true" title="Care requests are not available yet">
-              <span>Start a care request</span>
+              <span>Care requests coming soon</span>
             </span>
           </div>
 
           <div class="workflow-panel">
             <div class="workflow-card">
               <div class="workflow-card-top">
-                <span class="workflow-card-title">Care Request</span>
+                <span class="workflow-card-title">Booking flow preview</span>
                 <span class="workflow-card-status">
                   <span></span>
-                  Active
+                  Preview only
                 </span>
               </div>
 
@@ -510,9 +510,9 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
               </div>
 
               <div class="request-progress">
-                <div class="progress-top">
-                  <span>Provider match</span>
-                  <span class="progress-percent">78%</span>
+              <div class="progress-top">
+                  <span>Illustrative provider card layout</span>
+                  <span class="progress-percent">Preview</span>
                 </div>
                 <div class="progress-bar">
                   <span class="progress-fill"></span>
@@ -521,20 +521,20 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
 
               <div class="provider-grid">
                 <div class="provider-card">
-                  <span class="provider-avatar">AV</span>
-                  <span class="provider-name">Avery Veterinary</span>
-                  <span class="provider-meta">12 min away</span>
+                  <span class="provider-avatar">V</span>
+                  <span class="provider-name">Veterinary provider</span>
+                  <span class="provider-meta">Example only</span>
                 </div>
                 <div class="provider-card selected">
-                  <span class="provider-avatar">LK</span>
-                  <span class="provider-name">Livestock Care</span>
-                  <span class="provider-meta">Farm specialist</span>
+                  <span class="provider-avatar">L</span>
+                  <span class="provider-name">Livestock provider</span>
+                  <span class="provider-meta">Example only</span>
                 </div>
               </div>
 
               <div class="request-actions">
-                <span class="button button-primary small-button" aria-disabled="true" title="Bookings are not available yet">Confirm booking</span>
-                <span class="button button-ghost small-button" aria-disabled="true" title="Provider comparison is not available yet">Compare options</span>
+                <span class="button button-primary small-button" aria-disabled="true" title="Booking requests are not available yet">Appointments coming soon</span>
+                <span class="button button-ghost small-button" aria-disabled="true" title="Provider comparison is not available yet">Comparison coming soon</span>
               </div>
             </div>
           </div>
@@ -544,20 +544,20 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
       <section class="section stats-section">
         <div class="stats-grid">
           <article class="stat-card">
-            <span class="stat-number">18k+</span>
-            <span class="stat-label">Verified service providers</span>
+            <span class="stat-number">Local</span>
+            <span class="stat-label">Service discovery</span>
           </article>
           <article class="stat-card">
-            <span class="stat-number">42k+</span>
-            <span class="stat-label">Animal care requests</span>
+            <span class="stat-number">Pet</span>
+            <span class="stat-label">Products &amp; care</span>
           </article>
           <article class="stat-card">
-            <span class="stat-number">96%</span>
-            <span class="stat-label">Care satisfaction</span>
+            <span class="stat-number">Farm</span>
+            <span class="stat-label">Livestock services</span>
           </article>
           <article class="stat-card">
-            <span class="stat-number">8 min</span>
-            <span class="stat-label">Average first response</span>
+            <span class="stat-number">India</span>
+            <span class="stat-label">First launch market</span>
           </article>
         </div>
       </section>
@@ -570,8 +570,8 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             <p>For local providers, farmers, pet parents, and communities building healthier animal care journeys.</p>
           </div>
           <div class="cta-actions">
-            <span class="button button-primary" aria-disabled="true" title="Provider profiles are not available yet">Create provider profile</span>
-            <span class="button button-secondary dark-button" aria-disabled="true" title="Marketplace access requests are not available yet">Request marketplace access</span>
+            <span class="button button-primary" aria-disabled="true" title="Provider onboarding is not available yet">Provider onboarding coming soon</span>
+            <span class="button button-secondary dark-button" aria-disabled="true" title="Marketplace access requests are not available yet">Marketplace access coming soon</span>
           </div>
         </div>
       </section>
@@ -590,7 +590,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.cookies);
             <span class="brand-title">vetit</span><span class="brand-subtitle">online</span>
           </span>
         </a>
-        <span class="footer-copy">AI-powered pet, livestock and services marketplace</span>
+        <span class="footer-copy">Pet, livestock and animal-care services marketplace</span>
       </div>
       <nav class="footer-links">
         <a href="#marketplace">Marketplace</a>

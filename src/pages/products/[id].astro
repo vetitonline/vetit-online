@@ -1,0 +1,49 @@
+---
+import logo from '../../../Vetit-online-transparent.png';
+import '../../../styles.css';
+import { formatPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
+
+const productId = Astro.params.id ?? '';
+const result = await getMarketplaceProduct(Astro.cookies, productId);
+const product = result.product;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{product ? `${product.title} | Vetit Online` : 'Product | Vetit Online'}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body><div class="page-shell">
+  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/products">Marketplace</a><a href="/shop/dogs">Dogs</a><a href="/shop/cats">Cats</a><a href="/shop/livestock">Livestock</a><a href="/services">Services</a></nav><div class="header-actions"><a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <main><section class="product-showcase product-detail-page">
+    {product ? <>
+      <p class="product-breadcrumb"><a href="/products">Marketplace</a> / {product.category}</p>
+      <div class="product-detail-layout">
+        <div class="product-detail-image"><img src={product.imageUrl} alt={`${product.category} category image`}><span class="product-tag">{product.category}</span></div>
+        <div class="product-detail-copy">
+          <span class="section-label dark-label"><span></span>{product.category}</span>
+          {product.brand && <p class="product-brand">{product.brand}</p>}
+          <h1>{product.title}</h1>
+          <p class="product-detail-seller">Sold by {product.sellerName}</p>
+          <p class="product-detail-price">{formatPrice(product.pricePaise)}</p>
+          <p class="product-detail-availability">Availability: Active published marketplace listing. Stock quantity is not provided.</p>
+          <div class="product-description"><h2>Product details</h2><p>{product.description.trim() || 'The seller has not provided a product description.'}</p></div>
+          <div class="product-detail-actions" data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
+            <button class="button button-primary" type="button" data-add-to-cart>Add to cart</button>
+            <a class="button button-secondary" href="/cart">View cart</a>
+          </div>
+          <p class="catalog-data-note">The displayed image is a category illustration because this live listing has no product-image field.</p>
+        </div>
+      </div>
+    </> : <div class="product-not-found">
+      <span class="section-label dark-label"><span></span>Marketplace</span>
+      <h1>{result.state === 'error' ? 'Product unavailable right now.' : 'This product is not available.'}</h1>
+      <p>{result.state === 'unconfigured' ? 'The marketplace connection is not configured.' : 'Only active published India product listings can be viewed here.'}</p>
+      <a class="button button-secondary" href="/products">Browse products</a>
+    </div>}
+    <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
+  </section></main>
+</div><script src="../../../script.js"></script></body>
+</html>

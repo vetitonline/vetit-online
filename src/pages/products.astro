@@ -1,9 +1,27 @@
 ---
 import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
-import { formatPrice, getMarketplaceProducts } from '../lib/marketplace/featured-products';
+import ProductCard from '../components/marketplace/ProductCard.astro';
+import { getMarketplaceProducts } from '../lib/marketplace/featured-products';
+import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
+import { PRODUCT_ANIMALS } from '../lib/marketplace/product-taxonomy';
 
 const result = await getMarketplaceProducts(Astro.cookies);
+const params = Astro.url.searchParams;
+const query = params.get('q')?.trim() ?? '';
+const animal = params.get('animal')?.trim() ?? '';
+const category = params.get('category')?.trim() ?? '';
+const minPriceRaw = params.get('min') ?? '';
+const maxPriceRaw = params.get('max') ?? '';
+const minPrice = minPriceRaw !== '' && Number.isFinite(Number(minPriceRaw)) ? Number(minPriceRaw) * 100 : null;
+const maxPrice = maxPriceRaw !== '' && Number.isFinite(Number(maxPriceRaw)) ? Number(maxPriceRaw) * 100 : null;
+const sort = params.get('sort') ?? 'newest';
+const filteredProducts = filterMarketplaceProducts(result.products, { query, animal, category, minPrice, maxPrice, sort });
+const selectedAnimal = PRODUCT_ANIMALS.find((item) => item.slug === animal);
+const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
+const pageSize = 24;
+const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
+const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -42,37 +60,67 @@ const result = await getMarketplaceProducts(Astro.cookies);
           <div>
             <span class="section-label dark-label"><span></span>Marketplace</span>
             <h1>Shop what your animals need.</h1>
-            <p>Products from verified Vetit sellers across India.</p>
+            <p>Search published product listings from Vetit sellers across India.</p>
           </div>
         </div>
 
-        <div class="product-grid">
-          {result.state === 'available' && result.products.map((product) => (
-            <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
-              <div class="product-image-wrap">
-                <img src={product.imageUrl} alt={product.title} loading="lazy">
-                <span class="product-tag">{product.category}</span>
-              </div>
-              <div class="product-info">
-                <span class="product-seller">{product.sellerName}</span>
-                <h2>{product.title}</h2>
-                <div class="product-bottom">
-                  <strong>{formatPrice(product.pricePaise)}</strong>
-                  <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
-                </div>
-              </div>
-            </article>
-          ))}
+        <nav class="catalog-animal-links" aria-label="Shop by animal">
+          {PRODUCT_ANIMALS.map((item) => <a class:list={['catalog-chip', animal === item.slug && 'active']} href={`/shop/${item.slug}`}>{item.label}</a>)}
+          <a class="catalog-chip" href="/services">Animal services</a>
+        </nav>
 
-          {result.products.length === 0 && (
+        <form class="catalog-filters" method="get" action="/products">
+          <label class="catalog-search-label">Search products
+            <input type="search" name="q" value={query} placeholder="Product, category or seller" maxlength="100">
+          </label>
+          <label>Animal type
+            <select name="animal">
+              <option value="">All animals</option>
+              {PRODUCT_ANIMALS.map((item) => <option value={item.slug} selected={animal === item.slug}>{item.label}</option>)}
+            </select>
+          </label>
+          <label>Category
+            <select name="category">
+              <option value="">All categories</option>
+              {selectedAnimal?.categories.map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
+              {selectedAnimal?.categories.flatMap((item) => item.children ?? []).map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
+            </select>
+          </label>
+          <label>Min price (₹)<input name="min" type="number" min="0" step="1" value={minPriceRaw} inputmode="numeric"></label>
+          <label>Max price (₹)<input name="max" type="number" min="0" step="1" value={maxPriceRaw} inputmode="numeric"></label>
+          <label>Sort by
+            <select name="sort">
+              <option value="newest" selected={sort === 'newest'}>Newest</option>
+              <option value="price-asc" selected={sort === 'price-asc'}>Price: low to high</option>
+              <option value="price-desc" selected={sort === 'price-desc'}>Price: high to low</option>
+              <option value="name" selected={sort === 'name'}>Name</option>
+            </select>
+          </label>
+          <button class="button button-primary" type="submit">Apply filters</button>
+          <a class="catalog-clear" href="/products">Clear</a>
+        </form>
+        <p class="catalog-data-note">Brand filtering and seller product photos will be available when seller catalog details are supported in the live database.</p>
+
+        <div class="product-grid">
+          {result.state === 'available' && pageProducts.map((product) => <ProductCard product={product} />)}
+
+          {pageProducts.length === 0 && (
             <p class="product-empty-state">
               {result.state === 'error'
                 ? 'The marketplace is temporarily unavailable. Please try again later.'
-                : 'There are no published products yet.'}
-              {' '}<a href="/#featured-products">Browse featured products</a>
+                : (query || animal || category || minPriceRaw || maxPriceRaw)
+                  ? 'No products in this category yet.'
+                  : 'No published products yet. Check back when sellers add their listings.'}
+              {' '}<a href="/services">Explore animal services</a>
             </p>
           )}
         </div>
+        {pageCount > 1 && <nav class="catalog-pagination" aria-label="Product pages">
+          {page > 1 && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page - 1) })}`}>Previous</a>}
+          <span>Page {page} of {pageCount}</span>
+          {page < pageCount && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page + 1) })}`}>Next</a>}
+        </nav>}
+        <p class="catalog-count">{filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'} shown{filteredProducts.length === 1000 ? ' (first 1,000 published listings)' : ''}</p>
         <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
       </section>
     </main>
