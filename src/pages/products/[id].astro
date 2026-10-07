@@ -2,6 +2,7 @@
 import '../../../styles.css';
 import { formatPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
 import SiteHeader from '../../components/SiteHeader.astro';
+import ProductPlaceholder from '../../components/marketplace/ProductPlaceholder.astro';
 
 const productId = Astro.params.id ?? '';
 const result = await getMarketplaceProduct(Astro.request, Astro.cookies, productId);
@@ -21,7 +22,7 @@ const product = result.product;
     {product ? <>
       <p class="product-breadcrumb"><a href="/products">Marketplace</a> / {product.category}</p>
       <div class="product-detail-layout">
-        <div class="product-detail-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title}> : <span class="product-image-placeholder">Image unavailable</span>}<span class="product-tag">{product.category}</span></div>
+        <div class="product-detail-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title}> : <ProductPlaceholder title={product.title} />}<span class="product-tag">{product.category}</span></div>
         <div class="product-detail-copy">
           <span class="section-label dark-label"><span></span>{product.category}</span>
           {product.brand && <p class="product-brand">{product.brand}</p>}

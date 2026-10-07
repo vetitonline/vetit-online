@@ -1,0 +1,8 @@
+---
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<div class="product-image-placeholder" role="img" aria-label={`Seller photo not available for ${title}`}>
+  <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M6 10.5 16 5l10 5.5v11L16 27 6 21.5v-11Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m6.5 10.8 9.5 5.4 9.5-5.4M16 16.5V27m-5.5-9.8v5.1m11-5.1v5.1" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M16 9v5m-2.5-2.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+  <span>Seller photo not available</span>
+</div>

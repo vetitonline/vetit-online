@@ -5,6 +5,7 @@ import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/f
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
 import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
 import SiteHeader from '../components/SiteHeader.astro';
+import CategoryArt from '../components/marketplace/CategoryArt.astro';
 
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
@@ -20,6 +21,7 @@ const sort = params.get('sort') ?? 'newest';
 const selectedAnimal = findAnimal(taxonomy.animals, animal);
 const selectedCategory = findCategory(taxonomy.categories, category);
 const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, minPrice, maxPrice, sort });
+const speciesArt = (slug: string) => slug === 'cattle' ? 'livestock' : ['dogs', 'cats', 'birds', 'fish'].includes(slug) ? slug : 'other';
 const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
 const pageSize = 24;
 const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
@@ -49,10 +51,17 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           </div>
         </div>
 
-        <nav class="catalog-animal-links" aria-label="Shop by pet or livestock">
-          {taxonomy.animals.map((item) => <a class:list={['catalog-chip', animal === item.slug && 'active']} href={`/shop/${item.slug}`}>{item.label}</a>)}
-          <a class="catalog-chip" href="/services">Pet &amp; Vet Services</a>
+        <nav class="catalog-species-selector" aria-label="Browse products by pet or livestock">
+          <a class:list={['catalog-species-card', !animal && 'active']} href="/products" aria-current={!animal ? 'page' : undefined}>
+            <span class="catalog-all-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M6 9h20M6 16h20M6 23h20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="11" cy="9" r="2" fill="currentColor"/><circle cx="21" cy="16" r="2" fill="currentColor"/></svg></span>
+            <span>All pets &amp; livestock</span>
+          </a>
+          {taxonomy.animals.map((item) => <a class:list={['catalog-species-card', animal === item.slug && 'active']} href={`/shop/${item.slug}`} aria-current={animal === item.slug ? 'page' : undefined}>
+            <CategoryArt kind={speciesArt(item.slug)} label={item.label} />
+            <span>{item.slug === 'fish' ? 'Fish & Aquatics' : item.slug === 'cattle' ? 'Livestock & Cattle' : item.label}</span>
+          </a>)}
         </nav>
+        <p class="catalog-service-link"><a href="/services">Looking for care? Explore Pet &amp; Vet Services →</a></p>
 
         <form class="catalog-filters" method="get" action="/products">
           <label class="catalog-search-label">Search products
@@ -83,7 +92,7 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           <button class="button button-primary" type="submit">Apply filters</button>
           <a class="catalog-clear" href="/products">Clear</a>
         </form>
-        <p class="catalog-data-note">Brand filtering and seller product photos will be available when seller catalog details are supported in the live database.</p>
+        <p class="catalog-data-note">Published product details and available seller photos appear here as listings are added.</p>
 
         <div class="product-grid">
           {result.state === 'available' && pageProducts.map((product) => <ProductCard product={product} />)}

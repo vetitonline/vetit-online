@@ -2,7 +2,7 @@
 interface Props { kind: string; label: string }
 const { kind, label } = Astro.props;
 const artLabel = `${label} illustration`;
-const color = kind === 'livestock' ? '#f4a15f' : kind === 'cats' ? '#b38adb' : kind === 'fish' ? '#80c8d5' : kind === 'birds' ? '#f0bd63' : '#8ac4a0';
+const color = kind === 'livestock' ? '#f4a15f' : kind === 'cats' ? '#b38adb' : kind === 'fish' ? '#80c8d5' : kind === 'birds' ? '#f0bd63' : kind === 'dogs' ? '#8ac4a0' : '#a995c9';
 ---
 <span class="category-art" style={`--art-color:${color}`} aria-hidden="true">
   <svg viewBox="0 0 120 96" role="img" aria-label={artLabel}>
@@ -12,5 +12,6 @@ const color = kind === 'livestock' ? '#f4a15f' : kind === 'cats' ? '#b38adb' : k
     {kind === 'birds' && <><path d="M33 62c2-18 18-32 36-28 12 3 18 14 16 26-2 14-15 23-31 19L40 86l4-14c-7-2-11-5-11-10z" fill="currentColor"/><path d="m74 53 20 7-20 7" fill="#f27d32"/><circle cx="69" cy="50" r="3" fill="#302b3d"/><path d="M55 76v9m12-10v10" stroke="#302b3d" strokeWidth="3" strokeLinecap="round"/></>}
     {kind === 'fish' && <><path d="M25 54c15-23 47-29 68 0-21 29-53 23-68 0zm68 0 15-15v30z" fill="currentColor"/><circle cx="46" cy="50" r="3" fill="#302b3d"/><path d="M55 34c11 7 11 32 0 40" fill="none" stroke="#fff" strokeWidth="3" opacity=".7"/><circle cx="39" cy="25" r="3" fill="currentColor" opacity=".5"/><circle cx="50" cy="17" r="2" fill="currentColor" opacity=".5"/></>}
     {kind === 'livestock' && <><path d="M30 45c-9-8-14-9-20-6 5 11 12 16 23 15m49-9c9-8 14-9 20-6-5 11-12 16-23 15" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/><path d="M34 44c0-15 10-24 26-24s26 9 26 24v19c0 15-11 24-26 24S34 78 34 63z" fill="currentColor"/><circle cx="49" cy="52" r="3" fill="#302b3d"/><circle cx="71" cy="52" r="3" fill="#302b3d"/><ellipse cx="60" cy="68" rx="13" ry="9" fill="#fff" opacity=".8"/><ellipse cx="55" cy="68" rx="2" ry="3" fill="#302b3d"/><ellipse cx="65" cy="68" rx="2" ry="3" fill="#302b3d"/></>}
+    {kind === 'other' && <><ellipse cx="60" cy="64" rx="19" ry="16" fill="currentColor"/><ellipse cx="36" cy="40" rx="8" ry="11" fill="currentColor"/><ellipse cx="52" cy="31" rx="8" ry="11" fill="currentColor"/><ellipse cx="69" cy="31" rx="8" ry="11" fill="currentColor"/><ellipse cx="84" cy="41" rx="8" ry="11" fill="currentColor"/></>}
   </svg>
 </span>
