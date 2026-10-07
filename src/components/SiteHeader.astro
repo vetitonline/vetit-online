@@ -1,0 +1,18 @@
+---
+import logo from '../../Vetit-online-transparent.png';
+
+interface Props { adminMode?: boolean }
+const { adminMode = false } = Astro.props;
+---
+<header class="site-header">
+  <a class="site-logo-link" href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a>
+  <nav class="main-nav" aria-label="Main navigation">
+    <a href="/products">Marketplace</a><a href="/shop">Pets &amp; Livestock</a><a href="/services">Pet &amp; Vet Services</a>
+    {adminMode && <a href="/admin" aria-current="page">Admin panel</a>}
+    {!adminMode && <a href="/#how-it-works">How it works</a>}
+  </nav>
+  <div class="header-actions">
+    <a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a>
+    {adminMode ? <a class="login-link" href="/">Customer site</a> : <><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></>}
+  </div>
+</header>

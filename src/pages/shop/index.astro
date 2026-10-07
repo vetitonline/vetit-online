@@ -1,25 +1,36 @@
 ---
-import logo from '../../../Vetit-online-transparent.png';
 import '../../../styles.css';
 import { getProductTaxonomy } from '../../lib/marketplace/featured-products';
+import SiteHeader from '../../components/SiteHeader.astro';
+import CategoryArt from '../../components/marketplace/CategoryArt.astro';
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
+const artFor = (slug: string) => slug === 'cattle' ? 'livestock' : ['dogs', 'cats', 'birds', 'fish'].includes(slug) ? slug : 'dogs';
+const roots = taxonomy.categories.filter((category) => !category.parentId);
+const groups = roots.map((root) => ({ root, children: taxonomy.categories.filter((category) => category.parentId === root.id) }));
+const categoryHref = (category: (typeof taxonomy.categories)[number]) => {
+  const animal = taxonomy.animals.find((item) => category.species.includes(item.id));
+  return animal ? `/shop/${animal.slug}/${category.slug}` : `/products?category=${encodeURIComponent(category.slug)}`;
+};
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop by animal | Vetit Online</title>
+  <title>Shop pets &amp; livestock | Vetit Online</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><div class="page-shell">
-  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/#marketplace">Marketplace</a><a href="/shop/dogs">Dogs</a><a href="/shop/cats">Cats</a><a href="/shop/livestock">Livestock</a><a href="/services">Services</a></nav><div class="header-actions"><a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <SiteHeader />
   <main><section class="product-showcase">
-    <div class="product-heading"><div><span class="section-label dark-label"><span></span>Vetit marketplace</span><h1>Shop by animal.</h1><p>Browse published product listings for pets and livestock.</p></div></div>
-    <div class="animal-category-grid">
-      {taxonomy.animals.map((animal) => <a class="animal-category-card" href={`/shop/${animal.slug}`}><span class="section-label dark-label"><span></span>Browse categories</span><h2>{animal.label}</h2><p>{taxonomy.categories.filter((category) => category.species.includes(animal.id)).map((category) => category.label).join(' · ') || 'No product categories published yet'}</p><span class="category-link">Explore {animal.label.toLocaleLowerCase()} <span>→</span></span></a>)}
+    <div class="product-heading"><div><span class="section-label dark-label"><span></span>Vetit marketplace</span><h1>Shop pets &amp; livestock.</h1><p>Start with a pet or browse Vetit’s product categories.</p></div></div>
+    <h2 class="discovery-subtitle">Choose a pet or livestock</h2>
+    <div class="animal-category-grid species-discovery-grid">
+      {taxonomy.animals.map((animal) => <a class="animal-category-card species-discovery-card" href={`/shop/${animal.slug}`}><CategoryArt kind={artFor(animal.slug)} label={animal.label} /><span class="species-discovery-name">{animal.slug === 'fish' ? 'Fish & Aquatics' : animal.slug === 'cattle' ? 'Livestock & Cattle' : animal.label}</span><p>{taxonomy.categories.filter((category) => category.species.includes(animal.id)).map((category) => category.label).join(' · ') || 'Product categories are being prepared'}</p><span class="category-link">Explore {animal.label.toLocaleLowerCase()} <span>→</span></span></a>)}
     </div>
-    {taxonomy.animals.length === 0 && <p class="product-empty-state">{taxonomy.state === 'error' ? 'Animal categories are temporarily unavailable.' : 'No animal categories have been published yet.'}</p>}
+    {taxonomy.animals.length === 0 && <p class="product-empty-state">{taxonomy.state === 'error' ? 'Pet and livestock categories are temporarily unavailable.' : 'No pet or livestock categories have been published yet.'}</p>}
+    <h2 class="discovery-subtitle">Browse product categories</h2>
+    <div class="browse-group-grid">{groups.map(({ root, children }) => <section class="browse-group"><h3>{root.label}</h3><div class="browse-category-links"><a href={`/products?category=${encodeURIComponent(root.slug)}`}>All {root.label}<span aria-hidden="true">→</span></a>{children.map((category) => <a href={categoryHref(category)}>{category.label}<span aria-hidden="true">→</span></a>)}</div></section>)}</div>
   </section></main>
 </div><script src="../../../script.js"></script></body>
 </html>

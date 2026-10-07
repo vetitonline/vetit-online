@@ -1,0 +1,35 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { getSupabasePublicConfig } from '../../lib/supabase/config';
+import { getProductTaxonomy } from '../../lib/marketplace/featured-products';
+
+if (!getSupabasePublicConfig()) {
+  Astro.response.status = 503;
+  return Astro.redirect('/admin/login', 302);
+}
+const supabase = createSupabaseServerClient({ request: Astro.request, cookies: Astro.cookies });
+const { data: { user }, error } = await supabase.auth.getUser();
+if (error || !user) return Astro.redirect('/admin/login', 302);
+const isAdmin = user.app_metadata?.vetit_admin === true || user.app_metadata?.vetit_admin === 'true';
+if (!isAdmin) Astro.response.status = 403;
+const taxonomy = isAdmin ? await getProductTaxonomy(Astro.request, Astro.cookies) : null;
+const roots = taxonomy?.categories.filter((category) => !category.parentId) ?? [];
+---
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vetit Admin | Master taxonomy</title></head>
+<body><div class="page-shell"><SiteHeader adminMode />
+  <main class="product-showcase admin-page">
+    {isAdmin ? <>
+      <div class="product-heading"><div><span class="section-label dark-label"><span></span>Vetit administration</span><h1>Marketplace controls</h1><p>Protected foundation for the Vetit master taxonomy and marketplace moderation.</p></div></div>
+      <p class="admin-notice">This panel is gated by the trusted <code>app_metadata.vetit_admin</code> claim. Categories are managed through protected backend permissions; seller accounts can select categories when creating listings but cannot change the master taxonomy.</p>
+      <section class="admin-category-list" aria-label="Current master categories">
+        <h2>Master category overview</h2>
+        {roots.map((root) => <article class="admin-category-group"><h2>{root.label}</h2><ul>{taxonomy?.categories.filter((category) => category.parentId === root.id).map((category) => <li>{category.label}</li>)}</ul></article>)}
+        {taxonomy?.state === 'error' && <p class="product-empty-state">The current category overview is temporarily unavailable.</p>}
+      </section>
+      <p class="admin-notice">Category imagery controls, moderation workflows and taxonomy editing tools are not enabled in this foundation phase.</p>
+    </> : <section class="admin-entry-card"><span class="section-label dark-label"><span></span>Access denied</span><h1>Admin access required</h1><p>This account is signed in but does not have the trusted Vetit administrator claim.</p><a href="/">Return to Vetit Online</a></section>}
+  </main>
+</div></body></html>

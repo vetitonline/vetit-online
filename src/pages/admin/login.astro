@@ -1,0 +1,29 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
+import { getSupabasePublicConfig } from '../../lib/supabase/config';
+
+let signedIn = false;
+let isAdmin = false;
+if (getSupabasePublicConfig()) {
+  try {
+    const supabase = createSupabaseServerClient({ request: Astro.request, cookies: Astro.cookies });
+    const { data: { user } } = await supabase.auth.getUser();
+    signedIn = Boolean(user);
+    isAdmin = user?.app_metadata?.vetit_admin === true || user?.app_metadata?.vetit_admin === 'true';
+    if (isAdmin) return Astro.redirect('/admin', 302);
+  } catch { /* The existing login flow will report auth availability to the user. */ }
+}
+---
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vetit Admin login</title></head>
+<body><div class="page-shell"><SiteHeader />
+  <main class="admin-entry-card">
+    <span class="section-label dark-label"><span></span>Vetit staff access</span>
+    <h1>Admin sign in</h1>
+    {signedIn ? <p>Your account does not have the trusted Vetit administrator claim. Ask an existing Vetit administrator to provision access.</p> : <p>Sign in with your Vetit account. Only accounts carrying the trusted Vetit admin claim can open the protected panel.</p>}
+    {!signedIn && <a class="button button-primary" href="/login?next=%2Fadmin">Continue to secure sign in</a>}
+    <p class="admin-notice">Seller profiles and editable profile roles do not grant access to Vetit administration.</p>
+  </main>
+</div></body></html>

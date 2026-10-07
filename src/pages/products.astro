@@ -1,10 +1,10 @@
 ---
-import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
 import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
 import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
+import SiteHeader from '../components/SiteHeader.astro';
 
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
@@ -37,47 +37,30 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
 </head>
 <body>
   <div class="page-shell">
-    <header class="site-header">
-      <img src={logo.src} alt="Vetit Online">
-      <nav class="main-nav" aria-label="Main navigation">
-        <a href="/#marketplace">Marketplace</a>
-        <a href="/#pet-care">Pet Care</a>
-        <a href="/#livestock">Livestock</a>
-        <a href="/#home-services">Services</a>
-        <a href="/#how-it-works">How it works</a>
-      </nav>
-      <div class="header-actions">
-        <a class="cart-link" href="/cart" aria-label="Shopping cart, 0 items" title="View your cart">
-          <span class="cart-icon">🛒</span>
-          <span class="cart-count">0</span>
-        </a>
-        <a class="login-link" href="/login">Log in</a>
-        <a class="button button-primary small-button" href="/login?mode=join">Join free</a>
-      </div>
-    </header>
+    <SiteHeader />
 
     <main>
       <section class="product-showcase" id="all-products">
         <div class="product-heading">
           <div>
             <span class="section-label dark-label"><span></span>Marketplace</span>
-            <h1>Shop what your animals need.</h1>
+            <h1>Everything your pets &amp; livestock need.</h1>
             <p>Search published product listings from Vetit sellers across India.</p>
           </div>
         </div>
 
-        <nav class="catalog-animal-links" aria-label="Shop by animal">
+        <nav class="catalog-animal-links" aria-label="Shop by pet or livestock">
           {taxonomy.animals.map((item) => <a class:list={['catalog-chip', animal === item.slug && 'active']} href={`/shop/${item.slug}`}>{item.label}</a>)}
-          <a class="catalog-chip" href="/services">Animal services</a>
+          <a class="catalog-chip" href="/services">Pet &amp; Vet Services</a>
         </nav>
 
         <form class="catalog-filters" method="get" action="/products">
           <label class="catalog-search-label">Search products
             <input type="search" name="q" value={query} placeholder="Product, category or seller" maxlength="100">
           </label>
-          <label>Animal type
+          <label>Pets &amp; livestock
             <select name="animal">
-              <option value="">All animals</option>
+              <option value="">All pets &amp; livestock</option>
               {taxonomy.animals.map((item) => <option value={item.slug} selected={animal === item.slug}>{item.label}</option>)}
             </select>
           </label>
@@ -112,7 +95,7 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
                 : (query || animal || category || minPriceRaw || maxPriceRaw)
                   ? 'No products in this category yet.'
                   : 'No published products yet. Check back when sellers add their listings.'}
-              {' '}<a href="/services">Explore animal services</a>
+              {' '}<a href="/services">Explore Pet &amp; Vet Services</a>
             </p>
           )}
         </div>

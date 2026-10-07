@@ -1,6 +1,6 @@
 ---
-import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
 import { formatPrice } from '../lib/marketplace/featured-products';
 import { getPublicServices } from '../lib/marketplace/services';
 
@@ -22,23 +22,13 @@ const selectedCategory = result.categories.find((item) => item.slug === category
 </head>
 <body>
   <div class="page-shell">
-    <header class="site-header">
-      <a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a>
-      <nav class="main-nav" aria-label="Main navigation">
-        <a href="/#marketplace">Marketplace</a><a href="/#pet-care">Pet Care</a><a href="/#livestock">Livestock</a>
-        <a href="/services" aria-current="page">Services</a><a href="/#how-it-works">How it works</a>
-      </nav>
-      <div class="header-actions">
-        <a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a>
-        <a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a>
-      </div>
-    </header>
+    <SiteHeader />
 
     <main>
       <section class="service-marketplace">
         <div class="product-heading">
           <div>
-            <span class="section-label dark-label"><span></span>Local animal care</span>
+            <span class="section-label dark-label"><span></span>Pet &amp; Vet Services</span>
             <h1>Find trusted services.</h1>
             <p>Discover verified pet, veterinary and livestock providers by service and location.</p>
           </div>
@@ -69,7 +59,7 @@ const selectedCategory = result.categories.find((item) => item.slug === category
             <p class="product-empty-state">Services could not be loaded right now. Please try again later.</p>
           ) : result.services.length ? (
             <>
-              <h2>{selectedCategory?.name ?? 'Animal care services'}{city ? ` in ${city}` : ''}{locality ? `, ${locality}` : ''}</h2>
+              <h2>{selectedCategory?.name ?? 'Pet & Vet Services'}{city ? ` in ${city}` : ''}{locality ? `, ${locality}` : ''}</h2>
               <div class="service-listings">
                 {result.services.map((service) => (
                   <article class="service-listing-card">

@@ -1,10 +1,10 @@
 ---
-import logo from '../../../../Vetit-online-transparent.png';
 import '../../../../styles.css';
 import ProductCard from '../../../components/marketplace/ProductCard.astro';
 import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
 import { getMarketplaceProducts, getProductTaxonomy } from '../../../lib/marketplace/featured-products';
 import { categoriesForAnimal, findAnimal, findCategory } from '../../../lib/marketplace/product-taxonomy';
+import SiteHeader from '../../../components/SiteHeader.astro';
 
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
@@ -24,9 +24,9 @@ const childCategories = taxonomy.categories.filter((item) => item.parentId === c
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><div class="page-shell">
-  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/products">Marketplace</a><a href="/shop/dogs">Dogs</a><a href="/shop/cats">Cats</a><a href="/shop/livestock">Livestock</a><a href="/services">Services</a></nav><div class="header-actions"><a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <SiteHeader />
   <main><section class="product-showcase">
-    <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All animals</a> / <a href={`/shop/${animal.slug}`}>{animal.label}</a></span><h1>{category.label}</h1><p>Published listings in {animal.label.toLocaleLowerCase()} {category.label.toLocaleLowerCase()}.</p></div><a class="product-view-all" href={`/shop/${animal.slug}`}>All {animal.label.toLocaleLowerCase()} categories →</a></div>
+    <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All pets &amp; livestock</a> / <a href={`/shop/${animal.slug}`}>{animal.label}</a></span><h1>{category.label}</h1><p>Published listings in {animal.label.toLocaleLowerCase()} {category.label.toLocaleLowerCase()}.</p></div><a class="product-view-all" href={`/shop/${animal.slug}`}>All {animal.label.toLocaleLowerCase()} categories →</a></div>
     {childCategories.length ? <nav class="subcategory-links" aria-label={`${category.label} subcategories`}>
       {childCategories.map((child) => <a class="catalog-chip" href={`/shop/${animal.slug}/${child.slug}`}>{child.label}</a>)}
     </nav> : null}

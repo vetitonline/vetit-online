@@ -1,9 +1,9 @@
 ---
-import logo from '../../../Vetit-online-transparent.png';
 import '../../../styles.css';
 import { formatPrice } from '../../lib/marketplace/featured-products';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../lib/supabase/config';
+import SiteHeader from '../../components/SiteHeader.astro';
 
 const businessId = Astro.params.slug ?? '';
 let profile: { provider_type: string; biography: string | null; contact_email: string | null; contact_phone: string | null } | null = null;
@@ -72,7 +72,7 @@ const timeText = (value: string) => value.slice(0, 5);
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><div class="page-shell">
-  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/">Marketplace</a><a href="/services">Services</a><a href="/products">Products</a></nav><div class="header-actions"><a class="cart-link" href="/cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <SiteHeader />
   <main><section class="service-marketplace provider-profile-page">
     {loadError ? <p class="product-empty-state">Provider profiles are unavailable right now. Please try again later.</p> : profile && business ? <>
       <div class="product-heading"><div><span class="section-label dark-label"><span></span>Verified provider</span><h1>{business.display_name}</h1><p>{profile.provider_type.replaceAll('_', ' ')}</p></div></div>

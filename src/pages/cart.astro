@@ -1,6 +1,6 @@
 ---
-import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -14,24 +14,7 @@ import '../../styles.css';
 </head>
 <body>
   <div class="page-shell">
-    <header class="site-header">
-      <img src={logo.src} alt="Vetit Online">
-      <nav class="main-nav" aria-label="Main navigation">
-        <a href="/#marketplace">Marketplace</a>
-        <a href="/#pet-care">Pet Care</a>
-        <a href="/#livestock">Livestock</a>
-        <a href="/#home-services">Services</a>
-        <a href="/#how-it-works">How it works</a>
-      </nav>
-      <div class="header-actions">
-        <a class="cart-link" href="/cart" aria-label="Shopping cart, 0 items" title="View your cart">
-          <span class="cart-icon">🛒</span>
-          <span class="cart-count">0</span>
-        </a>
-        <a class="login-link" href="/login">Log in</a>
-        <a class="button button-primary small-button" href="/login?mode=join">Join free</a>
-      </div>
-    </header>
+    <SiteHeader />
 
     <main>
       <section class="product-showcase cart-page" data-cart-page>
