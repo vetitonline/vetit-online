@@ -222,6 +222,20 @@ const visualGroups = browseGroups.slice(0, 4).map((group) => ({
             </article>
           ))}
 
+          {featuredProductsResult.state === 'available' && featuredProductsResult.products.length > 0 && featuredProductsResult.products.length < 4 && <article class="product-card product-discovery-card">
+            <a class="product-discovery-link-card" href="/products" aria-label="Explore Pet Essentials in the marketplace">
+              <div class="product-image-wrap">
+                <PhotoCategoryArt slug="essentials" label="Unbranded pet food bowl, leash and toys" />
+                <span class="product-tag">Explore Vetit</span>
+              </div>
+              <div class="product-info">
+                <span class="product-seller">Browse the marketplace</span>
+                <h3>Explore Pet Essentials</h3>
+                <span class="product-discovery-cta">See all products <span aria-hidden="true">→</span></span>
+              </div>
+            </a>
+          </article>}
+
           {featuredProductsResult.products.length === 0 && <p class="product-empty-state">{featuredProductsResult.state === 'error' ? 'The marketplace is temporarily unavailable. Please try again later.' : 'No published products are available yet.'} <a href="/products">Browse the marketplace</a></p>}
 
 
