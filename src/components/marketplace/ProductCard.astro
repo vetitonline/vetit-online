@@ -13,7 +13,7 @@ const detailHref = `/products/${encodeURIComponent(product.id)}`;
 <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
   <a class="product-card-image-link" href={detailHref} aria-label={`View ${product.title}`}>
     <div class="product-image-wrap">
-      {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <ProductPlaceholder title={product.title} />}
+      {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <ProductPlaceholder title={product.title} category={product.category} />}
       <span class="product-tag">{product.category}</span>
     </div>
   </a>

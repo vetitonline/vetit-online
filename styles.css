@@ -3216,6 +3216,46 @@ main {
 .product-image-placeholder span { color: var(--text-soft); font-weight: 600; }
 @media (max-width: 760px) { .catalog-species-selector { grid-template-columns: repeat(3, minmax(0, 1fr)); } .catalog-species-card { min-height: 88px; font-size: 11px; } .catalog-service-link { text-align: left; } }
 
+/* Locally hosted photo discovery keeps the category experience rich without seller imagery. */
+.photo-category-art { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.species-discovery-card { position: relative; overflow: hidden; padding: 0; border-radius: 20px; background: var(--cream); }
+.species-discovery-card .photo-category-art { height: 148px; border-radius: 18px 18px 0 0; }
+.species-discovery-name, .species-discovery-link { margin-right: 16px; margin-left: 16px; }
+.species-discovery-name { margin-top: 14px; }
+.species-discovery-link { margin-bottom: 16px; }
+.visual-discovery-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 24px 0 34px; }
+.visual-discovery-card { position: relative; display: block; min-height: 210px; overflow: hidden; border: 1px solid rgba(63,31,104,.12); border-radius: 22px; background: var(--green-900); box-shadow: 0 12px 30px var(--shadow); isolation: isolate; text-decoration: none; }
+.visual-discovery-card .photo-category-art { position: absolute; inset: 0; z-index: -2; transition: transform .35s ease; }
+.visual-discovery-card:hover .photo-category-art { transform: scale(1.045); }
+.visual-discovery-shade { position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(27,13,45,.02) 20%, rgba(27,13,45,.78) 100%); }
+.visual-discovery-copy { position: absolute; right: 16px; bottom: 16px; left: 16px; display: grid; gap: 5px; color: white; }
+.visual-discovery-copy > span { color: #f9d8b6; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.visual-discovery-copy strong { font: 700 20px/1.2 var(--font-display); }
+.visual-discovery-copy em { color: #fff; font-size: 12px; font-style: normal; font-weight: 700; }
+.catalog-species-card { flex-direction: column; justify-content: center; min-height: 142px; gap: 8px; padding: 9px; }
+.catalog-species-card .photo-category-art { width: 100%; height: 84px; flex: 0 0 84px; border-radius: 11px; object-fit: cover; }
+.catalog-species-card .catalog-all-icon { width: 100%; height: 84px; flex: 0 0 84px; }
+.product-image-placeholder { position: relative; display: block; min-height: 220px; overflow: hidden; background: var(--sage-light); }
+.product-image-placeholder > img { display: block; width: 100%; height: 220px; object-fit: cover; }
+.product-placeholder-label { position: absolute; right: 10px; bottom: 10px; left: 10px; display: grid; gap: 2px; padding: 9px 11px; border: 1px solid rgba(255,255,255,.72); border-radius: 12px; background: rgba(38,20,63,.84); color: white; font-size: 11px; font-weight: 700; line-height: 1.25; text-shadow: none; }
+.product-placeholder-label b { color: #f7d4b0; font-size: 10px; font-weight: 600; }
+.product-detail-image .product-image-placeholder, .product-detail-image .product-image-placeholder > img { min-height: 420px; height: 420px; }
+.catalog-species-card:focus-visible, .visual-discovery-card:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+@media (max-width: 900px) { .visual-discovery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+  .species-discovery-card { min-height: 184px; }
+  .species-discovery-card .photo-category-art { height: 112px; }
+  .species-discovery-name { font-size: 15px; }
+  .visual-discovery-grid { gap: 10px; margin: 20px 0 28px; }
+  .visual-discovery-card { min-height: 164px; border-radius: 17px; }
+  .visual-discovery-copy { right: 11px; bottom: 11px; left: 11px; }
+  .visual-discovery-copy strong { font-size: 16px; }
+  .catalog-species-selector { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .catalog-species-card { min-height: 126px; padding: 7px; font-size: 10px; }
+  .catalog-species-card .photo-category-art, .catalog-species-card .catalog-all-icon { height: 72px; flex-basis: 72px; }
+  .product-detail-image .product-image-placeholder, .product-detail-image .product-image-placeholder > img { min-height: 300px; height: 300px; }
+}
+
 .product-detail-page {
   max-width: 1180px;
   margin: 0 auto;

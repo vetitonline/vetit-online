@@ -3,16 +3,20 @@ import heroImage from '../../vetit-online.jpeg';
 import '../../styles.css';
 import { formatPrice, getFeaturedProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import SiteHeader from '../components/SiteHeader.astro';
-import CategoryArt from '../components/marketplace/CategoryArt.astro';
+import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 import ProductPlaceholder from '../components/marketplace/ProductPlaceholder.astro';
 
 const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
-const animalArt = (slug: string) => slug === 'cattle' || slug === 'livestock' ? 'livestock' : ['dogs', 'cats', 'birds', 'fish'].includes(slug) ? slug : 'other';
 const browseGroups = taxonomy.categories.filter((category) => !category.parentId).map((root) => ({
   title: root.label,
   slug: root.slug,
   categories: taxonomy.categories.filter((category) => category.parentId === root.id),
+}));
+const visualGroups = browseGroups.slice(0, 4).map((group) => ({
+  ...group,
+  image: /livestock|farm|cattle/i.test(`${group.title} ${group.slug}`) ? 'livestock' : 'essentials',
+  href: `/products?category=${encodeURIComponent(group.categories[0]?.slug ?? group.slug)}`,
 }));
 ---
 <!DOCTYPE html>
@@ -161,9 +165,16 @@ const browseGroups = taxonomy.categories.filter((category) => !category.parentId
         </div>
         <h3 class="discovery-subtitle">Shop by pet or livestock</h3>
         <div class="species-discovery-grid">
-          {taxonomy.animals.map((animal) => <a class="species-discovery-card" href={`/shop/${animal.slug}`}><CategoryArt kind={animalArt(animal.slug)} label={animal.label} /><span class="species-discovery-name">{animal.slug === 'fish' ? 'Fish & Aquatics' : animal.slug === 'cattle' ? 'Livestock & Cattle' : animal.label}</span><span class="species-discovery-link">Explore <span aria-hidden="true">→</span></span></a>)}
+          {taxonomy.animals.map((animal) => <a class="species-discovery-card" href={`/shop/${animal.slug}`}><PhotoCategoryArt slug={animal.slug} label={animal.label} /><span class="species-discovery-name">{animal.slug === 'fish' ? 'Fish & Aquatics' : animal.slug === 'cattle' ? 'Livestock & Cattle' : animal.label}</span><span class="species-discovery-link">Explore <span aria-hidden="true">→</span></span></a>)}
           {taxonomy.state === 'error' && <p class="product-empty-state">Pet and livestock categories are temporarily unavailable.</p>}
         </div>
+        {visualGroups.length > 0 && <div class="visual-discovery-grid" aria-label="Shop popular categories">
+          {visualGroups.map((group) => <a class="visual-discovery-card" href={group.href}>
+            <PhotoCategoryArt slug={group.image} label={group.title} />
+            <span class="visual-discovery-shade"></span>
+            <span class="visual-discovery-copy"><span>Explore Vetit</span><strong>{group.title}</strong><em>Browse category →</em></span>
+          </a>)}
+        </div>}
         <h3 class="discovery-subtitle">Browse product categories</h3>
         <div class="browse-group-grid">
           {browseGroups.map((group) => <section class="browse-group"><h4><a href={`/products?category=${encodeURIComponent(group.slug)}`}>{group.title}</a></h4><div class="browse-category-links">{group.categories.map((category) => {
@@ -197,7 +208,7 @@ const browseGroups = taxonomy.categories.filter((category) => !category.parentId
           {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
             <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
               <a class="product-card-image-link" href={`/products/${encodeURIComponent(product.id)}`} aria-label={`View ${product.title}`}><div class="product-image-wrap">
-                {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <ProductPlaceholder title={product.title} />}
+                {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <ProductPlaceholder title={product.title} category={product.category} />}
                 <span class="product-tag">{product.category}</span>
               </div></a>
               <div class="product-info">

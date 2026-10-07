@@ -5,7 +5,7 @@ import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/f
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
 import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
 import SiteHeader from '../components/SiteHeader.astro';
-import CategoryArt from '../components/marketplace/CategoryArt.astro';
+import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
@@ -21,7 +21,6 @@ const sort = params.get('sort') ?? 'newest';
 const selectedAnimal = findAnimal(taxonomy.animals, animal);
 const selectedCategory = findCategory(taxonomy.categories, category);
 const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, minPrice, maxPrice, sort });
-const speciesArt = (slug: string) => slug === 'cattle' ? 'livestock' : ['dogs', 'cats', 'birds', 'fish'].includes(slug) ? slug : 'other';
 const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
 const pageSize = 24;
 const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
@@ -57,7 +56,7 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
             <span>All pets &amp; livestock</span>
           </a>
           {taxonomy.animals.map((item) => <a class:list={['catalog-species-card', animal === item.slug && 'active']} href={`/shop/${item.slug}`} aria-current={animal === item.slug ? 'page' : undefined}>
-            <CategoryArt kind={speciesArt(item.slug)} label={item.label} />
+            <PhotoCategoryArt slug={item.slug} label={item.label} />
             <span>{item.slug === 'fish' ? 'Fish & Aquatics' : item.slug === 'cattle' ? 'Livestock & Cattle' : item.label}</span>
           </a>)}
         </nav>

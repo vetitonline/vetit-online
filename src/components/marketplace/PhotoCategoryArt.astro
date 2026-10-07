@@ -1,0 +1,14 @@
+---
+interface Props { slug: string; label: string; }
+const { slug, label } = Astro.props;
+const key = slug === 'cattle' || slug === 'livestock' ? 'livestock' : ['dogs', 'cats', 'birds', 'fish'].includes(slug) ? slug : 'essentials';
+const images: Record<string, string> = {
+  dogs: '/images/discovery/dog.webp',
+  cats: '/images/discovery/cat.webp',
+  birds: '/images/discovery/bird.webp',
+  fish: '/images/discovery/fish.webp',
+  livestock: '/images/discovery/livestock.webp',
+  essentials: '/images/discovery/essentials.webp',
+};
+---
+<img class="photo-category-art" src={images[key]} alt={label} loading="lazy" decoding="async" />

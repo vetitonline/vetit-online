@@ -22,7 +22,7 @@ const product = result.product;
     {product ? <>
       <p class="product-breadcrumb"><a href="/products">Marketplace</a> / {product.category}</p>
       <div class="product-detail-layout">
-        <div class="product-detail-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title}> : <ProductPlaceholder title={product.title} />}<span class="product-tag">{product.category}</span></div>
+        <div class="product-detail-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title}> : <ProductPlaceholder title={product.title} category={product.category} />}<span class="product-tag">{product.category}</span></div>
         <div class="product-detail-copy">
           <span class="section-label dark-label"><span></span>{product.category}</span>
           {product.brand && <p class="product-brand">{product.brand}</p>}
