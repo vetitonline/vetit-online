@@ -1,7 +1,8 @@
 ---
 import logo from '../../../Vetit-online-transparent.png';
 import '../../../styles.css';
-import { PRODUCT_ANIMALS } from '../../lib/marketplace/product-taxonomy';
+import { getProductTaxonomy } from '../../lib/marketplace/featured-products';
+const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -16,9 +17,9 @@ import { PRODUCT_ANIMALS } from '../../lib/marketplace/product-taxonomy';
   <main><section class="product-showcase">
     <div class="product-heading"><div><span class="section-label dark-label"><span></span>Vetit marketplace</span><h1>Shop by animal.</h1><p>Browse published product listings for pets and livestock.</p></div></div>
     <div class="animal-category-grid">
-      {PRODUCT_ANIMALS.map((animal) => <a class="animal-category-card" href={`/shop/${animal.slug}`}><span class="section-label dark-label"><span></span>Browse categories</span><h2>{animal.label}</h2><p>{animal.categories.map((category) => category.label).join(' · ')}</p><span class="category-link">Explore {animal.label.toLocaleLowerCase()} <span>→</span></span></a>)}
+      {taxonomy.animals.map((animal) => <a class="animal-category-card" href={`/shop/${animal.slug}`}><span class="section-label dark-label"><span></span>Browse categories</span><h2>{animal.label}</h2><p>{taxonomy.categories.filter((category) => category.species.includes(animal.id)).map((category) => category.label).join(' · ') || 'No product categories published yet'}</p><span class="category-link">Explore {animal.label.toLocaleLowerCase()} <span>→</span></span></a>)}
     </div>
-    <p class="catalog-data-note">More animal categories can be added without changing the listing or cart data model.</p>
+    {taxonomy.animals.length === 0 && <p class="product-empty-state">{taxonomy.state === 'error' ? 'Animal categories are temporarily unavailable.' : 'No animal categories have been published yet.'}</p>}
   </section></main>
 </div><script src="../../../script.js"></script></body>
 </html>

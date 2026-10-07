@@ -3,14 +3,17 @@ import logo from '../../../../Vetit-online-transparent.png';
 import '../../../../styles.css';
 import ProductCard from '../../../components/marketplace/ProductCard.astro';
 import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
-import { getMarketplaceProducts } from '../../../lib/marketplace/featured-products';
-import { findAnimal, findCategory } from '../../../lib/marketplace/product-taxonomy';
+import { getMarketplaceProducts, getProductTaxonomy } from '../../../lib/marketplace/featured-products';
+import { categoriesForAnimal, findAnimal, findCategory } from '../../../lib/marketplace/product-taxonomy';
 
-const animal = findAnimal(Astro.params.animal ?? '');
-const category = animal && findCategory(animal, Astro.params.category ?? '');
+const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
+const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
+const category = animal && findCategory(categoriesForAnimal(taxonomy.categories, animal), Astro.params.category ?? '');
 if (!animal || !category) return Astro.redirect('/shop', 302);
-const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
-const products = filterMarketplaceProducts(result.products, { animal: animal.slug, category: category.slug });
+const childIds = taxonomy.categories.filter((item) => item.parentId === category.id).map((item) => item.id);
+const result = await getMarketplaceProducts(Astro.request, Astro.cookies, 1000, { speciesId: animal.id });
+const products = filterMarketplaceProducts(result.products, { animal }).filter((product) => product.categoryId === category.id || childIds.includes(product.categoryId));
+const childCategories = taxonomy.categories.filter((item) => item.parentId === category.id);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -24,8 +27,8 @@ const products = filterMarketplaceProducts(result.products, { animal: animal.slu
   <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/products">Marketplace</a><a href="/shop/dogs">Dogs</a><a href="/shop/cats">Cats</a><a href="/shop/livestock">Livestock</a><a href="/services">Services</a></nav><div class="header-actions"><a class="cart-link" href="/cart" aria-label="View your cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
   <main><section class="product-showcase">
     <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All animals</a> / <a href={`/shop/${animal.slug}`}>{animal.label}</a></span><h1>{category.label}</h1><p>Published listings in {animal.label.toLocaleLowerCase()} {category.label.toLocaleLowerCase()}.</p></div><a class="product-view-all" href={`/shop/${animal.slug}`}>All {animal.label.toLocaleLowerCase()} categories →</a></div>
-    {category.children?.length ? <nav class="subcategory-links" aria-label={`${category.label} subcategories`}>
-      {category.children.map((child) => <a class="catalog-chip" href={`/shop/${animal.slug}/${child.slug}`}>{child.label}</a>)}
+    {childCategories.length ? <nav class="subcategory-links" aria-label={`${category.label} subcategories`}>
+      {childCategories.map((child) => <a class="catalog-chip" href={`/shop/${animal.slug}/${child.slug}`}>{child.label}</a>)}
     </nav> : null}
     <div class="product-grid">
       {result.state === 'available' && products.map((product) => <ProductCard product={product} />)}

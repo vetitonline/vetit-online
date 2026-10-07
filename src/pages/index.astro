@@ -195,137 +195,24 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
         <div class="product-grid">
 
           {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
-            <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
+            <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
               <a class="product-card-image-link" href={`/products/${encodeURIComponent(product.id)}`} aria-label={`View ${product.title}`}><div class="product-image-wrap">
-                <img src={product.imageUrl} alt={product.title} loading="lazy">
+                {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <span class="product-image-placeholder">Image unavailable</span>}
                 <span class="product-tag">{product.category}</span>
               </div></a>
               <div class="product-info">
                 <span class="product-seller">{product.sellerName}</span>
                 <h3><a class="product-title-link" href={`/products/${encodeURIComponent(product.id)}`}>{product.title}</a></h3>
                 <div class="product-bottom">
-                  <strong>{formatPrice(product.pricePaise)}</strong>
+                  <strong>{formatPrice(product.priceMinor, product.currencyCode)}</strong>
                   <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
                 </div>
               </div>
             </article>
           ))}
 
-          {featuredProductsResult.products.length === 0 && <>
+          {featuredProductsResult.products.length === 0 && <p class="product-empty-state">{featuredProductsResult.state === 'error' ? 'The marketplace is temporarily unavailable. Please try again later.' : 'No published products are available yet.'} <a href="/products">Browse the marketplace</a></p>}
 
-          <article class="product-card" data-cart-product data-product-id="sample-premium-dog-nutrition" data-product-title="Premium dog nutrition" data-product-category="Pet food" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80" data-product-price-paise="89900">
-
-            <div class="product-image-wrap">
-
-              <a class="product-card-image-link" href="/shop/dogs" aria-label="Shop dog products"><img src="https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80" alt="Dog food and pet supplies"></a>
-
-              <span class="product-tag">Pet food</span>
-
-            </div>
-
-            <div class="product-info">
-
-              <span class="product-seller">Featured seller</span>
-
-              <h3><a class="product-title-link" href="/shop/dogs">Premium dog nutrition</a></h3>
-
-              <div class="product-bottom">
-
-                <strong>From ₹899</strong>
-
-              <button type="button" data-add-to-cart aria-label="Add Premium dog nutrition to cart" title="Add Premium dog nutrition to cart">+</button>
-
-              </div>
-
-            </div>
-
-          </article>
-
-          <article class="product-card" data-cart-product data-product-id="sample-cat-wellness-essentials" data-product-title="Cat wellness essentials" data-product-category="Cat care" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" data-product-price-paise="49900">
-
-            <div class="product-image-wrap">
-
-              <a class="product-card-image-link" href="/shop/cats" aria-label="Shop cat products"><img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80" alt="Cat care and wellness"></a>
-
-              <span class="product-tag">Cat care</span>
-
-            </div>
-
-            <div class="product-info">
-
-              <span class="product-seller">Featured seller</span>
-
-              <h3><a class="product-title-link" href="/shop/cats">Cat wellness essentials</a></h3>
-
-              <div class="product-bottom">
-
-                <strong>From ₹499</strong>
-
-              <button type="button" data-add-to-cart aria-label="Add Cat wellness essentials to cart" title="Add Cat wellness essentials to cart">+</button>
-
-              </div>
-
-            </div>
-
-          </article>
-
-          <article class="product-card" data-cart-product data-product-id="sample-playtime-favourites" data-product-title="Playtime favourites" data-product-category="Toys" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80" data-product-price-paise="29900">
-
-            <div class="product-image-wrap">
-
-              <a class="product-card-image-link" href="/shop/dogs/toys" aria-label="Shop pet toys"><img src="https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80" alt="Pet toys and accessories"></a>
-
-              <span class="product-tag">Toys</span>
-
-            </div>
-
-            <div class="product-info">
-
-              <span class="product-seller">Featured seller</span>
-
-              <h3><a class="product-title-link" href="/shop/dogs/toys">Playtime favourites</a></h3>
-
-              <div class="product-bottom">
-
-                <strong>From ₹299</strong>
-
-              <button type="button" data-add-to-cart aria-label="Add Playtime favourites to cart" title="Add Playtime favourites to cart">+</button>
-
-              </div>
-
-            </div>
-
-          </article>
-
-          <article class="product-card" data-cart-product data-product-id="sample-livestock-essentials" data-product-title="Livestock essentials" data-product-category="Livestock" data-product-seller="Featured seller" data-product-image="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80" data-product-price-paise="">
-
-            <div class="product-image-wrap">
-
-              <a class="product-card-image-link" href="/shop/livestock" aria-label="Shop livestock products"><img src="https://images.unsplash.com/photo-1500595046743-cd271d694d30?auto=format&fit=crop&w=800&q=80" alt="Livestock and farm"></a>
-
-              <span class="product-tag">Livestock</span>
-
-            </div>
-
-            <div class="product-info">
-
-              <span class="product-seller">Featured seller</span>
-
-              <h3><a class="product-title-link" href="/shop/livestock">Livestock essentials</a></h3>
-
-              <div class="product-bottom">
-
-                <strong>Shop farm supplies</strong>
-
-              <button type="button" data-add-to-cart aria-label="Add Livestock essentials to cart" title="Add Livestock essentials to cart">+</button>
-
-              </div>
-
-            </div>
-
-          </article>
-
-          </>}
 
         </div>
 

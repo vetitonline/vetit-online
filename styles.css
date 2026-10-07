@@ -2085,6 +2085,20 @@ main {
 
 }
 
+.product-image-placeholder {
+  display: grid;
+  width: 100%;
+  min-height: 220px;
+  place-items: center;
+  color: #6b6577;
+  background: #f2f0f6;
+  font-size: 0.875rem;
+}
+
+.product-detail-image .product-image-placeholder {
+  min-height: 420px;
+}
+
 .product-bottom button:disabled {
   cursor: default;
 }

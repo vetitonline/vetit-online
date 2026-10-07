@@ -9,14 +9,6 @@ const city = Astro.url.searchParams.get('city')?.trim() ?? '';
 const locality = Astro.url.searchParams.get('locality')?.trim() ?? '';
 const result = await getPublicServices(Astro.request, Astro.cookies, { category, city, locality });
 const selectedCategory = result.categories.find((item) => item.slug === category);
-const serviceShortcuts = [
-  ['Veterinary clinics', 'veterinary-clinic'], ['Veterinarians / doctors', 'veterinarian'],
-  ['Veterinary surgeries', 'veterinary-surgery'], ['Grooming', 'dog-grooming'],
-  ['Daycare', 'dog-daycare'], ['Boarding', 'boarding-kennels-catteries'],
-  ['Training', 'training-behaviour'], ['Dog walking', 'dog-walking'],
-  ['Pet sitting', 'pet-sitting'], ['Pet transport', 'pet-transport'],
-  ['Livestock veterinary', 'livestock-veterinary'], ['Farm services', 'farm-services'],
-];
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -69,10 +61,6 @@ const serviceShortcuts = [
           </label>
           <button class="button button-primary" type="submit">Search services</button>
         </form>
-
-        <nav class="service-category-shortcuts" aria-label="Browse service categories">
-          {serviceShortcuts.map(([label, slug]) => <a class="catalog-chip" href={`/services?category=${slug}`}>{label}</a>)}
-        </nav>
 
         <div class="service-results" aria-live="polite">
           {result.state === 'unconfigured' ? (

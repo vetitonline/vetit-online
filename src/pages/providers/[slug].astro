@@ -5,47 +5,53 @@ import { formatPrice } from '../../lib/marketplace/featured-products';
 import { createSupabaseServerClient } from '../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../lib/supabase/config';
 
-const slug = Astro.params.slug ?? '';
-let profile = null;
-let business = null;
-let listings = [];
-let locations = [];
-let availability = [];
+const businessId = Astro.params.slug ?? '';
+let profile: { provider_type: string; biography: string | null; contact_email: string | null; contact_phone: string | null } | null = null;
+let business: { id: string; display_name: string } | null = null;
+let listings: Array<{ id: string; title: string; category: string; duration: number | null; amountMinor: number | null; currencyCode: string }> = [];
+let locations: Array<{ address_line1: string | null; locality: string | null; city: string | null }> = [];
+let availability: Array<{ service_listing_id: string; weekday: number; start_local_time: string; end_local_time: string; timezone: string }> = [];
 let loadError = false;
 
-if (!getSupabasePublicConfig()) {
-  loadError = true;
-} else {
+if (!getSupabasePublicConfig()) loadError = true;
+else {
   try {
     const supabase = createSupabaseServerClient({ request: Astro.request, cookies: Astro.cookies });
-    const { data: foundProfile, error: profileError } = await supabase
-      .from('provider_profiles')
-      .select('business_id, slug, provider_type, biography, public_email, public_phone, website_url, professional_verification_status')
-      .eq('slug', slug)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    profile = foundProfile;
-    if (profile) {
-      const [businessResult, listingResult, locationResult] = await Promise.all([
-        supabase.from('businesses').select('id, display_name').eq('id', profile.business_id).maybeSingle(),
-        supabase.from('listings').select('id, title, category, service_category_slug, price_paise, service_duration_minutes').eq('business_id', profile.business_id).eq('kind', 'service').eq('status', 'published').eq('country_code', 'IN').order('published_at', { ascending: false }),
-        supabase.from('provider_locations').select('id, label, address_line, city, locality').eq('business_id', profile.business_id).eq('is_public', true),
-      ]);
-      if (businessResult.error) throw businessResult.error;
-      if (listingResult.error) throw listingResult.error;
-      if (locationResult.error) throw locationResult.error;
-      business = businessResult.data;
-      listings = listingResult.data ?? [];
-      locations = locationResult.data ?? [];
-      if (listings.length) {
-        const { data: rules, error: rulesError } = await supabase
-          .from('service_availability_rules')
-          .select('listing_id, day_of_week, opens_at, closes_at, timezone')
-          .in('listing_id', listings.map((listing) => listing.id))
-          .eq('is_active', true)
-          .order('day_of_week');
-        if (rulesError) throw rulesError;
-        availability = rules ?? [];
+    const { data: foundBusiness, error: businessError } = await supabase.from('businesses').select('id, display_name').eq('id', businessId).eq('is_active', true).is('archived_at', null).eq('verification_status', 'verified').maybeSingle();
+    if (businessError) throw businessError;
+    business = foundBusiness;
+    if (business) {
+      const { data: foundProfile, error: profileError } = await supabase.from('provider_profiles').select('provider_type, biography, contact_email, contact_phone').eq('business_id', business.id).eq('published_status', 'published').eq('credential_verification_status', 'verified').maybeSingle();
+      if (profileError) throw profileError;
+      profile = foundProfile;
+      if (profile) {
+        const { data: rows, error: listingError } = await supabase.from('listings').select('id, title, categories(name), service_offerings(duration_minutes, provider_location_id), listing_markets!inner(market_code, availability_status, compliance_status)').eq('business_id', business.id).eq('kind', 'service').eq('moderation_status', 'published').is('archived_at', null).eq('listing_markets.market_code', 'IN').eq('listing_markets.availability_status', 'available').eq('listing_markets.compliance_status', 'approved').order('created_at', { ascending: false });
+        if (listingError) throw listingError;
+        const ids = (rows ?? []).map((row) => row.id);
+        if (ids.length) {
+          const [{ data: prices, error: priceError }, { data: rules, error: rulesError }] = await Promise.all([
+            supabase.from('listing_prices').select('listing_id, amount_minor, currency_code').in('listing_id', ids).eq('market_code', 'IN').eq('status', 'active').is('product_variant_id', null).lte('valid_from', new Date().toISOString()).or(`valid_to.is.null,valid_to.gt.${new Date().toISOString()}`, { referencedTable: 'listing_prices' }).order('valid_from', { ascending: false }),
+            supabase.from('service_availability_rules').select('service_listing_id, weekday, start_local_time, end_local_time, timezone').in('service_listing_id', ids).eq('active_status', true).order('weekday'),
+          ]);
+          if (priceError) throw priceError;
+          if (rulesError) throw rulesError;
+          availability = rules ?? [];
+          listings = (rows ?? []).map((row) => {
+            const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
+            const offering = Array.isArray(row.service_offerings) ? row.service_offerings[0] : row.service_offerings;
+            const price = prices?.find((candidate) => candidate.listing_id === row.id);
+            return { id: row.id, title: row.title, category: category?.name ?? '', duration: offering?.duration_minutes ?? null, amountMinor: price?.amount_minor ?? null, currencyCode: price?.currency_code ?? 'INR' };
+          });
+          const locationIds = [...new Set((rows ?? []).flatMap((row) => {
+            const offering = Array.isArray(row.service_offerings) ? row.service_offerings[0] : row.service_offerings;
+            return offering?.provider_location_id ? [offering.provider_location_id] : [];
+          }))];
+          if (locationIds.length) {
+            const { data, error } = await supabase.from('provider_locations').select('address_line1, locality, city').in('id', locationIds).eq('is_public', true).eq('is_active', true);
+            if (error) throw error;
+            locations = data ?? [];
+          }
+        }
       }
     }
   } catch (error) {
@@ -53,69 +59,33 @@ if (!getSupabasePublicConfig()) {
     loadError = true;
   }
 }
-
 if (!profile || !business) Astro.response.status = 404;
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const timeText = (value: string) => value.slice(0, 5);
-const websiteUrl = profile?.website_url?.startsWith('https://') ? profile.website_url : null;
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{business ? `${business.display_name} | Vetit Online` : 'Provider | Vetit Online'}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <div class="page-shell">
-    <header class="site-header">
-      <a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a>
-      <nav class="main-nav" aria-label="Main navigation"><a href="/">Marketplace</a><a href="/services">Services</a><a href="/products">Products</a></nav>
-      <div class="header-actions"><a class="cart-link" href="/cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div>
-    </header>
-    <main>
-      <section class="service-marketplace provider-profile-page">
-        {loadError ? (
-          <p class="product-empty-state">Provider profiles are unavailable right now. Please try again later.</p>
-        ) : profile && business ? (
-          <>
-            <div class="product-heading"><div><span class="section-label dark-label"><span></span>Verified provider</span><h1>{business.display_name}</h1><p>{profile.provider_type.replaceAll('_', ' ')}</p></div></div>
-            {profile.biography && <p class="provider-biography">{profile.biography}</p>}
-            <section class="provider-information" aria-labelledby="provider-location-title">
-              <h2 id="provider-location-title">Location</h2>
-              {locations.length ? locations.map((location) => <p>{location.label}: {[location.address_line, location.locality, location.city].filter(Boolean).join(', ')}</p>) : <p>Location details have not been published.</p>}
-            </section>
-            <section class="provider-information" aria-labelledby="provider-contact-title">
-              <h2 id="provider-contact-title">Contact</h2>
-              {profile.public_phone && <p><a href={`tel:${profile.public_phone}`}>{profile.public_phone}</a></p>}
-              {profile.public_email && <p><a href={`mailto:${profile.public_email}`}>{profile.public_email}</a></p>}
-              {websiteUrl && <p><a href={websiteUrl} rel="noopener noreferrer">Provider website</a></p>}
-              {!profile.public_phone && !profile.public_email && !websiteUrl && <p>Public contact details have not been listed.</p>}
-            </section>
-            <section class="provider-information" aria-labelledby="provider-services-title">
-              <h2 id="provider-services-title">Services offered</h2>
-              {listings.length ? (
-                <div class="service-listings">
-                  {listings.map((listing) => {
-                    const hours = availability.filter((rule) => rule.listing_id === listing.id);
-                    return <article class="service-listing-card"><div><h3>{listing.title}</h3><p>{listing.category}</p>{listing.service_duration_minutes && <p>{listing.service_duration_minutes} minutes</p>}<div class="provider-hours">{hours.length ? hours.map((rule) => <p>{weekdays[rule.day_of_week]} · {timeText(rule.opens_at)}–{timeText(rule.closes_at)} ({rule.timezone})</p>) : <p>Opening hours not listed.</p>}</div></div><div class="service-listing-meta"><strong>{formatPrice(listing.price_paise)}</strong><span>Appointment booking coming soon</span></div></article>;
-                  })}
-                </div>
-              ) : <p>No public service listings are available for this provider yet.</p>}
-            </section>
-            <p class="service-booking-note">Provider ratings and reviews are not available yet.</p>
-            <p class="service-booking-note">Appointment slots and booking requests are not available yet. This profile does not confirm an appointment.</p>
-          </>
-        ) : (
-          <p class="product-empty-state">This provider profile was not found or is not public.</p>
-        )}
-        <a class="button button-secondary small-button" href="/services">Browse services</a>
-      </section>
-    </main>
-  </div>
-  <script src="../../../script.js"></script>
-</body>
+<body><div class="page-shell">
+  <header class="site-header"><a href="/" aria-label="Vetit Online home"><img src={logo.src} alt="Vetit Online"></a><nav class="main-nav" aria-label="Main navigation"><a href="/">Marketplace</a><a href="/services">Services</a><a href="/products">Products</a></nav><div class="header-actions"><a class="cart-link" href="/cart" title="View your cart"><span class="cart-icon">🛒</span><span class="cart-count">0</span></a><a class="login-link" href="/login">Log in</a><a class="button button-primary small-button" href="/login?mode=join">Join free</a></div></header>
+  <main><section class="service-marketplace provider-profile-page">
+    {loadError ? <p class="product-empty-state">Provider profiles are unavailable right now. Please try again later.</p> : profile && business ? <>
+      <div class="product-heading"><div><span class="section-label dark-label"><span></span>Verified provider</span><h1>{business.display_name}</h1><p>{profile.provider_type.replaceAll('_', ' ')}</p></div></div>
+      {profile.biography && <p class="provider-biography">{profile.biography}</p>}
+      <section class="provider-information"><h2>Location</h2>{locations.length ? locations.map((location) => <p>{[location.address_line1, location.locality, location.city].filter(Boolean).join(', ')}</p>) : <p>Location details have not been published.</p>}</section>
+      <section class="provider-information"><h2>Contact</h2>{profile.contact_phone && <p><a href={`tel:${profile.contact_phone}`}>{profile.contact_phone}</a></p>}{profile.contact_email && <p><a href={`mailto:${profile.contact_email}`}>{profile.contact_email}</a></p>}{!profile.contact_phone && !profile.contact_email && <p>Public contact details have not been listed.</p>}</section>
+      <section class="provider-information"><h2>Services offered</h2>{listings.length ? <div class="service-listings">{listings.map((listing) => {
+        const hours = availability.filter((rule) => rule.service_listing_id === listing.id);
+        return <article class="service-listing-card"><div><h3>{listing.title}</h3><p>{listing.category}</p>{listing.duration && <p>{listing.duration} minutes</p>}<div class="provider-hours">{hours.length ? hours.map((rule) => <p>{weekdays[rule.weekday]} · {timeText(rule.start_local_time)}–{timeText(rule.end_local_time)} ({rule.timezone})</p>) : <p>Opening hours not listed.</p>}</div></div><div class="service-listing-meta"><strong>{formatPrice(listing.amountMinor, listing.currencyCode)}</strong><span>Appointment booking coming soon</span></div></article>;
+      })}</div> : <p>No public service listings are available for this provider yet.</p>}</section>
+      <p class="service-booking-note">Provider ratings and reviews are not available yet.</p><p class="service-booking-note">Appointment slots and booking requests are not available yet. This profile does not confirm an appointment.</p>
+    </> : <p class="product-empty-state">This provider profile was not found or is not public.</p>}
+    <a class="button button-secondary small-button" href="/services">Browse services</a>
+  </section></main>
+</div><script src="../../../script.js"></script></body>
 </html>

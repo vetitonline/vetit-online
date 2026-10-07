@@ -9,10 +9,10 @@ interface Props {
 const { product } = Astro.props;
 const detailHref = `/products/${encodeURIComponent(product.id)}`;
 ---
-<article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl} data-product-price-paise={product.pricePaise ?? ''}>
+<article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
   <a class="product-card-image-link" href={detailHref} aria-label={`View ${product.title}`}>
     <div class="product-image-wrap">
-      <img src={product.imageUrl} alt={`${product.category} category image`} loading="lazy">
+      {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <span class="product-image-placeholder">Image unavailable</span>}
       <span class="product-tag">{product.category}</span>
     </div>
   </a>
@@ -21,7 +21,7 @@ const detailHref = `/products/${encodeURIComponent(product.id)}`;
     <span class="product-seller">{product.sellerName}</span>
     <h2><a href={detailHref}>{product.title}</a></h2>
     <div class="product-bottom">
-      <strong>{formatPrice(product.pricePaise)}</strong>
+      <strong>{formatPrice(product.priceMinor, product.currencyCode)}</strong>
       <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
     </div>
   </div>

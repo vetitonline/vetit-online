@@ -2,11 +2,12 @@
 import logo from '../../Vetit-online-transparent.png';
 import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
-import { getMarketplaceProducts } from '../lib/marketplace/featured-products';
+import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
-import { PRODUCT_ANIMALS } from '../lib/marketplace/product-taxonomy';
+import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
 
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
+const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const params = Astro.url.searchParams;
 const query = params.get('q')?.trim() ?? '';
 const animal = params.get('animal')?.trim() ?? '';
@@ -16,8 +17,9 @@ const maxPriceRaw = params.get('max') ?? '';
 const minPrice = minPriceRaw !== '' && Number.isFinite(Number(minPriceRaw)) ? Number(minPriceRaw) * 100 : null;
 const maxPrice = maxPriceRaw !== '' && Number.isFinite(Number(maxPriceRaw)) ? Number(maxPriceRaw) * 100 : null;
 const sort = params.get('sort') ?? 'newest';
-const filteredProducts = filterMarketplaceProducts(result.products, { query, animal, category, minPrice, maxPrice, sort });
-const selectedAnimal = PRODUCT_ANIMALS.find((item) => item.slug === animal);
+const selectedAnimal = findAnimal(taxonomy.animals, animal);
+const selectedCategory = findCategory(taxonomy.categories, category);
+const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, minPrice, maxPrice, sort });
 const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
 const pageSize = 24;
 const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
@@ -65,7 +67,7 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
         </div>
 
         <nav class="catalog-animal-links" aria-label="Shop by animal">
-          {PRODUCT_ANIMALS.map((item) => <a class:list={['catalog-chip', animal === item.slug && 'active']} href={`/shop/${item.slug}`}>{item.label}</a>)}
+          {taxonomy.animals.map((item) => <a class:list={['catalog-chip', animal === item.slug && 'active']} href={`/shop/${item.slug}`}>{item.label}</a>)}
           <a class="catalog-chip" href="/services">Animal services</a>
         </nav>
 
@@ -76,14 +78,13 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           <label>Animal type
             <select name="animal">
               <option value="">All animals</option>
-              {PRODUCT_ANIMALS.map((item) => <option value={item.slug} selected={animal === item.slug}>{item.label}</option>)}
+              {taxonomy.animals.map((item) => <option value={item.slug} selected={animal === item.slug}>{item.label}</option>)}
             </select>
           </label>
           <label>Category
             <select name="category">
               <option value="">All categories</option>
-              {selectedAnimal?.categories.map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
-              {selectedAnimal?.categories.flatMap((item) => item.children ?? []).map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
+              {categoriesForAnimal(taxonomy.categories, selectedAnimal ?? { id: '', slug: '', label: '' }).map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
             </select>
           </label>
           <label>Min price (₹)<input name="min" type="number" min="0" step="1" value={minPriceRaw} inputmode="numeric"></label>

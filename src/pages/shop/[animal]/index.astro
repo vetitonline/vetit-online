@@ -3,13 +3,15 @@ import logo from '../../../../Vetit-online-transparent.png';
 import '../../../../styles.css';
 import ProductCard from '../../../components/marketplace/ProductCard.astro';
 import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
-import { getMarketplaceProducts } from '../../../lib/marketplace/featured-products';
-import { findAnimal } from '../../../lib/marketplace/product-taxonomy';
+import { getMarketplaceProducts, getProductTaxonomy } from '../../../lib/marketplace/featured-products';
+import { categoriesForAnimal, findAnimal } from '../../../lib/marketplace/product-taxonomy';
 
-const animal = findAnimal(Astro.params.animal ?? '');
+const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
+const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
 if (!animal) return Astro.redirect('/shop', 302);
-const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
-const products = filterMarketplaceProducts(result.products, { animal: animal.slug });
+const categories = categoriesForAnimal(taxonomy.categories, animal);
+const result = await getMarketplaceProducts(Astro.request, Astro.cookies, 1000, { speciesId: animal.id });
+const products = filterMarketplaceProducts(result.products, { animal });
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -24,8 +26,8 @@ const products = filterMarketplaceProducts(result.products, { animal: animal.slu
   <main><section class="product-showcase">
     <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All animals</a> / {animal.label}</span><h1>{animal.label} products</h1><p>Browse categories and real published listings.</p></div><a class="product-view-all" href={`/products?animal=${animal.slug}`}>View all {animal.label.toLocaleLowerCase()} products →</a></div>
     <nav class="subcategory-links" aria-label={`${animal.label} product categories`}>
-      {animal.categories.map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
-      {animal.categories.flatMap((category) => category.children ?? []).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
+      {categories.filter((category) => !category.parentId).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
+      {categories.filter((category) => category.parentId).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
     </nav>
     <h2 class="catalog-section-title">Available listings</h2>
     <div class="product-grid">
