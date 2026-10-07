@@ -1,7 +1,8 @@
 import type { ProductAnimal, ProductCategory } from "./featured-products";
 
 export function findAnimal(animals: ProductAnimal[], slug: string): ProductAnimal | undefined {
-  return animals.find((animal) => animal.slug === slug);
+  return animals.find((animal) => animal.slug === slug)
+    ?? (slug === "livestock" ? animals.find((animal) => animal.slug === "cattle") : undefined);
 }
 
 export function findCategory(categories: ProductCategory[], slug: string): ProductCategory | undefined {

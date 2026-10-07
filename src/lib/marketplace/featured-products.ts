@@ -91,31 +91,10 @@ export async function getMarketplaceProducts(
     const { data: market, error: marketError } = await supabase.from("markets").select("currency_code, market_status").eq("country_code", marketCode).maybeSingle();
     if (marketError) throw marketError;
     if (!market || market.market_status !== "active") return { state: "available", products: [] };
-    let query = supabase.from("listings").select(`
-      id, business_id, title, description, category_id, slug,
-      categories!inner(id, slug, name, moderation_status, category_species(species_id, animal_species(slug))),
-      businesses!inner(id, display_name, is_active, archived_at),
-      listing_prices!inner(amount_minor, currency_code, market_code, status, valid_from, valid_to, product_variant_id),
-      listing_markets!inner(market_code, availability_status, compliance_status),
-      listing_images(storage_object_path, alt_text, sort_order, visibility_status),
-      listing_species(species_id, animal_species(slug))
-    `)
+    let query = supabase.from("listings").select("id, business_id, title, description, category_id, created_at")
       .eq("kind", "product")
       .eq("moderation_status", "published")
       .is("archived_at", null)
-      .eq("categories.moderation_status", "active")
-      .eq("businesses.is_active", true)
-      .eq("businesses.verification_status", "verified")
-      .is("businesses.archived_at", null)
-      .eq("listing_prices.market_code", marketCode)
-      .eq("listing_prices.currency_code", market.currency_code)
-      .eq("listing_prices.status", "active")
-      .is("listing_prices.product_variant_id", null)
-      .lte("listing_prices.valid_from", now)
-      .or(`valid_to.is.null,valid_to.gt.${now}`, { referencedTable: "listing_prices" })
-      .eq("listing_markets.market_code", marketCode)
-      .eq("listing_markets.availability_status", "available")
-      .eq("listing_markets.compliance_status", "approved")
       .order("created_at", { ascending: false })
       .limit(Math.min(1000, Math.max(0, Math.floor(requestedLimit))));
     if (options.categoryId) query = query.eq("category_id", options.categoryId);
@@ -123,24 +102,41 @@ export async function getMarketplaceProducts(
     const { data, error } = await query;
     if (error) throw error;
 
-    const products = (data ?? []).map((row) => {
-      const price = Array.isArray(row.listing_prices) ? row.listing_prices[0] : row.listing_prices;
-      const image = Array.isArray(row.listing_images)
-        ? row.listing_images.filter((entry) => entry.visibility_status === "visible").sort((a, b) => a.sort_order - b.sort_order)[0]
-        : null;
-      const category = Array.isArray(row.categories) ? row.categories[0] : row.categories;
-      const business = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
-      const species = Array.isArray(row.listing_species) ? row.listing_species : [];
-      const categorySpecies = category && Array.isArray(category.category_species) ? category.category_species : [];
-      const speciesSlugs = new Set<string>();
-      for (const entry of species) {
-        const animal = Array.isArray(entry.animal_species) ? entry.animal_species[0] : entry.animal_species;
-        if (animal?.slug) speciesSlugs.add(animal.slug);
-      }
-      for (const entry of categorySpecies) {
-        const animal = Array.isArray(entry.animal_species) ? entry.animal_species[0] : entry.animal_species;
-        if (animal?.slug) speciesSlugs.add(animal.slug);
-      }
+    if (!data?.length) return { state: "available", products: [] };
+    const listingIds = data.map((listing) => listing.id);
+    const businessIds = [...new Set(data.map((listing) => listing.business_id))];
+    const categoryIds = [...new Set(data.map((listing) => listing.category_id))];
+    const [{ data: categories, error: categoriesError }, { data: businesses, error: businessesError }, { data: prices, error: pricesError }, { data: listingMarkets, error: marketsError }, { data: listingSpecies, error: speciesError }] = await Promise.all([
+      supabase.from("categories").select("id, slug, name, moderation_status").in("id", categoryIds).in("kind", ["product", "both"]).eq("moderation_status", "active"),
+      supabase.from("businesses").select("id, display_name, is_active, archived_at, verification_status").in("id", businessIds).eq("is_active", true).is("archived_at", null).eq("verification_status", "verified"),
+      supabase.from("listing_prices").select("listing_id, amount_minor, currency_code, valid_from").in("listing_id", listingIds).eq("market_code", marketCode).eq("currency_code", market.currency_code).eq("status", "active").is("product_variant_id", null).lte("valid_from", now).or(`valid_to.is.null,valid_to.gt.${now}`).order("valid_from", { ascending: false }),
+      supabase.from("listing_markets").select("listing_id").in("listing_id", listingIds).eq("market_code", marketCode).eq("availability_status", "available").eq("compliance_status", "approved"),
+      supabase.from("listing_species").select("listing_id, species_id").in("listing_id", listingIds),
+    ]);
+    if (categoriesError) throw categoriesError;
+    if (businessesError) throw businessesError;
+    if (pricesError) throw pricesError;
+    if (marketsError) throw marketsError;
+    if (speciesError) throw speciesError;
+    const taxonomy = await getProductTaxonomy(request, cookies);
+    if (taxonomy.state === "error") throw new Error("Product taxonomy is unavailable.");
+    const categoriesById = new Map((categories ?? []).map((category) => [category.id, category]));
+    const businessesById = new Map((businesses ?? []).map((business) => [business.id, business]));
+    const priceByListing = new Map((prices ?? []).map((price) => [price.listing_id, price]));
+    const marketListingIds = new Set((listingMarkets ?? []).map((listing) => listing.listing_id));
+    const animalSlugs = new Map(taxonomy.animals.map((animal) => [animal.id, animal.slug]));
+    const speciesByListing = new Map<string, string[]>();
+    for (const link of listingSpecies ?? []) {
+      const slug = animalSlugs.get(link.species_id);
+      if (slug) speciesByListing.set(link.listing_id, [...(speciesByListing.get(link.listing_id) ?? []), slug]);
+    }
+    const products = data.flatMap((row) => {
+      const category = categoriesById.get(row.category_id);
+      const business = businessesById.get(row.business_id);
+      const price = priceByListing.get(row.id);
+      if (!category || !business || !price || !marketListingIds.has(row.id)) return [];
+      const categorySpecies = taxonomy.categories.find((item) => item.id === category.id)?.species ?? [];
+      const speciesSlugs = new Set([...(speciesByListing.get(row.id) ?? []), ...categorySpecies.flatMap((id) => animalSlugs.get(id) ?? [])]);
       return {
         id: row.id,
         title: row.title,
@@ -153,9 +149,9 @@ export async function getMarketplaceProducts(
         sellerName: business?.display_name ?? "",
         priceMinor: price?.amount_minor ?? null,
         currencyCode: price?.currency_code ?? "INR",
-        // No public image bucket is configured in the live project, so private paths are not exposed.
+        // The live project has no storage bucket, so private object paths are not exposed.
         imageUrl: null,
-        imageAlt: image?.alt_text ?? null,
+        imageAlt: null,
       } satisfies FeaturedProduct;
     });
     if (options.speciesId) {
