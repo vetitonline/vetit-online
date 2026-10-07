@@ -1,5 +1,6 @@
 ---
 import logo from '../../Vetit-online-transparent.png';
+import heroImage from '../../vetit-online.jpeg';
 import '../../styles.css';
 import { formatPrice, getFeaturedProducts } from '../lib/marketplace/featured-products';
 
@@ -21,13 +22,13 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
      <img src={logo.src} alt="Vetit Online">
       <nav class="main-nav" aria-label="Main navigation">
 
-  <a class="active" href="#marketplace">Marketplace</a>
+  <a class="active" href="/products">Marketplace</a>
 
-  <a href="#pet-care">Pet Care</a>
+  <a href="/shop/dogs">Pet Care</a>
 
-  <a href="#livestock">Livestock</a>
+  <a href="/shop/livestock">Livestock</a>
 
-  <a href="#home-services">Services</a>
+  <a href="/services">Services</a>
 
   <a href="#how-it-works">How it works</a>
 
@@ -69,7 +70,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
           </form>
 
           <div class="hero-cta">
-            <a class="button button-primary" href="#home-services">
+            <a class="button button-primary" href="/services">
               <span>Find trusted services</span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14M13 3l9 9-9 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -95,6 +96,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
             </div>
           </div>
         <aside class="hero-panel" aria-label="Marketplace summary">
+          <img class="hero-image" src={heroImage.src} alt="Vetit Online animal care marketplace" />
           <div class="floating-card panel-top">
             <div class="panel-header">
               <span>
@@ -273,7 +275,7 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
             </span>
             <span class="category-title">Animal products</span>
             <span class="category-copy">Quality feed, farm equipment, wellness essentials and everyday pet supplies.</span>
-            <a href="#featured-products" class="category-link">Shop products <span>→</span></a>
+            <a href="/shop/dogs" class="category-link">Shop pet products <span>→</span></a>
           </article>
         </div>
       </section>
@@ -480,10 +482,10 @@ const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.co
         <span class="footer-copy">Pet, livestock and animal-care services marketplace</span>
       </div>
       <nav class="footer-links">
-        <a href="#marketplace">Marketplace</a>
-        <a href="#home-services">Care services</a>
-        <a href="#livestock">Livestock</a>
-        <a href="#seller">Providers</a>
+        <a href="/products">Marketplace</a>
+        <a href="/services">Care services</a>
+        <a href="/shop/livestock">Livestock</a>
+        <a href="/login?mode=join">Providers</a>
         <a href="#insights">Insights</a>
       </nav>
       <span class="footer-social" role="img" aria-label="Vetit social link is not available yet" title="Vetit social link is not available yet">
