@@ -1,6 +1,6 @@
 ---
 import '../../../styles.css';
-import { formatPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
+import { formatProductPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
 import SiteHeader from '../../components/SiteHeader.astro';
 import ProductPlaceholder from '../../components/marketplace/ProductPlaceholder.astro';
 
@@ -28,11 +28,12 @@ const product = result.product;
           {product.brand && <p class="product-brand">{product.brand}</p>}
           <h1>{product.title}</h1>
           <p class="product-detail-seller">Sold by {product.sellerName}</p>
-          <p class="product-detail-price">{formatPrice(product.priceMinor, product.currencyCode)}</p>
+          <p class="product-detail-price">{formatProductPrice(product)}</p>
+          {product.priceIsFrom && <p class="catalog-data-note">Price shown is the lowest current price across active variants. Variant selection is not available yet.</p>}
           <p class="product-detail-availability">Availability: Active published marketplace listing. Stock quantity is not provided.</p>
           <div class="product-description"><h2>Product details</h2><p>{product.description.trim() || 'The seller has not provided a product description.'}</p></div>
           <div class="product-detail-actions" data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
-            <button class="button button-primary" type="button" data-add-to-cart>Add to cart</button>
+            <button class="button button-primary" type="button" data-add-to-cart disabled={product.priceIsFrom}>{product.priceIsFrom ? 'Variant options coming soon' : 'Add to cart'}</button>
             <a class="button button-secondary" href="/cart">View cart</a>
           </div>
           {!product.imageUrl && <p class="catalog-data-note">The seller has not published a public product image.</p>}

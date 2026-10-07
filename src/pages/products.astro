@@ -3,7 +3,7 @@ import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
 import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
-import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
+import { categoriesForAnimal, categoryAndDescendantIds, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
 import SiteHeader from '../components/SiteHeader.astro';
 import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 
@@ -20,7 +20,9 @@ const maxPrice = maxPriceRaw !== '' && Number.isFinite(Number(maxPriceRaw)) ? Nu
 const sort = params.get('sort') ?? 'newest';
 const selectedAnimal = findAnimal(taxonomy.animals, animal);
 const selectedCategory = findCategory(taxonomy.categories, category);
-const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, minPrice, maxPrice, sort });
+const categoryOptions = selectedAnimal ? categoriesForAnimal(taxonomy.categories, selectedAnimal) : taxonomy.categories;
+const selectedCategoryIds = selectedCategory ? categoryAndDescendantIds(taxonomy.categories, selectedCategory.id) : undefined;
+const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, categoryIds: selectedCategoryIds, minPrice, maxPrice, sort });
 const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
 const pageSize = 24;
 const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
@@ -75,7 +77,7 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           <label>Category
             <select name="category">
               <option value="">All categories</option>
-              {categoriesForAnimal(taxonomy.categories, selectedAnimal ?? { id: '', slug: '', label: '' }).map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
+              {categoryOptions.map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
             </select>
           </label>
           <label>Min price (₹)<input name="min" type="number" min="0" step="1" value={minPriceRaw} inputmode="numeric"></label>

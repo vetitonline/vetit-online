@@ -4,6 +4,7 @@ export type CatalogFilters = {
   query?: string;
   animal?: ProductAnimal;
   category?: ProductCategory;
+  categoryIds?: string[];
   minPrice?: number | null;
   maxPrice?: number | null;
   sort?: string;
@@ -18,7 +19,9 @@ export function filterMarketplaceProducts(products: FeaturedProduct[], filters: 
   const filtered = products.filter((product) => {
     if (query && !searchableText(product).toLocaleLowerCase().includes(query)) return false;
     if (filters.animal && !product.species.includes(filters.animal.slug)) return false;
-    if (filters.category && product.categoryId !== filters.category.id) return false;
+    if (filters.categoryIds?.length) {
+      if (!filters.categoryIds.includes(product.categoryId)) return false;
+    } else if (filters.category && product.categoryId !== filters.category.id) return false;
     if (filters.minPrice !== null && filters.minPrice !== undefined && (product.priceMinor === null || product.priceMinor < filters.minPrice)) return false;
     if (filters.maxPrice !== null && filters.maxPrice !== undefined && (product.priceMinor === null || product.priceMinor > filters.maxPrice)) return false;
     return true;

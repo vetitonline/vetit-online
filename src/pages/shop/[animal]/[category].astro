@@ -3,16 +3,15 @@ import '../../../../styles.css';
 import ProductCard from '../../../components/marketplace/ProductCard.astro';
 import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
 import { getMarketplaceProducts, getProductTaxonomy } from '../../../lib/marketplace/featured-products';
-import { categoriesForAnimal, findAnimal, findCategory } from '../../../lib/marketplace/product-taxonomy';
+import { categoriesForAnimal, categoryAndDescendantIds, findAnimal, findCategory } from '../../../lib/marketplace/product-taxonomy';
 import SiteHeader from '../../../components/SiteHeader.astro';
 
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
 const category = animal && findCategory(categoriesForAnimal(taxonomy.categories, animal), Astro.params.category ?? '');
 if (!animal || !category) return Astro.redirect('/shop', 302);
-const childIds = taxonomy.categories.filter((item) => item.parentId === category.id).map((item) => item.id);
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies, 1000, { speciesId: animal.id });
-const products = filterMarketplaceProducts(result.products, { animal }).filter((product) => product.categoryId === category.id || childIds.includes(product.categoryId));
+const products = filterMarketplaceProducts(result.products, { animal, categoryIds: categoryAndDescendantIds(taxonomy.categories, category.id) });
 const childCategories = taxonomy.categories.filter((item) => item.parentId === category.id);
 ---
 <!DOCTYPE html>

@@ -1,6 +1,8 @@
 export type SupabasePublicConfig = {
   url: string;
   publishableKey: string;
+  /** Optional public-read Storage bucket for listing_images object paths. */
+  listingImagesBucket: string | null;
 };
 
 export function getSupabasePublicConfig(): SupabasePublicConfig | null {
@@ -11,5 +13,9 @@ export function getSupabasePublicConfig(): SupabasePublicConfig | null {
     return null;
   }
 
-  return { url, publishableKey };
+  return {
+    url,
+    publishableKey,
+    listingImagesBucket: import.meta.env.PUBLIC_SUPABASE_LISTING_IMAGES_BUCKET?.trim() || null,
+  };
 }

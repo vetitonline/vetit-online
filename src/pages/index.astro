@@ -1,7 +1,7 @@
 ---
 import heroImage from '../../vetit-online.jpeg';
 import '../../styles.css';
-import { formatPrice, getFeaturedProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
+import { formatProductPrice, getFeaturedProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import SiteHeader from '../components/SiteHeader.astro';
 import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 import ProductPlaceholder from '../components/marketplace/ProductPlaceholder.astro';
@@ -16,7 +16,7 @@ const browseGroups = taxonomy.categories.filter((category) => !category.parentId
 const visualGroups = browseGroups.slice(0, 4).map((group) => ({
   ...group,
   image: /livestock|farm|cattle/i.test(`${group.title} ${group.slug}`) ? 'livestock' : 'essentials',
-  href: `/products?category=${encodeURIComponent(group.categories[0]?.slug ?? group.slug)}`,
+  href: `/products?category=${encodeURIComponent(group.slug)}`,
 }));
 ---
 <!DOCTYPE html>
@@ -207,16 +207,16 @@ const visualGroups = browseGroups.slice(0, 4).map((group) => ({
 
           {featuredProductsResult.state === 'available' && featuredProductsResult.products.map((product) => (
             <article class="product-card" data-listing-id={product.id} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
-              <a class="product-card-image-link" href={`/products/${encodeURIComponent(product.id)}`} aria-label={`View ${product.title}`}><div class="product-image-wrap">
+              <a class="product-card-image-link" href={`/products/${encodeURIComponent(product.slug || product.id)}`} aria-label={`View ${product.title}`}><div class="product-image-wrap">
                 {product.imageUrl ? <img src={product.imageUrl} alt={product.imageAlt ?? product.title} loading="lazy"> : <ProductPlaceholder title={product.title} category={product.category} />}
                 <span class="product-tag">{product.category}</span>
               </div></a>
               <div class="product-info">
                 <span class="product-seller">{product.sellerName}</span>
-                <h3><a class="product-title-link" href={`/products/${encodeURIComponent(product.id)}`}>{product.title}</a></h3>
+                <h3><a class="product-title-link" href={`/products/${encodeURIComponent(product.slug || product.id)}`}>{product.title}</a></h3>
                 <div class="product-bottom">
-                  <strong>{formatPrice(product.priceMinor, product.currencyCode)}</strong>
-                  <button type="button" data-add-to-cart aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>
+                  <strong>{formatProductPrice(product)}</strong>
+                  <button type="button" data-add-to-cart disabled={product.priceIsFrom} aria-label={product.priceIsFrom ? `Variant selection is not available for ${product.title}` : `Add ${product.title} to cart`} title={product.priceIsFrom ? 'Variant selection is not available yet' : `Add ${product.title} to cart`}>+</button>
                 </div>
               </div>
             </article>
