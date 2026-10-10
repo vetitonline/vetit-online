@@ -9,7 +9,7 @@
     "preview": "astro preview"
   },
   "devDependencies": {
-    "@astrojs/vercel": "^11.0.11",
+    "@astrojs/vercel": "^11.0.12",
     "astro": "^7.3.5"
   },
   "dependencies": {
