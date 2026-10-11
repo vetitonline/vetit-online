@@ -1,0 +1,38 @@
+---
+import '../../../../styles.css';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SellerProductForm from '../../../components/seller/SellerProductForm.astro';
+import { getSellerTaxonomy, hasSellerCatalogRole, loadSellerDashboard } from '../../../lib/seller/data';
+import { getSupabasePublicConfig } from '../../../lib/supabase/config';
+
+let dashboard: Awaited<ReturnType<typeof loadSellerDashboard>> | null = null;
+let taxonomy: Awaited<ReturnType<typeof getSellerTaxonomy>> | null = null;
+let unavailable = false;
+if (!getSupabasePublicConfig()) {
+  Astro.response.status = 503;
+  unavailable = true;
+} else {
+  try {
+    dashboard = await loadSellerDashboard(Astro.request, Astro.cookies);
+    if (!dashboard.user) return Astro.redirect('/login?mode=join&next=%2Fseller%2Fproducts%2Fnew', 302);
+    const catalogBusinesses = dashboard.businesses.filter(business => hasSellerCatalogRole(dashboard?.memberships.find(item => item.business_id === business.id)?.member_role));
+    if (!catalogBusinesses.length) return Astro.redirect('/seller/onboarding', 302);
+    taxonomy = await getSellerTaxonomy(Astro.request, Astro.cookies);
+  } catch {
+    Astro.response.status = 503;
+    unavailable = true;
+  }
+}
+const catalogBusinesses = dashboard?.businesses.filter(business => hasSellerCatalogRole(dashboard?.memberships.find(item => item.business_id === business.id)?.member_role)) ?? [];
+const requestedBusiness = Astro.url.searchParams.get('business');
+const selectedBusinessId = catalogBusinesses.some(item => item.id === requestedBusiness) ? requestedBusiness! : catalogBusinesses[0]?.id;
+---
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>New product draft | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page seller-onboarding">
+  {unavailable || taxonomy?.state === 'error' ? <section class="seller-panel"><h1>Product editor is unavailable</h1><p>Vetit could not load the protected seller catalogue. Please try again shortly.</p></section> : <section class="seller-panel seller-form-panel">
+    <span class="section-label dark-label"><span></span>Seller catalogue</span><h1>Create a product draft</h1><p>Choose a Vetit category and the pets or livestock this product is for. You can save now and submit for review later.</p>
+    {Astro.url.searchParams.has('error') && <p class="seller-feedback is-error" role="alert">The draft could not be saved. Review the details and try again.</p>}
+    {!taxonomy?.categories.length || !taxonomy.animals.length ? <p class="seller-empty">Vetit categories are not available yet. Please try again later.</p> : <SellerProductForm businesses={catalogBusinesses} selectedBusinessId={selectedBusinessId} categories={taxonomy.categories} animals={taxonomy.animals} />}
+  </section>}
+</main></div></body></html>

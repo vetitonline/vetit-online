@@ -1,0 +1,145 @@
+---
+import type { ProductAnimal, ProductCategory } from '../../lib/marketplace/featured-products';
+
+type VariantValue = { seller_sku: string; option_attributes: Record<string, string>; amountMinor?: number | null };
+type ExistingProduct = { id: string; business_id: string; title: string; description: string | null; category_id: string; moderation_status: string };
+interface Props {
+  businesses: Array<{ id: string; display_name: string }>;
+  categories: ProductCategory[];
+  animals: ProductAnimal[];
+  product?: ExistingProduct;
+  selectedBusinessId?: string;
+  selectedSpeciesIds?: string[];
+  baseAmountRupees?: number | null;
+  variants?: VariantValue[];
+  existingImageCount?: number;
+}
+const { businesses, categories, animals, product, selectedBusinessId, selectedSpeciesIds = [], baseAmountRupees, variants = [], existingImageCount = 0 } = Astro.props;
+const displayVariants: VariantValue[] = variants.length ? variants : [{ seller_sku: '', option_attributes: {}, amountMinor: null }];
+const remainingImageSlots = Math.max(0, 5 - existingImageCount);
+---
+<form class="seller-form" method="post" action="/api/seller/product" data-seller-product-form>
+  {product && <input type="hidden" name="listing_id" value={product.id} />}
+  <label>Seller profile
+    <select name="business_id" required>
+      {businesses.map((business) => <option value={business.id} selected={business.id === selectedBusinessId}>{business.display_name}</option>)}
+    </select>
+  </label>
+  <label>Product name<input name="title" required minlength="3" maxlength="160" value={product?.title ?? ''} autocomplete="off" /></label>
+  <label>Product details<textarea name="description" rows="5" maxlength="5000">{product?.description ?? ''}</textarea></label>
+  <label>Vetit product category
+    <select name="category_id" data-seller-category required>
+      <option value="">Choose a category</option>
+      {categories.map((category) => <option value={category.id} data-species={category.species.join(',')} selected={category.id === product?.category_id}>{category.label}</option>)}
+    </select>
+  </label>
+  <fieldset class="seller-species-picker"><legend>Pets &amp; livestock this product is for</legend>
+    <div class="seller-species-grid" data-seller-species>
+      {animals.map((animal) => <label data-species-choice={animal.id}><input type="checkbox" name="species_ids" value={animal.id} checked={selectedSpeciesIds.includes(animal.id)} /><span>{animal.label}</span></label>)}
+    </div>
+  </fieldset>
+  <p class="seller-form-hint">Vetit controls the category list. Choose only the pets or livestock supported by the selected category.</p>
+  <fieldset class="seller-pricing-fields"><legend>India pricing (INR)</legend>
+    <label>One price for the product<input name="base_amount_minor" type="number" min="1" max="99999999" step="1" inputmode="numeric" placeholder="e.g. 499" value={baseAmountRupees ?? ''} data-base-price /></label>
+    <p class="seller-form-hint">Enter rupees. Vetit stores INR prices in paise. Leave this blank when adding priced variants below.</p>
+    <div class="seller-variant-list" data-variant-list>
+      {displayVariants.map((variant, index) => <div class="seller-variant-row">
+        <label>Seller SKU<input name="variant_sku" maxlength="80" value={variant.seller_sku ?? ''} placeholder={`SKU-${index + 1}`} /></label>
+        <label>Option<input name="variant_name" maxlength="60" value={Object.keys(variant.option_attributes ?? {})[0] ?? ''} placeholder="Size" /></label>
+        <label>Value<input name="variant_value" maxlength="120" value={Object.values(variant.option_attributes ?? {})[0] ?? ''} placeholder="1 kg" /></label>
+        <label>Price (₹)<input name="variant_amount_minor" type="number" min="1" max="99999999" step="1" inputmode="numeric" value={variant.amountMinor ? variant.amountMinor / 100 : ''} /></label>
+      </div>)}
+    </div>
+    <button class="button button-secondary small-button" type="button" data-add-variant>Add another variant</button>
+  </fieldset>
+  <label>Product photos<input type="file" data-product-images data-max-images={remainingImageSlots} accept="image/jpeg,image/png,image/webp,image/avif" multiple disabled={remainingImageSlots === 0} /></label>
+  <p class="seller-form-hint">{remainingImageSlots === 0 ? 'This product already has the maximum of 5 photos.' : `Photos are optional. Add up to ${remainingImageSlots} JPEG, PNG, WebP or AVIF files, 5 MB each. They remain private until Vetit publishes the listing.`}</p>
+  <p class="seller-feedback" data-image-status role="status" aria-live="polite" hidden></p>
+  <button class="button button-primary" type="submit">{product ? 'Save draft changes' : 'Save product draft'}</button>
+  <p class="seller-form-hint">Saving creates or updates a draft. It will not appear in the marketplace until Vetit reviews and publishes it.</p>
+</form>
+
+<script>
+  import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+
+  const form = document.querySelector<HTMLFormElement>('[data-seller-product-form]');
+  const imageInput = form?.querySelector<HTMLInputElement>('[data-product-images]');
+  const maxImages = Number(imageInput?.dataset.maxImages ?? 5);
+  const imageStatus = form?.querySelector<HTMLElement>('[data-image-status]');
+  const submitButton = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.querySelector('input[name="species_ids"]:checked')) {
+      if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = 'Choose at least one pet or livestock type for this product.'; }
+      return;
+    }
+    const files = [...(imageInput?.files ?? [])];
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+    if (files.length > maxImages || files.some(file => !allowedTypes.has(file.type) || file.size > 5 * 1024 * 1024)) {
+      if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = `Choose up to ${maxImages} JPEG, PNG, WebP or AVIF photos under 5 MB each.`; }
+      return;
+    }
+    if (submitButton) submitButton.disabled = true;
+    if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.remove('is-error'); imageStatus.textContent = 'Saving your product draft…'; }
+    try {
+      const payload = new FormData(form);
+      const response = await fetch(form.action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('The product draft could not be saved.');
+      const { listingId } = await response.json();
+      let imageFailure = false;
+      if (files.length) {
+        if (imageStatus) imageStatus.textContent = 'Draft saved. Uploading your photos…';
+        const supabase = createSupabaseBrowserClient();
+        for (const [index, file] of files.entries()) {
+          const reservationResponse = await fetch('/api/seller/image-reservation', {
+            method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
+            body: JSON.stringify({ listing_id: listingId, content_type: file.type, alt_text: `${String(payload.get('title') ?? 'Product')} photo ${index + 1}` }),
+          });
+          if (!reservationResponse.ok) { imageFailure = true; continue; }
+          const { imageId, path } = await reservationResponse.json();
+          const { error: uploadError } = await supabase.storage.from('listing-images').upload(path, file, { contentType: file.type, upsert: false });
+          if (uploadError) {
+            imageFailure = true;
+            await supabase.storage.from('listing-images').remove([path]);
+            await fetch('/api/seller/image-reservation', {
+              method: 'DELETE', headers: { 'content-type': 'application/json', accept: 'application/json' },
+              body: JSON.stringify({ image_id: imageId }),
+            });
+          }
+        }
+      }
+      window.location.assign(`/seller/products/${listingId}?saved=1${imageFailure ? '&images=unavailable' : ''}`);
+    } catch (error) {
+      if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = error instanceof Error ? error.message : 'The draft could not be saved. Please try again.'; }
+      if (submitButton) submitButton.disabled = false;
+    }
+  });
+
+  const category = document.querySelector<HTMLSelectElement>('[data-seller-category]');
+  const speciesContainer = document.querySelector<HTMLElement>('[data-seller-species]');
+  if (category && speciesContainer) {
+    const syncSpecies = () => {
+      const allowed = new Set((category.selectedOptions[0]?.dataset.species || '').split(',').filter(Boolean));
+      for (const item of speciesContainer.querySelectorAll<HTMLElement>('[data-species-choice]')) {
+        const available = allowed.size === 0 || allowed.has(item.dataset.species ?? '');
+        item.hidden = !available;
+        const input = item.querySelector<HTMLInputElement>('input');
+        if (!available && input) input.checked = false;
+      }
+    };
+    category.addEventListener('change', syncSpecies);
+    syncSpecies();
+  }
+
+  const addVariant = document.querySelector<HTMLButtonElement>('[data-add-variant]');
+  const variantList = document.querySelector<HTMLElement>('[data-variant-list]');
+  addVariant?.addEventListener('click', () => {
+    const rows = variantList?.querySelectorAll<HTMLElement>('.seller-variant-row');
+    if (!variantList || !rows?.length || rows.length >= 20) return;
+    const row = rows[0].cloneNode(true);
+    if (!(row instanceof HTMLElement)) return;
+    for (const input of row.querySelectorAll<HTMLInputElement>('input')) input.value = '';
+    variantList.append(row);
+  });
+</script>

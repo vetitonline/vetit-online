@@ -6,11 +6,17 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check": "astro check",
+    "test:seller": "node --test --test-isolation=none tests/seller-validation.test.mjs tests/seller-test-support.test.mjs",
+    "test:seller:integration": "node --test --test-isolation=none tests/seller-backend.integration.test.mjs",
+    "test:seller:cleanup": "node tests/seller-test-cleanup.mjs"
   },
   "devDependencies": {
+    "@astrojs/check": "0.9.10",
     "@astrojs/vercel": "^11.0.11",
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "typescript": "6.0.3"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

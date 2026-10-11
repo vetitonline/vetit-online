@@ -1,0 +1,62 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { loadSellerDashboard } from '../../lib/seller/data';
+import { formatPrice } from '../../lib/marketplace/featured-products';
+import { getSupabasePublicConfig } from '../../lib/supabase/config';
+
+let dashboard = null;
+let loadFailed = false;
+if (!getSupabasePublicConfig()) {
+  Astro.response.status = 503;
+  loadFailed = true;
+} else {
+  try {
+    dashboard = await loadSellerDashboard(Astro.request, Astro.cookies);
+    if (!dashboard.user) return Astro.redirect('/login?mode=join&next=%2Fseller', 302);
+  } catch {
+    Astro.response.status = 503;
+    loadFailed = true;
+  }
+}
+const roleByBusiness = new Map((dashboard?.memberships ?? []).map(membership => [membership.business_id, membership.member_role]));
+const canCatalog = (businessId: string) => ['owner', 'admin', 'catalog_manager'].includes(roleByBusiness.get(businessId) ?? '');
+const query = Astro.url.searchParams;
+---
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seller dashboard | Vetit Online</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin></head>
+<body><div class="page-shell"><SiteHeader sellerMode />
+  <main class="seller-page">
+    {loadFailed ? <section class="seller-panel"><span class="section-label dark-label"><span></span>Seller space</span><h1>Seller dashboard is unavailable</h1><p>Vetit could not reach the authenticated seller data. Please try again shortly.</p><a class="button button-secondary" href="/">Return to marketplace</a></section> : <>
+      <section class="seller-heading"><div><span class="section-label dark-label"><span></span>Seller workspace</span><h1>Your Vetit business</h1><p>Manage your business details and product drafts. Vetit reviews products before marketplace publication.</p></div><a class="button button-primary" href="/seller/onboarding">Add seller profile</a></section>
+      {query.has('saved') && <p class="seller-feedback" role="status">Your changes were saved.</p>}
+      {query.has('error') && <p class="seller-feedback is-error" role="alert">We could not save that change. Review the form and try again.</p>}
+      {query.has('images') && <p class="seller-feedback is-error" role="status">Your product draft was saved, but one or more photos could not be uploaded.</p>}
+      {!dashboard?.businesses.length ? <section class="seller-panel seller-empty"><h2>Start selling on Vetit</h2><p>Create your seller profile to manage your own product catalogue. Your profile will begin as pending verification.</p><a class="button button-primary" href="/seller/onboarding">Create a seller profile</a></section> : <div class="seller-business-grid">
+        {dashboard.businesses.map((business) => <section class="seller-panel" aria-labelledby={`business-${business.id}`}>
+          <div class="seller-business-title"><div><span class="seller-status">{business.verification_status.replace('_', ' ')}</span><h2 id={`business-${business.id}`}>{business.display_name}</h2></div>{canCatalog(business.id) && <a href={`/seller/products/new?business=${business.id}`} class="button button-secondary small-button">Add product</a>}</div>
+          <p class="seller-muted">Seller profile · India · {business.business_type}</p>
+          <form class="seller-business-form" method="post" action="/api/seller/business">
+            <input type="hidden" name="business_id" value={business.id}>
+            <label>Business name<input name="display_name" maxlength="120" required value={business.display_name} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
+            <label>Legal name<input name="legal_name" maxlength="180" value={business.legal_name ?? ''} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
+            <p class="seller-muted">Business type · {business.business_type.replace('_', ' ')}</p>
+            <label>Public email<input type="email" name="public_email" value={business.public_email ?? ''} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
+            <label>Public phone<input name="public_phone" maxlength="32" value={business.public_phone ?? ''} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
+            <label>Website URL<input type="url" name="website_url" value={business.website_url ?? ''} placeholder="https://" disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
+            {['owner','admin'].includes(roleByBusiness.get(business.id) ?? '') && <button class="button button-secondary small-button" type="submit">Save business profile</button>}
+          </form>
+        </section>)}
+      </div>}
+
+      {dashboard?.businesses.length ? <section class="seller-panel seller-products"><div class="seller-section-heading"><div><span class="section-label dark-label"><span></span>Your catalogue</span><h2>Products</h2></div></div>
+        {dashboard.products.length ? <div class="seller-product-list">{dashboard.products.map((product) => <article class="seller-product-row">
+          <div><h3><a href={`/seller/products/${product.id}`}>{product.title}</a></h3><p>{product.businessName} · {product.categoryName}</p></div>
+          <div class="seller-product-state"><span class={`seller-status status-${product.moderation_status}`}>{product.moderation_status}</span><strong>{product.priceMinor === null ? 'Price not set' : formatPrice(product.priceMinor, product.currencyCode)}</strong></div>
+          {canCatalog(product.business_id) && <a class="seller-edit-link" href={`/seller/products/${product.id}`}>Manage <span aria-hidden="true">→</span></a>}
+        </article>)}</div> : <div class="seller-empty"><h3>No products yet</h3><p>Product drafts are visible only to your business until Vetit reviews and publishes them.</p><a href={`/seller/products/new?business=${dashboard.businesses[0].id}`}>Create your first product draft →</a></div>}
+      </section> : null}
+      <p class="seller-security-note">Vetit’s database policies check your signed-in account and active business membership on every seller operation. A seller profile never grants Vetit administrator access.</p>
+    </>}
+  </main>
+</div><script src="../../../script.js"></script></body></html>

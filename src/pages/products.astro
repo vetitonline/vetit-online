@@ -3,28 +3,31 @@ import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
 import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
 import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
-import { categoriesForAnimal, categoryAndDescendantIds, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
+import { parseCatalogParams } from '../lib/marketplace/catalog-contract.js';
+import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
 import SiteHeader from '../components/SiteHeader.astro';
 import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const params = Astro.url.searchParams;
-const query = params.get('q')?.trim() ?? '';
+const catalogParams = parseCatalogParams(params, taxonomy);
+const query = catalogParams.query;
 const animal = params.get('animal')?.trim() ?? '';
 const category = params.get('category')?.trim() ?? '';
 const minPriceRaw = params.get('min') ?? '';
 const maxPriceRaw = params.get('max') ?? '';
-const minPrice = minPriceRaw !== '' && Number.isFinite(Number(minPriceRaw)) ? Number(minPriceRaw) * 100 : null;
-const maxPrice = maxPriceRaw !== '' && Number.isFinite(Number(maxPriceRaw)) ? Number(maxPriceRaw) * 100 : null;
-const sort = params.get('sort') ?? 'newest';
-const selectedAnimal = findAnimal(taxonomy.animals, animal);
-const selectedCategory = findCategory(taxonomy.categories, category);
+const sort = catalogParams.sort;
+const selectedAnimal = catalogParams.animal ?? findAnimal(taxonomy.animals, animal);
+const selectedCategory = catalogParams.category ?? findCategory(taxonomy.categories, category);
 const categoryOptions = selectedAnimal ? categoriesForAnimal(taxonomy.categories, selectedAnimal) : taxonomy.categories;
-const selectedCategoryIds = selectedCategory ? categoryAndDescendantIds(taxonomy.categories, selectedCategory.id) : undefined;
-const filteredProducts = filterMarketplaceProducts(result.products, { query, animal: selectedAnimal, category: selectedCategory, categoryIds: selectedCategoryIds, minPrice, maxPrice, sort });
-const page = Math.max(1, Number.parseInt(params.get('page') ?? '1', 10) || 1);
-const pageSize = 24;
+const selectedCategoryIds = catalogParams.categoryIds;
+const filteredProducts = catalogParams.invalid ? [] : filterMarketplaceProducts(result.products, {
+  query, animal: selectedAnimal, category: selectedCategory, categoryIds: selectedCategoryIds,
+  minPrice: catalogParams.minPrice, maxPrice: catalogParams.maxPrice, sort,
+});
+const page = catalogParams.page;
+const pageSize = catalogParams.pageSize;
 const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
 const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
 ---
@@ -110,9 +113,9 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           )}
         </div>
         {pageCount > 1 && <nav class="catalog-pagination" aria-label="Product pages">
-          {page > 1 && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page - 1) })}`}>Previous</a>}
+          {page > 1 && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page - 1), pageSize: String(pageSize) })}`}>Previous</a>}
           <span>Page {page} of {pageCount}</span>
-          {page < pageCount && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page + 1) })}`}>Next</a>}
+          {page < pageCount && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page + 1), pageSize: String(pageSize) })}`}>Next</a>}
         </nav>}
         <p class="catalog-count">{filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'} shown{filteredProducts.length === 1000 ? ' (first 1,000 published listings)' : ''}</p>
         <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>

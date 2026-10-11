@@ -45,7 +45,8 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
         </form>
 
         <p class="auth-status" data-auth-status role="status" aria-live="polite"></p>
-        <p class="auth-footnote">A first-time sign-in creates your customer account. Provider verification and seller onboarding are separate steps.</p>
+        <p class="auth-footnote">A first-time sign-in creates your Vetit account. Seller profiles are created separately and remain pending until Vetit verifies the business.</p>
+        <p class="auth-footnote"><a href="/seller">Continue to the seller workspace</a></p>
         <a class="button button-ghost auth-home" href="/">Back to Vetit marketplace</a>
       </section>
     </main>
@@ -54,21 +55,23 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
     import { createSupabaseBrowserClient } from '../lib/supabase/browser';
     import { sendEmailOtp, sendIndianPhoneOtp, verifyEmailOtp, verifyIndianPhoneOtp } from '../lib/auth/otp';
 
-    const emailForm = document.querySelector('[data-email-form]');
-    const phoneForm = document.querySelector('[data-phone-form]');
-    const verifyForm = document.querySelector('[data-verify-form]');
-    const methods = document.querySelector('[data-auth-methods]');
-    const status = document.querySelector('[data-auth-status]');
-    const verifyPrompt = document.querySelector('[data-verify-prompt]');
-    let client;
-    let challenge;
+    const emailForm = document.querySelector<HTMLFormElement>('[data-email-form]')!;
+    const phoneForm = document.querySelector<HTMLFormElement>('[data-phone-form]')!;
+    const verifyForm = document.querySelector<HTMLFormElement>('[data-verify-form]')!;
+    const methods = document.querySelector<HTMLElement>('[data-auth-methods]')!;
+    const status = document.querySelector<HTMLElement>('[data-auth-status]')!;
+    const verifyPrompt = document.querySelector<HTMLElement>('[data-verify-prompt]')!;
+    const authCode = document.querySelector<HTMLInputElement>('#auth-code')!;
+    const authBack = document.querySelector<HTMLButtonElement>('[data-auth-back]')!;
+    let client: ReturnType<typeof createSupabaseBrowserClient> | undefined;
+    let challenge: { method: 'email' | 'phone', contact: string } | undefined;
 
     function safeNextPath() {
       const requested = new URLSearchParams(window.location.search).get('next');
       return requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
     }
 
-    function showStatus(message, isError = false) {
+    function showStatus(message: string, isError = false) {
       status.textContent = message;
       status.classList.toggle('is-error', isError);
     }
@@ -78,18 +81,18 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
       return client;
     }
 
-    function onError(error) {
+    function onError(error: unknown) {
       showStatus(error instanceof Error ? error.message : 'Authentication could not be completed. Please try again.', true);
     }
 
-    async function requestCode(event, method) {
+    async function requestCode(event: SubmitEvent, method: 'email' | 'phone') {
       event.preventDefault();
-      const form = event.currentTarget;
+      const form = event.currentTarget as HTMLFormElement;
       const value = new FormData(form).get(method === 'email' ? 'email' : 'phone');
       const contact = String(value || '').trim();
       if (!contact) return;
 
-      const button = form.querySelector('button[type="submit"]');
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
       button.disabled = true;
       showStatus('Sending your one-time code…');
       try {
@@ -102,7 +105,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
         methods.hidden = true;
         verifyPrompt.textContent = `Enter the code sent to ${contact}. If your email contains a sign-in link, you can use that instead.`;
         verifyForm.hidden = false;
-        document.querySelector('#auth-code').focus();
+        authCode.focus();
         showStatus('Check your email or SMS for the one-time code.');
       } catch (error) {
         onError(error);
@@ -114,10 +117,10 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
     emailForm.addEventListener('submit', (event) => requestCode(event, 'email'));
     phoneForm.addEventListener('submit', (event) => requestCode(event, 'phone'));
 
-    verifyForm.addEventListener('submit', async (event) => {
+    verifyForm.addEventListener('submit', async (event: SubmitEvent) => {
       event.preventDefault();
       if (!challenge) return;
-      const button = verifyForm.querySelector('button[type="submit"]');
+      const button = verifyForm.querySelector<HTMLButtonElement>('button[type="submit"]')!;
       button.disabled = true;
       showStatus('Verifying your code…');
       try {
@@ -136,7 +139,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
       }
     });
 
-    document.querySelector('[data-auth-back]').addEventListener('click', () => {
+    authBack.addEventListener('click', () => {
       challenge = undefined;
       verifyForm.hidden = true;
       methods.hidden = false;

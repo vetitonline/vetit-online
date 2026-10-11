@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Vetit Online",
+    "slug": "vetit-online",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "vetit",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#f6f2fc" } }
+  }
+}

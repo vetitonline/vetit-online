@@ -1,0 +1,74 @@
+---
+import '../../../../styles.css';
+import SiteHeader from '../../../components/SiteHeader.astro';
+import SellerProductForm from '../../../components/seller/SellerProductForm.astro';
+import { getSellerTaxonomy, hasSellerCatalogRole, loadSellerDashboard, sellerSignedImageUrl } from '../../../lib/seller/data';
+import { getSupabasePublicConfig } from '../../../lib/supabase/config';
+import { canEditSellerProduct } from '../../../lib/seller/permissions.js';
+
+let dashboard: Awaited<ReturnType<typeof loadSellerDashboard>> | null = null;
+let taxonomy: Awaited<ReturnType<typeof getSellerTaxonomy>> | null = null;
+let listing: Awaited<ReturnType<typeof loadSellerDashboard>>['products'][number] | null = null;
+let speciesIds: string[] = [];
+let baseRupees: number | null = null;
+let variants: Array<{ seller_sku: string; option_attributes: Record<string, string>; amountMinor: number | null }> = [];
+let images: Array<{ url: string | null; alt: string }> = [];
+let unavailable = false;
+if (!getSupabasePublicConfig()) {
+  Astro.response.status = 503;
+  unavailable = true;
+} else {
+  try {
+    dashboard = await loadSellerDashboard(Astro.request, Astro.cookies);
+    if (!dashboard.user) return Astro.redirect(`/login?mode=join&next=${encodeURIComponent(`/seller/products/${Astro.params.id}`)}`, 302);
+    listing = dashboard.products.find(product => product.id === Astro.params.id) ?? null;
+    if (!listing) Astro.response.status = 404;
+    else if (!hasSellerCatalogRole(listing.memberRole)) Astro.response.status = 403;
+    else {
+      taxonomy = await getSellerTaxonomy(Astro.request, Astro.cookies);
+      const [{ data: species, error: speciesError }, { data: prices, error: priceError }, { data: productVariants, error: variantsError }, { data: listingImages, error: imagesError }] = await Promise.all([
+        dashboard.supabase.from('listing_species').select('species_id').eq('listing_id', listing.id),
+        dashboard.supabase.from('listing_prices').select('product_variant_id, amount_minor, currency_code, status, valid_from, valid_to').eq('listing_id', listing.id).eq('market_code', 'IN').eq('status', 'active').order('valid_from', { ascending: false }),
+        dashboard.supabase.from('product_variants').select('id, seller_sku, option_attributes, active_status').eq('listing_id', listing.id).eq('active_status', true),
+        dashboard.supabase.from('listing_images').select('storage_object_path, alt_text, sort_order').eq('listing_id', listing.id).order('sort_order'),
+      ]);
+      if (speciesError || priceError || variantsError || imagesError) throw speciesError ?? priceError ?? variantsError ?? imagesError;
+      speciesIds = (species ?? []).map(item => item.species_id);
+      const activeVariants = productVariants ?? [];
+      const now = Date.now();
+      const currentPrices = (prices ?? []).filter(price => new Date(price.valid_from).getTime() <= now && (!price.valid_to || new Date(price.valid_to).getTime() > now));
+      baseRupees = currentPrices.find(price => price.product_variant_id === null)?.amount_minor ? Number(currentPrices.find(price => price.product_variant_id === null)!.amount_minor) / 100 : null;
+      variants = activeVariants.flatMap(variant => {
+        const price = currentPrices.find(item => item.product_variant_id === variant.id);
+        return price ? [{ seller_sku: variant.seller_sku, option_attributes: variant.option_attributes as Record<string, string>, amountMinor: Number(price.amount_minor) }] : [];
+      });
+      images = await Promise.all((listingImages ?? []).map(async image => ({
+        url: await sellerSignedImageUrl(dashboard!.supabase, image.storage_object_path),
+        alt: image.alt_text ?? listing!.title,
+      })));
+    }
+  } catch {
+    Astro.response.status = 503;
+    unavailable = true;
+  }
+}
+const canEdit = listing && canEditSellerProduct(listing.moderation_status) && hasSellerCatalogRole(listing.memberRole);
+const businesses = listing && dashboard ? dashboard.businesses.filter(business => business.id === listing!.business_id) : [];
+---
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{listing?.title ?? 'Product'} | Seller workspace | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page seller-onboarding">
+  {unavailable ? <section class="seller-panel"><h1>Product editor is unavailable</h1><p>Vetit could not load your product draft. Please try again shortly.</p></section>
+  : !listing ? <section class="seller-panel"><h1>Product not found</h1><p>This listing is not available in your seller workspace.</p><a href="/seller">Back to seller dashboard</a></section>
+  : Astro.response.status === 403 ? <section class="seller-panel"><h1>Catalog access required</h1><p>Your active business role cannot manage products.</p><a href="/seller">Back to seller dashboard</a></section>
+  : <section class="seller-panel seller-form-panel">
+    <span class="section-label dark-label"><span></span>Seller catalogue · {listing.moderation_status}</span><h1>{listing.moderation_status === 'draft' || listing.moderation_status === 'rejected' ? 'Edit product draft' : 'Product review status'}</h1>
+    {Astro.url.searchParams.has('saved') && <p class="seller-feedback" role="status">Product draft saved.</p>}
+    {Astro.url.searchParams.has('submitted') && <p class="seller-feedback" role="status">Your listing was sent to Vetit for review. It is not published yet.</p>}
+    {Astro.url.searchParams.has('images') && <p class="seller-feedback is-error" role="status">The draft was saved, but at least one image could not be uploaded.</p>}
+    {images.length > 0 && <div class="seller-image-grid">{images.map(image => image.url ? <figure><img src={image.url} alt={image.alt}><figcaption>Seller supplied photo</figcaption></figure> : null)}</div>}
+    {canEdit && taxonomy && taxonomy.state === 'available' ? <SellerProductForm product={listing} businesses={businesses} selectedBusinessId={listing.business_id} categories={taxonomy.categories} animals={taxonomy.animals} selectedSpeciesIds={speciesIds} baseAmountRupees={baseRupees} variants={variants} existingImageCount={images.length} /> : <div class="seller-review-status"><p>Current status: <strong>{listing.moderation_status}</strong></p><p>Products in review or published cannot be edited here. Contact Vetit support if a change is needed.</p></div>}
+    {canEdit && <form method="post" action="/api/seller/submit" class="seller-submit-form"><input type="hidden" name="business_id" value={listing.business_id}><input type="hidden" name="listing_id" value={listing.id}><button class="button button-secondary" type="submit">Submit for Vetit review</button><p class="seller-form-hint">Vetit will review the listing before any marketplace publication.</p></form>}
+    <a class="seller-back-link" href="/seller">← Back to seller dashboard</a>
+  </section>}
+</main></div><script src="../../../../script.js"></script></body></html>

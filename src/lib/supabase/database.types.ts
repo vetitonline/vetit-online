@@ -16,7 +16,7 @@ export type Database = {
     Tables: {
       addresses: {
         Row: {
-          address_line1: string
+          address_line1: string | null
           address_line2: string | null
           city: string
           country_code: string
@@ -35,7 +35,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          address_line1: string
+          address_line1?: string | null
           address_line2?: string | null
           city: string
           country_code?: string
@@ -54,7 +54,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          address_line1?: string
+          address_line1?: string | null
           address_line2?: string | null
           city?: string
           country_code?: string
@@ -424,11 +424,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "cart_items_product_variant_id_fkey"
-            columns: ["product_variant_id"]
+            foreignKeyName: "cart_items_variant_listing_fk"
+            columns: ["listing_id", "product_variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            referencedColumns: ["listing_id", "id"]
           },
         ]
       }
@@ -772,7 +772,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "inventory_movements_order_item_fk"
+            foreignKeyName: "inventory_movements_related_order_item_id_fkey"
             columns: ["related_order_item_id"]
             isOneToOne: false
             referencedRelation: "order_items"
@@ -917,11 +917,11 @@ export type Database = {
             referencedColumns: ["country_code"]
           },
           {
-            foreignKeyName: "listing_prices_variant_fk"
-            columns: ["product_variant_id"]
+            foreignKeyName: "listing_prices_variant_listing_fk"
+            columns: ["listing_id", "product_variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            referencedColumns: ["listing_id", "id"]
           },
         ]
       }
@@ -1121,11 +1121,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "order_items_product_variant_id_fkey"
-            columns: ["product_variant_id"]
+            foreignKeyName: "order_items_variant_listing_fk"
+            columns: ["listing_id", "product_variant_id"]
             isOneToOne: false
             referencedRelation: "product_variants"
-            referencedColumns: ["id"]
+            referencedColumns: ["listing_id", "id"]
           },
         ]
       }
@@ -1231,7 +1231,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "payments_booking_fk"
+            foreignKeyName: "payments_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
@@ -1671,9 +1671,65 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_seller_businesses: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          business_type: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          legal_name: string | null
+          public_email: string | null
+          public_phone: string | null
+          verification_status: string
+          website_url: string | null
+        }[]
+      }
+      create_seller_business: {
+        Args: {
+          p_business_type: string
+          p_display_name: string
+          p_legal_name: string | null
+          p_public_email: string | null
+          p_public_phone: string | null
+          p_website_url: string | null
+        }
+        Returns: string
+      }
+      cancel_seller_image_reservation: {
+        Args: { p_image_id: string }
+        Returns: string
+      }
       is_active_business_member: {
         Args: { target_business_id: string }
         Returns: boolean
+      }
+      save_seller_product: {
+        Args: {
+          p_base_amount_minor: number | null
+          p_business_id: string
+          p_category_id: string
+          p_description: string
+          p_listing_id: string | null
+          p_slug: string
+          p_species_ids: string[]
+          p_title: string
+          p_variants: Json
+        }
+        Returns: string
+      }
+      review_seller_business: {
+        Args: { p_business_id: string; p_decision: string }
+        Returns: string
+      }
+      review_seller_listing: {
+        Args: { p_decision: string; p_listing_id: string }
+        Returns: string
+      }
+      submit_seller_product: {
+        Args: { p_business_id: string; p_listing_id: string }
+        Returns: string
       }
     }
     Enums: {

@@ -1,0 +1,40 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { loadSellerDashboard } from '../../lib/seller/data';
+import { getSupabasePublicConfig } from '../../lib/supabase/config';
+
+let user: Awaited<ReturnType<typeof loadSellerDashboard>>['user'] = null;
+let unavailable = false;
+if (!getSupabasePublicConfig()) {
+  Astro.response.status = 503;
+  unavailable = true;
+} else {
+  try {
+    const dashboard = await loadSellerDashboard(Astro.request, Astro.cookies);
+    user = dashboard.user;
+    if (!user) return Astro.redirect('/login?mode=join&next=%2Fseller%2Fonboarding', 302);
+  } catch {
+    Astro.response.status = 503;
+    unavailable = true;
+  }
+}
+---
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seller onboarding | Vetit Online</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin></head>
+<body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page seller-onboarding">
+  {unavailable ? <section class="seller-panel"><h1>Seller onboarding is unavailable</h1><p>Vetit could not connect to the seller workspace. Please try again shortly.</p></section> : <section class="seller-panel seller-form-panel">
+    <span class="section-label dark-label"><span></span>Seller onboarding</span><h1>Create your seller profile</h1><p>Use your existing Vetit account. Your business begins as pending verification, and all products start as drafts.</p>
+    {Astro.url.searchParams.has('error') && <p class="seller-feedback is-error" role="alert">We could not create that seller profile. Check the details and try again.</p>}
+    <form class="seller-form" method="post" action="/api/seller/business">
+      <label>Business display name<input name="display_name" minlength="2" maxlength="120" required autocomplete="organization" placeholder="Your shop or farm name"></label>
+      <label>Legal name (optional)<input name="legal_name" maxlength="180" autocomplete="organization-title"></label>
+      <label>Business type<select name="business_type" required><option value="individual">Individual seller</option><option value="company">Company</option><option value="farm">Farm or livestock business</option><option value="other">Other seller</option></select></label>
+      <label>Public email (optional)<input name="public_email" type="email" maxlength="254" autocomplete="email"></label>
+      <label>Public phone (optional)<input name="public_phone" type="tel" maxlength="32" autocomplete="tel"></label>
+      <label>Website (optional)<input name="website_url" type="url" placeholder="https://example.in" autocomplete="url"></label>
+      <button class="button button-primary" type="submit">Create seller profile</button>
+    </form>
+    <p class="seller-security-note">Creating a profile does not verify your business or publish any listing. Vetit administrators manage verification and marketplace moderation.</p>
+  </section>}
+</main></div></body></html>

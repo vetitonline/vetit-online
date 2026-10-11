@@ -76,7 +76,7 @@ export async function getProductTaxonomy(request: Request, cookies: AstroCookies
   }
 }
 
-type ProductOptions = { marketCode?: string; categoryId?: string; speciesId?: string; productId?: string; productSlug?: string };
+type ProductOptions = { marketCode?: string; categoryId?: string; speciesId?: string; productId?: string; productSlug?: string; listingIds?: string[]; taxonomy?: ProductTaxonomyResult };
 
 /** Fetch active, moderation-approved product listings with current market pricing. */
 export async function getMarketplaceProducts(
@@ -86,6 +86,7 @@ export async function getMarketplaceProducts(
   options: ProductOptions = {},
 ): Promise<FeaturedProductsResult> {
   if (!getSupabasePublicConfig()) return { state: "unconfigured", products: [] };
+  if (options.listingIds?.length === 0) return { state: "available", products: [] };
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
     const marketCode = options.marketCode ?? DEFAULT_MARKET_CODE;
@@ -102,6 +103,7 @@ export async function getMarketplaceProducts(
     if (options.categoryId) query = query.eq("category_id", options.categoryId);
     if (options.productId) query = query.eq("id", options.productId);
     if (options.productSlug) query = query.eq("slug", options.productSlug);
+    if (options.listingIds) query = query.in("id", options.listingIds);
     const { data, error } = await query;
     if (error) throw error;
 
@@ -133,7 +135,7 @@ export async function getMarketplaceProducts(
     if (listingImagesError) throw listingImagesError;
     if (marketsError) throw marketsError;
     if (speciesError) throw speciesError;
-    const taxonomy = await getProductTaxonomy(request, cookies);
+    const taxonomy = options.taxonomy ?? await getProductTaxonomy(request, cookies);
     if (taxonomy.state === "error") throw new Error("Product taxonomy is unavailable.");
     const categoriesById = new Map((categories ?? []).map((category) => [category.id, category]));
     const businessesById = new Map((businesses ?? []).map((business) => [business.id, business]));
@@ -157,7 +159,7 @@ export async function getMarketplaceProducts(
     for (const image of listingImages ?? []) {
       if (!imageByListing.has(image.listing_id)) imageByListing.set(image.listing_id, image);
     }
-    const listingImagesBucket = getSupabasePublicConfig()?.listingImagesBucket;
+    const listingImagesBucket = getSupabasePublicConfig()?.listingImagesBucket || "listing-images";
     const marketListingIds = new Set((listingMarkets ?? []).map((listing) => listing.listing_id));
     const animalSlugs = new Map(taxonomy.animals.map((animal) => [animal.id, animal.slug]));
     const speciesByListing = new Map<string, string[]>();
@@ -165,7 +167,7 @@ export async function getMarketplaceProducts(
       const slug = animalSlugs.get(link.species_id);
       if (slug) speciesByListing.set(link.listing_id, [...(speciesByListing.get(link.listing_id) ?? []), slug]);
     }
-    const products = data.flatMap((row) => {
+    const mappedProducts = await Promise.all(data.map(async (row): Promise<FeaturedProduct | null> => {
       const category = categoriesById.get(row.category_id);
       const business = businessesById.get(row.business_id);
       const priceCandidates = priceCandidatesByListing.get(row.id);
@@ -174,7 +176,7 @@ export async function getMarketplaceProducts(
         : null;
       const price = priceCandidates?.base ?? variantPrice;
       const image = imageByListing.get(row.id);
-      if (!category || !business || !marketListingIds.has(row.id)) return [];
+      if (!category || !business || !marketListingIds.has(row.id)) return null;
       const categorySpecies = taxonomy.categories.find((item) => item.id === category.id)?.species ?? [];
       // Listing-specific species are authoritative. Category relationships describe
       // which species may use a category and must not broaden a specific listing.
@@ -182,9 +184,13 @@ export async function getMarketplaceProducts(
       const speciesSlugs = new Set(listingSpeciesSlugs?.length
         ? listingSpeciesSlugs
         : categorySpecies.flatMap((id) => animalSlugs.get(id) ?? []));
-      const imageUrl = image && listingImagesBucket
-        ? supabase.storage.from(listingImagesBucket).getPublicUrl(image.storage_object_path).data.publicUrl
-        : null;
+      let imageUrl: string | null = null;
+      if (image && listingImagesBucket) {
+        const { data: signedImage, error: signedImageError } = await supabase.storage.from(listingImagesBucket)
+          .createSignedUrl(image.storage_object_path, 3600);
+        if (signedImageError) console.warn("[marketplace] A product photo could not be signed.");
+        imageUrl = signedImage?.signedUrl ?? null;
+      }
       return {
         id: row.id,
         slug: row.slug,
@@ -202,7 +208,8 @@ export async function getMarketplaceProducts(
         imageUrl,
         imageAlt: imageUrl ? image?.alt_text ?? null : null,
       } satisfies FeaturedProduct;
-    });
+    }));
+    const products = mappedProducts.filter((product): product is FeaturedProduct => product !== null);
     if (options.speciesId) {
       const { data: animal, error: animalError } = await supabase.from("animal_species").select("slug").eq("id", options.speciesId).maybeSingle();
       if (animalError) throw animalError;
@@ -232,7 +239,7 @@ export function formatPrice(amountMinor: number | null, currencyCode = "INR"): s
     currency: currencyCode,
     maximumFractionDigits: currencyCode === "INR" ? 0 : 2,
   });
-  const digits = new Intl.NumberFormat("en", { style: "currency", currency: currencyCode }).resolvedOptions().maximumFractionDigits;
+  const digits = new Intl.NumberFormat("en", { style: "currency", currency: currencyCode }).resolvedOptions().maximumFractionDigits ?? 2;
   return formatter.format(amountMinor / 10 ** digits);
 }
 
