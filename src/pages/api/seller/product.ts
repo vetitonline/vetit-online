@@ -4,11 +4,16 @@ import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { getSellerTaxonomy } from '../../../lib/seller/data';
 import { sellerProductInput } from '../../../lib/seller/validation.js';
 import { canEditSellerProduct, canManageSellerBusiness } from '../../../lib/seller/permissions.js';
+import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!isSameOriginFormMutation(request)) return new Response('Cross-origin seller changes are not allowed.', { status: 403 });
   if (!getSupabasePublicConfig()) return new Response('Seller workspace is unavailable.', { status: 503 });
+  if (!['application/x-www-form-urlencoded', 'multipart/form-data'].includes(request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() ?? '')) {
+    return new Response('Seller product form is invalid.', { status: 415 });
+  }
   let listingPath = '/seller/products/new?error=save';
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
@@ -22,9 +27,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .select('profile_id, business_id, member_role, membership_status').eq('business_id', businessId).eq('profile_id', user.id)
       .eq('membership_status', 'active').maybeSingle();
     if (membershipError || !canManageSellerBusiness(membership, user.id, businessId)) return new Response('Seller catalogue access denied.', { status: 403 });
+    const { data: business, error: businessError } = await supabase.from('businesses').select('id, is_active, archived_at').eq('id', businessId).maybeSingle();
+    if (businessError || !business || !business.is_active || business.archived_at) return new Response('Seller profile is inactive.', { status: 403 });
     if (listingId) {
-      const { data: listing, error: listingError } = await supabase.from('listings').select('business_id, moderation_status').eq('id', listingId).maybeSingle();
-      if (listingError || !listing || listing.business_id !== businessId || !canEditSellerProduct(listing.moderation_status)) {
+      const { data: listing, error: listingError } = await supabase.from('listings').select('business_id, kind, archived_at, moderation_status').eq('id', listingId).maybeSingle();
+      if (listingError || !listing || listing.business_id !== businessId || listing.kind !== 'product' || listing.archived_at || !canEditSellerProduct(listing.moderation_status)) {
         return new Response('Only your draft or rejected product listings can be edited.', { status: 403 });
       }
     }

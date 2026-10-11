@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerImage } from '../../../lib/seller/permissions.js';
 import { sellerImageExtension } from '../../../lib/seller/validation.js';
+import { readJsonBody } from '../../../lib/api/json-body.js';
+import { isSameOriginMutation } from '../../../lib/api/request-security.js';
 
 const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -10,12 +12,17 @@ const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.
 });
 
 export const POST: APIRoute = async ({ request, cookies }) => {
+  if (!isSameOriginMutation(request, { allowBearer: false })) return json({ error: 'forbidden' }, 403);
   if (!getSupabasePublicConfig()) return json({ error: 'unavailable' }, 503);
+  if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return json({ error: 'invalid_image_request' }, 415);
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return json({ error: 'authentication_required' }, 401);
-    const input = await request.json();
+    const body = await readJsonBody(request, 4096);
+    if (!body.ok) return json({ error: 'invalid_image_request' }, body.status);
+    const input = body.value as Record<string, unknown> | null;
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return json({ error: 'invalid_image_request' }, 400);
     const listingId = String(input?.listing_id ?? '').trim();
     const extension = sellerImageExtension(input?.content_type);
     const altText = String(input?.alt_text ?? '').trim();
@@ -54,12 +61,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, cookies }) => {
+  if (!isSameOriginMutation(request, { allowBearer: false })) return json({ error: 'forbidden' }, 403);
   if (!getSupabasePublicConfig()) return json({ error: 'unavailable' }, 503);
+  if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return json({ error: 'invalid_image_request' }, 415);
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return json({ error: 'authentication_required' }, 401);
-    const input = await request.json();
+    const body = await readJsonBody(request, 4096);
+    if (!body.ok) return json({ error: 'invalid_image_request' }, body.status);
+    const input = body.value as Record<string, unknown> | null;
+    if (!input || typeof input !== 'object' || Array.isArray(input)) return json({ error: 'invalid_image_request' }, 400);
     const imageId = String(input?.image_id ?? '').trim();
     if (!/^[0-9a-f-]{36}$/i.test(imageId)) return json({ error: 'invalid_image_request' }, 400);
     const { error } = await supabase.rpc('cancel_seller_image_reservation', { p_image_id: imageId });

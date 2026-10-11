@@ -33,6 +33,9 @@ test('address validation rejects missing shipping fields, invalid country and ou
   assert.throws(() => normalizeAddressInput({ recipientName: 'A', city: 'Pune', countryCode: 'IN' }), BuyerInputError);
   assert.throws(() => normalizeAddressInput({ recipientName: 'A', addressLine1: 'Road', city: 'Pune', countryCode: 'India' }), BuyerInputError);
   assert.throws(() => normalizeAddressInput({ recipientName: 'A', addressLine1: 'Road', city: 'Pune', countryCode: 'IN', latitude: 92 }), BuyerInputError);
+  assert.throws(() => normalizeAddressInput({ recipientName: 'A', addressLine1: 'Road', city: 'Pune', countryCode: 'IN', postalCode: '12-34' }), BuyerInputError);
+  assert.equal(normalizeAddressInput({ recipientName: 'A', addressLine1: 'Road', city: 'Pune', countryCode: 'IN', postalCode: '411001' }).postalCode, '411001');
+  assert.equal(normalizeAddressInput({ recipientName: 'A', addressLine1: 'Road', city: 'London', countryCode: 'GB', postalCode: 'SW1A 1AA' }).postalCode, 'SW1A 1AA');
   assert.throws(() => normalizeAddressId('not-an-id'), BuyerInputError);
 });
 

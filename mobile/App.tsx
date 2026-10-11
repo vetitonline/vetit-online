@@ -6,10 +6,13 @@ import {
 import type { CatalogApiResponse, CatalogRequestFilters } from '../src/lib/marketplace/catalog-client';
 import { CatalogClientError, fetchCatalog } from '../src/lib/marketplace/catalog-client';
 import type { FeaturedProduct, ProductAnimal, ProductCategory } from '../src/lib/marketplace/featured-products';
+import type { ServiceSearchResponse } from '../src/lib/services/service-client';
+import { requestServices, ServiceClientError } from '../src/lib/services/service-client';
 
 type Tab = 'home' | 'shop' | 'services' | 'cart' | 'account';
 type CartLine = { product: FeaturedProduct; quantity: number };
 type LoadState = { loading: boolean; data: CatalogApiResponse | null; error: string | null };
+type ServiceLoadState = { loading: boolean; data: ServiceSearchResponse | null; error: string | null };
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_VETIT_API_BASE_URL?.trim() || 'https://vetit.online';
 const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
@@ -80,6 +83,11 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [browseReload, setBrowseReload] = useState(0);
   const [detailReload, setDetailReload] = useState(0);
+  const [serviceCity, setServiceCity] = useState('');
+  const [servicePostalCode, setServicePostalCode] = useState('');
+  const [serviceCategory, setServiceCategory] = useState('');
+  const [serviceReload, setServiceReload] = useState(0);
+  const [serviceResults, setServiceResults] = useState<ServiceLoadState>({ loading: false, data: null, error: null });
   const [cart, setCart] = useState<CartLine[]>([]);
   const [catalog, setCatalog] = useState<LoadState>({ loading: true, data: null, error: null });
   const [detail, setDetail] = useState<LoadState>({ loading: false, data: null, error: null });
@@ -128,6 +136,22 @@ export default function App() {
       });
     return () => controller.abort();
   }, [detailKey, detailReload]);
+
+  useEffect(() => {
+    if (tab !== 'services') return;
+    const controller = new AbortController();
+    setServiceResults((current) => ({ ...current, loading: true, error: null }));
+    void requestServices({
+      baseUrl: API_BASE_URL,
+      filters: { city: serviceCity, postalCode: servicePostalCode, category: serviceCategory },
+      signal: controller.signal,
+    }).then((data) => setServiceResults({ loading: false, data, error: null }))
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setServiceResults((current) => ({ ...current, loading: false, error: error instanceof ServiceClientError ? error.message : 'Service discovery is unavailable.' }));
+      });
+    return () => controller.abort();
+  }, [tab, serviceReload]);
 
   const products = catalog.data?.products ?? [];
   const selectedProduct = detail.data?.products[0] ?? null;
@@ -226,10 +250,33 @@ export default function App() {
     </>}
   </>;
 
-  const renderOther = () => tab === 'services' ? <View style={styles.infoCard}>
-    <Text style={styles.pageTitle}>Pet & vet services</Text><Text style={styles.description}>Service discovery is available on Vetit Online. Mobile service booking is not enabled.</Text>
-    <Pressable onPress={() => openWeb('/services')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Explore services online</Text></Pressable>
-  </View> : <View style={styles.infoCard}>
+  const renderServices = () => <>
+    <Text style={styles.pageTitle}>Pet & vet services</Text>
+    <Text style={styles.muted}>Find published, verified veterinary, grooming, boarding, daycare, training and livestock services by location.</Text>
+    <TextInput value={serviceCity} onChangeText={setServiceCity} placeholder="City" placeholderTextColor={colors.muted} style={styles.input} accessibilityLabel="Service city" />
+    <TextInput value={servicePostalCode} onChangeText={setServicePostalCode} placeholder="Postcode / PIN code" placeholderTextColor={colors.muted} style={styles.input} accessibilityLabel="Service postcode" autoCapitalize="characters" />
+    <Pressable onPress={() => setServiceReload((current) => current + 1)} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Search services</Text></Pressable>
+    <Text style={styles.filterLabel}>Service type</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
+      <Chip label="All services" selected={!serviceCategory} onPress={() => { setServiceCategory(''); setServiceReload((current) => current + 1); }} />
+      {(serviceResults.data?.categories ?? []).map((category) => <Chip key={category.slug} label={category.name} selected={serviceCategory === category.slug} onPress={() => { setServiceCategory(category.slug); setServiceReload((current) => current + 1); }} />)}
+    </ScrollView>
+    {serviceResults.loading && !serviceResults.data ? <LoadingState /> : serviceResults.error ? <ErrorState message={serviceResults.error} onRetry={() => setServiceReload((current) => current + 1)} /> : (serviceResults.data?.services.length ?? 0) === 0 ?
+      <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No matching services</Text><Text style={styles.muted}>Try another city or postcode. Only published provider listings are shown.</Text></View> :
+      <View style={styles.serviceList}>{serviceResults.data?.services.map((service) => <View key={service.id} style={styles.serviceCard}>
+        <Text style={styles.eyebrow}>{service.categoryName}</Text><Text style={styles.productTitle}>{service.title}</Text>
+        <Text style={styles.sellerName}>{service.providerName}</Text>
+        {!!service.description && <Text style={styles.muted}>{service.description}</Text>}
+        <Text style={styles.muted}>{[service.locality, service.city].filter(Boolean).join(', ') || 'Location details not listed'}</Text>
+        <Text style={styles.productPrice}>{service.pricePaise === null ? 'Price not listed' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: service.currencyCode, maximumFractionDigits: 2 }).format(service.pricePaise / 100)}</Text>
+        {service.distanceKm !== null && <Text style={styles.muted}>{service.distanceKm} km away</Text>}
+        <Pressable onPress={() => openWeb(`/providers/${encodeURIComponent(service.providerSlug || service.businessId)}`)} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>View provider</Text></Pressable>
+      </View>)}</View>}
+    <Text style={styles.note}>Appointment slots can be checked online. Booking remains unavailable until the verified booking database migration is enabled.</Text>
+    <Pressable onPress={() => openWeb('/services')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Use device location online</Text></Pressable>
+  </>;
+
+  const renderOther = () => <View style={styles.infoCard}>
     <Text style={styles.pageTitle}>Your Vetit account</Text><Text style={styles.description}>Sign-in uses Vetit’s existing secure OTP flow on the website. Seller and admin tools are not enabled in this mobile preview.</Text>
     <Pressable onPress={() => openWeb('/login')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Continue to sign in online</Text></Pressable>
   </View>;
@@ -239,7 +286,7 @@ export default function App() {
     <View style={styles.topBar}><Image source={require('../Vetit-online-transparent.png')} style={styles.topLogo} resizeMode="contain" /><Pressable onPress={() => setTab('cart')}><Text style={styles.cartBadge}>Cart · {cartCount}</Text></Pressable></View>
     <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
       {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
-        : tab === 'home' ? renderHome() : tab === 'shop' ? renderShop() : tab === 'cart' ? renderCart() : renderOther()}
+        : tab === 'home' ? renderHome() : tab === 'shop' ? renderShop() : tab === 'cart' ? renderCart() : tab === 'services' ? renderServices() : renderOther()}
     </ScrollView>
     <View style={styles.tabBar}>{tabs.map((item) => <Pressable key={item.id} onPress={() => { setDetailKey(null); setTab(item.id); }} style={styles.tabItem} accessibilityRole="button" accessibilityState={{ selected: tab === item.id }}>
       <Text style={[styles.tabLabel, tab === item.id && styles.tabLabelActive]}>{item.label}{item.id === 'cart' && cartCount > 0 ? ` (${cartCount})` : ''}</Text>
@@ -269,7 +316,7 @@ const styles = StyleSheet.create({
   horizontalChips: { gap: 8, paddingBottom: 7 }, chip: { borderWidth: 1, borderColor: colors.border, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: colors.white }, chipSelected: { backgroundColor: colors.violet, borderColor: colors.violet }, chipText: { color: colors.ink, fontSize: 13, fontWeight: '600' }, chipTextSelected: { color: colors.white },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, categoryCard: { width: '47%', minHeight: 118, padding: 13, borderRadius: 16, justifyContent: 'space-between' }, categoryViolet: { backgroundColor: colors.violetPale }, categoryOrange: { backgroundColor: colors.orangePale }, categoryMark: { color: colors.violet, fontSize: 21, fontWeight: '900' }, categoryTitle: { color: colors.ink, fontSize: 15, fontWeight: '800' }, categoryLink: { color: colors.violet, fontSize: 12, fontWeight: '700' },
   input: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: 12, minHeight: 46, paddingHorizontal: 13, color: colors.ink, marginTop: 12 }, filterLabel: { color: colors.ink, fontWeight: '700', marginTop: 13, marginBottom: 8 }, filterRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }, priceInput: { flex: 1, minWidth: 90 }, sortGroup: { flexDirection: 'row', gap: 5 },
-  productList: { gap: 13, marginTop: 12 }, productCard: { backgroundColor: colors.white, borderRadius: 17, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, paddingBottom: 12 }, productImage: { width: '100%', height: 190, backgroundColor: colors.violetPale }, imageFallback: { width: '100%', height: 150, backgroundColor: colors.violetPale, alignItems: 'center', justifyContent: 'center', padding: 16 }, detailImage: { width: '100%', height: 270, borderRadius: 18, backgroundColor: colors.violetPale, marginTop: 14 }, detailFallback: { height: 240, borderRadius: 18, marginTop: 14 }, fallbackCategory: { color: colors.violet, fontSize: 20, fontWeight: '800' }, fallbackCaption: { color: colors.muted, fontSize: 12, marginTop: 5 }, productInfo: { paddingHorizontal: 14, paddingTop: 12 }, sellerName: { color: colors.muted, fontSize: 12 }, productTitle: { color: colors.ink, fontSize: 16, fontWeight: '700', marginTop: 5 }, productPrice: { color: colors.violetDark, fontWeight: '800', fontSize: 17, marginTop: 7 }, addButton: { alignSelf: 'flex-start', marginHorizontal: 14, marginTop: 12, backgroundColor: colors.orange, paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10 }, addButtonText: { color: colors.white, fontWeight: '800', fontSize: 13 },
+  productList: { gap: 13, marginTop: 12 }, serviceList: { gap: 12, marginTop: 12 }, serviceCard: { backgroundColor: colors.white, borderRadius: 16, padding: 15, borderWidth: 1, borderColor: colors.border }, productCard: { backgroundColor: colors.white, borderRadius: 17, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, paddingBottom: 12 }, productImage: { width: '100%', height: 190, backgroundColor: colors.violetPale }, imageFallback: { width: '100%', height: 150, backgroundColor: colors.violetPale, alignItems: 'center', justifyContent: 'center', padding: 16 }, detailImage: { width: '100%', height: 270, borderRadius: 18, backgroundColor: colors.violetPale, marginTop: 14 }, detailFallback: { height: 240, borderRadius: 18, marginTop: 14 }, fallbackCategory: { color: colors.violet, fontSize: 20, fontWeight: '800' }, fallbackCaption: { color: colors.muted, fontSize: 12, marginTop: 5 }, productInfo: { paddingHorizontal: 14, paddingTop: 12 }, sellerName: { color: colors.muted, fontSize: 12 }, productTitle: { color: colors.ink, fontSize: 16, fontWeight: '700', marginTop: 5 }, productPrice: { color: colors.violetDark, fontWeight: '800', fontSize: 17, marginTop: 7 }, addButton: { alignSelf: 'flex-start', marginHorizontal: 14, marginTop: 12, backgroundColor: colors.orange, paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10 }, addButtonText: { color: colors.white, fontWeight: '800', fontSize: 13 },
   primaryButton: { backgroundColor: colors.violet, paddingHorizontal: 18, paddingVertical: 13, borderRadius: 12, alignSelf: 'flex-start', marginTop: 10 }, primaryButtonText: { color: colors.white, fontWeight: '800' }, secondaryButton: { alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 11, borderWidth: 1, borderColor: colors.violet, borderRadius: 11, marginTop: 13 }, secondaryButtonText: { color: colors.violet, fontWeight: '800' }, buttonDisabled: { opacity: 0.45 },
   stateBox: { alignItems: 'center', padding: 28, gap: 10, backgroundColor: colors.violetPale, borderRadius: 16, marginTop: 16 }, emptyBox: { alignItems: 'flex-start', padding: 20, gap: 8, backgroundColor: colors.violetPale, borderRadius: 16, marginTop: 16 }, emptyTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, muted: { color: colors.muted, fontSize: 13, lineHeight: 19 }, inlineLink: { color: colors.violet, fontWeight: '800', paddingVertical: 5 }, disabledLink: { color: '#aaa4af', fontWeight: '700' },
   pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, paddingVertical: 8 }, detailTitle: { color: colors.ink, fontSize: 27, fontWeight: '800', marginTop: 7 }, description: { color: colors.muted, fontSize: 15, lineHeight: 23, marginTop: 12 }, backLink: { color: colors.violet, fontWeight: '800', paddingVertical: 8 }, note: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 10 },

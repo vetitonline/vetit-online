@@ -4,25 +4,20 @@ import { BuyerInputError, normalizeCartItemId, normalizeCartItemInput } from '..
 import { readJsonBody } from '../../../lib/api/json-body.js';
 import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { callProposedCommerceRpc } from '../../../lib/supabase/proposed-commerce-rpc';
+import { isSameOriginMutation } from '../../../lib/api/request-security.js';
 
 export const prerender = false;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
 });
-const sameOrigin = (request: Request) => {
-  if (request.headers.has('authorization')) return true;
-  const origin = request.headers.get('origin');
-  if (!origin) return true;
-  try { return new URL(origin).origin === new URL(request.url).origin; } catch { return false; }
-};
 const rpcError = (error: { code?: string }) => error.code === '42501' ? 403 : error.code === '22023' ? 422 : 503;
 
 export const GET: APIRoute = async ({ request, cookies, url }) => {
   const auth = await authenticateApiRequest(request, cookies);
   if (auth.state === 'unavailable') return json({ state: 'unavailable' }, 503);
   if (auth.state !== 'authenticated') return json({ state: 'unauthorized' }, 401);
-  const marketCode = url.searchParams.get('market') ?? 'IN';
+  const marketCode = (url.searchParams.get('market') ?? 'IN').trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(marketCode)) return json({ state: 'invalid_request' }, 400);
   const { data: cart, error: cartError } = await auth.supabase.from('carts').select('id,market_code,currency_code,status')
     .eq('profile_id', auth.user.id).eq('market_code', marketCode).eq('status', 'active').maybeSingle();
@@ -35,7 +30,7 @@ export const GET: APIRoute = async ({ request, cookies, url }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!sameOrigin(request)) return json({ state: 'forbidden' }, 403);
+  if (!isSameOriginMutation(request)) return json({ state: 'forbidden' }, 403);
   if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return json({ state: 'invalid_request' }, 415);
   const auth = await authenticateApiRequest(request, cookies);
   if (auth.state === 'unavailable') return json({ state: 'unavailable' }, 503);
@@ -62,7 +57,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, cookies }) => {
-  if (!sameOrigin(request)) return json({ state: 'forbidden' }, 403);
+  if (!isSameOriginMutation(request)) return json({ state: 'forbidden' }, 403);
   if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return json({ state: 'invalid_request' }, 415);
   const auth = await authenticateApiRequest(request, cookies);
   if (auth.state === 'unavailable') return json({ state: 'unavailable' }, 503);

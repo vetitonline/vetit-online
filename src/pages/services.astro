@@ -3,11 +3,21 @@ import '../../styles.css';
 import SiteHeader from '../components/SiteHeader.astro';
 import { formatPrice } from '../lib/marketplace/featured-products';
 import { getPublicServices } from '../lib/marketplace/services';
+import type { ServiceSearch } from '../lib/marketplace/services';
+import { normalizeServiceSearch, ServiceSearchError } from '../lib/services/service-search.js';
 
-const category = Astro.url.searchParams.get('category')?.trim() ?? '';
-const city = Astro.url.searchParams.get('city')?.trim() ?? '';
-const locality = Astro.url.searchParams.get('locality')?.trim() ?? '';
-const result = await getPublicServices(Astro.request, Astro.cookies, { category, city, locality });
+let invalidSearch = false;
+let search: ServiceSearch;
+try { search = normalizeServiceSearch(Astro.url.searchParams); }
+catch (error) {
+  if (!(error instanceof ServiceSearchError)) throw error;
+  invalidSearch = true;
+  search = normalizeServiceSearch({});
+}
+const { category, city, locality, postalCode, countryCode } = search;
+const result = invalidSearch
+  ? { state: 'available' as const, services: [], categories: [], truncated: false }
+  : await getPublicServices(Astro.request, Astro.cookies, search);
 const selectedCategory = result.categories.find((item) => item.slug === category);
 ---
 <!DOCTYPE html>
@@ -34,7 +44,8 @@ const selectedCategory = result.categories.find((item) => item.slug === category
           </div>
         </div>
 
-        <form class="service-search" method="get" action="/services" role="search">
+        <form id="service-search-form" class="service-search" method="get" action="/services" role="search">
+          <input type="hidden" name="countryCode" value={countryCode}>
           <label>Service type
             <select name="category">
               <option value="">All service types</option>
@@ -49,11 +60,23 @@ const selectedCategory = result.categories.find((item) => item.slug === category
           <label>Area or locality
             <input name="locality" value={locality} maxlength="100" placeholder="e.g. Bandra">
           </label>
+          <label>Postcode / PIN code
+            <input name="postalCode" value={postalCode} maxlength="20" autocomplete="postal-code" placeholder="e.g. 400050">
+          </label>
           <button class="button button-primary" type="submit">Search services</button>
+          <button class="button button-secondary" id="service-use-location" type="button">Use my location</button>
+          <label>Distance
+            <select id="service-radius">
+              <option value="5">Within 5 km</option><option value="10">Within 10 km</option><option value="25" selected>Within 25 km</option><option value="50">Within 50 km</option><option value="100">Within 100 km</option>
+            </select>
+          </label>
+          <p class="service-location-status" id="service-location-status" role="status" aria-live="polite">Your device location is used only after you choose “Use my location”.</p>
         </form>
 
-        <div class="service-results" aria-live="polite">
-          {result.state === 'unconfigured' ? (
+        <div class="service-results" id="service-results" aria-live="polite">
+          {invalidSearch ? (
+            <p class="product-empty-state">Some service search filters are invalid. Please check the city, locality or postcode and try again.</p>
+          ) : result.state === 'unconfigured' ? (
             <p class="product-empty-state">Service discovery is not connected yet. No provider listings are being shown.</p>
           ) : result.state === 'error' ? (
             <p class="product-empty-state">Services could not be loaded right now. Please try again later.</p>
@@ -71,8 +94,9 @@ const selectedCategory = result.categories.find((item) => item.slug === category
                       <p class="service-location-line">{[service.locality, service.city].filter(Boolean).join(', ') || 'Location details not listed'}</p>
                     </div>
                     <div class="service-listing-meta">
-                      <strong>{formatPrice(service.pricePaise)}</strong>
+                      <strong>{formatPrice(service.pricePaise, service.currencyCode)}</strong>
                       {service.durationMinutes && <span>{service.durationMinutes} min</span>}
+                      {service.distanceKm !== null && <span>{service.distanceKm} km away</span>}
                       {service.providerSlug ? <a class="button button-secondary small-button" href={`/providers/${service.providerSlug}`}>View provider</a> : <span>Provider profile coming soon</span>}
                     </div>
                   </article>
@@ -87,10 +111,93 @@ const selectedCategory = result.categories.find((item) => item.slug === category
             </p>
           )}
         </div>
+        {result.truncated && <p class="service-booking-note">Showing a limited set of matching services. Add a city or postcode to narrow your search.</p>}
         <p class="service-booking-note">Appointment requests and live availability are not enabled yet. No booking is created from this page.</p>
       </section>
     </main>
   </div>
   <script src="../../script.js"></script>
+  <script>
+    const serviceForm = document.querySelector('#service-search-form');
+    const locationButton = document.querySelector('#service-use-location');
+    const locationStatus = document.querySelector('#service-location-status');
+    const results = document.querySelector('#service-results');
+    const escapeText = (value) => String(value ?? '');
+    const appendText = (parent, tag, className, value) => {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      element.textContent = escapeText(value);
+      parent.append(element);
+      return element;
+    };
+    locationButton?.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        locationStatus.textContent = 'Location is not available in this browser. Search by city or postcode instead.';
+        return;
+      }
+      locationButton.disabled = true;
+      locationStatus.textContent = 'Waiting for location permission…';
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const formValues = Object.fromEntries(new FormData(serviceForm).entries());
+        const payload = {
+          ...formValues,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          radiusKm: Number(document.querySelector('#service-radius').value),
+          limit: 60,
+        };
+        try {
+          const response = await fetch('/api/services', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', accept: 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json();
+          if (!response.ok || data.state !== 'available') throw new Error('Service search unavailable');
+          results.replaceChildren();
+          if (!data.services.length) {
+            appendText(results, 'p', 'product-empty-state', 'No verified providers were found within that distance. Try a wider radius or search by city.');
+          } else {
+            const heading = appendText(results, 'h2', '', `${data.services.length} nearby service${data.services.length === 1 ? '' : 's'}`);
+            heading.setAttribute('aria-live', 'polite');
+            const list = document.createElement('div');
+            list.className = 'service-listings';
+            for (const service of data.services) {
+              const card = document.createElement('article');
+              card.className = 'service-listing-card';
+              const details = document.createElement('div');
+              appendText(details, 'span', 'section-label dark-label', service.categoryName);
+              appendText(details, 'h2', '', service.title);
+              appendText(details, 'p', 'service-provider-name', service.providerName);
+              appendText(details, 'p', '', service.description);
+              appendText(details, 'p', 'service-location-line', [service.locality, service.city].filter(Boolean).join(', ') || 'Location details not listed');
+              const meta = document.createElement('div');
+              meta.className = 'service-listing-meta';
+              appendText(meta, 'strong', '', service.pricePaise == null ? 'Price not listed' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: service.currencyCode }).format(service.pricePaise / 100));
+              if (service.durationMinutes) appendText(meta, 'span', '', `${service.durationMinutes} min`);
+              appendText(meta, 'span', '', `${service.distanceKm} km away`);
+              const link = document.createElement('a');
+              link.className = 'button button-secondary small-button';
+              link.href = `/providers/${encodeURIComponent(service.providerSlug)}`;
+              link.textContent = 'View provider';
+              meta.append(link);
+              card.append(details, meta);
+              list.append(card);
+            }
+            results.append(list);
+          }
+          if (data.truncated) appendText(results, 'p', 'service-booking-note', 'Only a limited set of matching services was checked. Add a city or postcode to narrow the search.');
+          locationStatus.textContent = 'Showing verified services near your current location. Your coordinates were not added to the page URL.';
+        } catch {
+          locationStatus.textContent = 'Nearby services could not be loaded. Try searching by city or postcode.';
+        } finally {
+          locationButton.disabled = false;
+        }
+      }, () => {
+        locationStatus.textContent = 'Location permission was not granted. Search by city or postcode instead.';
+        locationButton.disabled = false;
+      }, { enableHighAccuracy: false, maximumAge: 300000, timeout: 10000 });
+    });
+  </script>
 </body>
 </html>

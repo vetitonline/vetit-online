@@ -4,18 +4,13 @@ import { BuyerInputError, normalizeAddressId, normalizeAddressInput } from '../.
 import { readJsonBody } from '../../../lib/api/json-body.js';
 import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { callProposedCommerceRpc } from '../../../lib/supabase/proposed-commerce-rpc';
+import { isSameOriginMutation } from '../../../lib/api/request-security.js';
 
 export const prerender = false;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' },
 });
-const sameOrigin = (request: Request) => {
-  if (request.headers.has('authorization')) return true;
-  const origin = request.headers.get('origin');
-  if (!origin) return true;
-  try { return new URL(origin).origin === new URL(request.url).origin; } catch { return false; }
-};
 const addressArgs = (address: BuyerAddressInput) => ({
   p_address_id: address.id,
   p_label: address.label,
@@ -46,7 +41,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!sameOrigin(request)) return json({ state: 'forbidden' }, 403);
+  if (!isSameOriginMutation(request)) return json({ state: 'forbidden' }, 403);
   if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !== 'application/json') return json({ state: 'invalid_request' }, 415);
   const auth = await authenticateApiRequest(request, cookies);
   if (auth.state === 'unavailable') return json({ state: 'unavailable' }, 503);
@@ -69,7 +64,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 };
 
 export const DELETE: APIRoute = async ({ request, cookies, url }) => {
-  if (!sameOrigin(request)) return json({ state: 'forbidden' }, 403);
+  if (!isSameOriginMutation(request)) return json({ state: 'forbidden' }, 403);
   let id: string;
   try {
     id = normalizeAddressId(url.searchParams.get('id'));

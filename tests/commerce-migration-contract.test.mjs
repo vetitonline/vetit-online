@@ -48,6 +48,8 @@ test('appointment SQL locks an available slot and derives service identity and p
   assert.match(bookingSql, /set\s+status\s*=\s*'booked'/i);
   assert.match(bookingSql, /insert\s+into\s+public\.bookings/i);
   assert.match(bookingSql, /bookings_one_per_appointment_slot_idx/i);
+  assert.match(bookingSql, /if\s+slot_row\.status\s*=\s*'booked'[\s\S]*?customer_profile_id\s*=\s*requester_id[\s\S]*?return\s+booking_id/i);
+  assert.match(bookingSql, /where\s+id\s*=\s*slot_row\.id\s+and\s+status\s*=\s*'available'/i);
 });
 
 test('generated database types describe applied constraints and keep unapplied RPCs separate', () => {

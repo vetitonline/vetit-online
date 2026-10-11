@@ -32,6 +32,8 @@ export function normalizeAddressInput(input) {
   if (latitude !== null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) throw new BuyerInputError('invalid_address', 'Latitude is invalid.');
   if (longitude !== null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180)) throw new BuyerInputError('invalid_address', 'Longitude is invalid.');
   if (input.isDefault != null && typeof input.isDefault !== 'boolean') throw new BuyerInputError('invalid_address', 'Default address setting is invalid.');
+  const postalCode = optionalText(input.postalCode, 'Postal code', 20);
+  if (countryCode === 'IN' && postalCode && !/^\d{6}$/.test(postalCode)) throw new BuyerInputError('invalid_address', 'Indian PIN codes must contain six digits.');
   return {
     id,
     label: optionalText(input.label, 'Label', 40),
@@ -42,7 +44,7 @@ export function normalizeAddressInput(input) {
     locality: optionalText(input.locality, 'Locality', 120),
     city: requiredText(input.city, 'City', 120),
     stateRegion: optionalText(input.stateRegion, 'State or region', 120),
-    postalCode: optionalText(input.postalCode, 'Postal code', 20),
+    postalCode,
     countryCode,
     latitude,
     longitude,
