@@ -1,3 +1,47 @@
+# Cost-controlled continuation — 21 October 2026
+
+Same laptop repository `C:\Users\DELL\vetit-online`, branch `codex/appointment-availability-contract-fixes`, HEAD `9ff89d435b18f0c4e521c6cdff8cfc2ec0b2b2f6`. All 21 saved checkpoint file hashes matched before this documentation update. Targeted `node scripts/check-data-api-grants.mjs` passed: all 17 source hashes match; 35 canonical public tables have explicit RLS sources, 31 have explicit client grants/policy sources and four inventory/payment tables remain deliberately closed. The new `fulfilment_events` table already has authenticated SELECT plus participant RLS. Service workers use explicitly granted scoped definer RPCs; no new direct service-role table grant is justified. No SQL/payload/manifest changes or database execution occurred.
+
+October 30 changes new public-table defaults, not existing grants. Excluded legacy migrations lack explicit table grants and must not be used for recreation. No blanket anon/authenticated/service grants were added. Full findings/access matrix: `docs/recovery-october30-readiness-2026-10-21.md`. New files are this report and the static checker; existing uncommitted package/evidence/ZIPs remain intact. No builds, suites, installs, commits, pushes, fetches, hosted access or deployments occurred; local work is not remotely persisted. Cached origin/main is stale d50bf63, not proof of live GitHub state.
+
+Next task: finalize missing CLI-generated release versions and isolated executor without changing validated SQL. CLI availability/install approval remains a blocker. Separate approval required before migration execution, hosted Test application, synthetic hosted acceptance, remote push or production/deployment actions. Historical patch-base provenance, real Test sessions/Storage/roles, physical devices/protected storage and general concurrency/idempotency remain pending. Existing passing local SQL, TypeScript, web/mobile and 81 offline-test evidence is reused; English-first source is unchanged.
+
+---
+
+# Local Test correction package — 20 October 2026
+
+Approved local-only preparation completed on `C:\Users\DELL\vetit-online`, branch `codex/appointment-availability-contract-fixes`, HEAD unchanged `9ff89d435b18f0c4e521c6cdff8cfc2ec0b2b2f6`. Existing preflight handover and all prior work were retained. No Git commit/staging, dependency changes, hosted access, push, migration application to hosted services or deployment occurred.
+
+Current candidate: `supabase/test-project/reconciled-candidate-20261020-r5/package-manifest.json` and its README. Thirteen ordered, hash-recorded SQL copies: original six corrections; rejected resubmission; admin queue; durable moderation; disabled automatic-approval support; service Storage boundaries; business-scoped reviewer authorization; new seller price-version timing correction. No historical SQL was changed. The first six proposal timestamps are not generated release versions; steps 1–6 and 12–13 remain unversioned. CLI is unavailable on PATH; the package is explicitly not an executable hosted release. Do not use the old six-file executor or default migration directory.
+
+New combined regression reproduced invalid and then duplicate price-version timestamps during repeated same-transaction edits. Final additive `seller-price-validity.proposal.sql` computes monotonic wall-clock price versions after the existing listing lock and aligns submission price checks. RPC signatures/grants remain unchanged. This does not provide seller optimistic concurrency or general retry idempotency.
+
+Fresh loopback synthetic PostgreSQL database `vetit_disposable_corrections_20261020_1902` retained at `127.0.0.1:55432`. All thirteen payloads compose: original 11 correction groups, combined schema/disabled-default assertions, three scoped reviewer groups and three new seller/price/Storage groups pass. Six TypeScript commerce argument contracts match; thirteen required app RPCs have expected ACLs/search paths. Intentional anonymous public appointment-policy read remains. All final payload bytes match those tested. Existing unchanged 81 offline tests, types, web build and Android/iOS exports were reused; no frontend or multilingual code changed.
+
+New files: package/README/manifest/prepared read-only data-preflight SQL; `scripts/prepare-reconciled-test-package.mjs`; `tests/prepare-reconciled-validation.mjs`; `tests/reconciled-package-acceptance.sql`; new price correction. Only this handover is a modified tracked file. Separate durable evidence `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\test-correction-package-20261020` contains fresh SQL/logs, catalog/contracts, checkpoint hashes and preserved superseded attempts. Initial failed/incomplete correction evidence is retained; only r5 is current. Existing synthetic databases and archives were not deleted/reset.
+
+Next: finalize missing CLI-generated versions and review exact timing/SQL/ordered executor locally. Before any hosted application, separately approve fresh aggregate data preflights, backup/recovery, exact migration package and execution. Real Test Auth/RLS/Storage HTTP/session acceptance, reviewer/policy provisioning, physical devices/protected storage, general concurrency/idempotency and original historical patch-base provenance remain unresolved. No scheduler/notification/payment activation or production/Vercel changes authorized. Verify the same laptop/repository/branch/status before resuming from iPhone.
+
+---
+
+# Supabase Test read-only preflight — 20 October 2026
+
+Verified laptop repository `C:\Users\DELL\vetit-online`, branch `codex/appointment-availability-contract-fixes`, HEAD `9ff89d435b18f0c4e521c6cdff8cfc2ec0b2b2f6`. Tracked tree was clean at entry; all five untracked report/archive/temp paths remain preserved. This section supersedes the earlier request below for a read-only preflight: that preflight is now complete, with no hosted correction authorized or performed.
+
+Exact Test project `apfyfmokcynqiaxqvvxx`, **Vetit Online Test**, API origin `https://apfyfmokcynqiaxqvvxx.supabase.co`, eu-west-1, ACTIVE_HEALTHY, PostgreSQL 17.11.0.003. Its four ledger entries match the source manifest. All ten manifest source hashes match. The 34 public table names match the foundation and all have RLS enabled. All 12 public function bodies match the latest foundation sources after whitespace normalization. Captured column metadata, 192 constraints, eight triggers, 43 public policies, seven Storage policies and privileges are catalog evidence, not live-session or full schema-equivalence acceptance.
+
+Confirmed blockers: hosted `save_seller_product` still references nonexistent `jsonb_object_length`; booking SELECT still allows any active provider-business member rather than owner/admin only. The six additive commerce/appointment corrections remain absent from the ledger and their RPCs are absent. Recovered 19 October moderation/service/admin RPCs and appointment/moderation tables are absent. Current seller submission calls missing `moderation_open`, so the old hosted submit RPC does not establish readiness. Hosted catalog guard remains the older foundation, not the rejected-resubmission/durable moderation corrections. These are unapplied recovered sources, not evidence of lost local code.
+
+Storage is the expected private `listing-images` bucket, 5 MiB, JPEG/PNG/WebP/AVIF, with canonical product image paths, scoped uploads/deletes and restrictive overwrite denial. Later service-image boundaries are absent. Business public-column SELECT and legal-name privacy grants are correct in the catalog. Four advisor INFO notices correspond to closed inventory/payment tables; eight WARN notices concern intentionally authenticated SECURITY DEFINER RPCs and still need role/session acceptance. No blanket grants or policy fixes were made.
+
+Full findings and evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\supabase-test-preflight-20261020-9ff89d4\preflight-report.md`, alongside `catalog-evidence.json`, `column-grants.json`, `source-comparison.json` and reproducible `compare.py`. Earlier evidence remains separate. Only this documentation is changed in the tracked tree; no new Git checkpoint is created.
+
+Pending: real Test hosted-session/role/Storage acceptance, device execution, protected native storage, backend concurrency/idempotency, and original Changes-view comparison-base provenance. Prior unchanged 81 offline tests, type checks, web build and Android/iOS JS exports are reused. No test accounts, writes, migrations, dependency changes, production access, push, merge or deployment occurred.
+
+Next approval: a bounded **local-only** release preparation/SQL-validation batch reconciling the six additive corrections with later durable moderation, seller resubmission, service Storage and business-scoped authorization candidates. Present its exact ordered SQL and acceptance plan for a separate approval before hosted application. Do not apply the default migration directory or six-source bundle blindly. Scheduler/notification/payment automation remains disabled/unapproved. English-default multilingual sources are unchanged.
+
+---
+
 # Approved dependency/history integration — 20 October 2026
 
 This section supersedes earlier statements below that dependency synchronization is pending.
