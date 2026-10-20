@@ -1,3 +1,27 @@
+# Approved dependency/history integration — 20 October 2026
+
+This section supersedes earlier statements below that dependency synchronization is pending.
+
+Repository `C:\Users\DELL\vetit-online`, host `DESKTOP-UN1B38N`, branch `codex/appointment-availability-contract-fixes`. Approved integration starts at `b0e56a3d823306fcdb7959fa5ace90b0eb9c89b9` and merges exactly `00a064b2dae94a3d1b06222db9d3cddedac89edb`. Common ancestor was verified as `d50bf63fd2b2e87d8e6ff991d6aeaa24cbc38cf5`. No branch switch or merge into local main occurred. The final chat and integration receipt identify the resulting two-parent local merge commit; this file cannot embed its own commit hash.
+
+Only root `package.json`, root `pnpm-lock.yaml` and this handover are included in the checkpoint. Manifest changes are exactly Astro `^7.3.5` to `^7.3.7`, Vercel adapter `^11.0.11` to `^11.0.12`, Supabase JS `^2.117.2` to `^2.117.3`. All local scripts, Astro-check and root TypeScript 6.0.3 are retained. Supabase SSR stays 0.12.7 with its peer binding updated to JS 2.117.3. Both mobile dependency files remain byte-identical; no native dependency install occurred.
+
+The two expected merge conflicts were limited to the root manifest/lockfile. The manifest was reconstructed from the preserved local copy with only three version changes. pnpm 11.25.0 performed its own lockfile conflict reconciliation; no manual lockfile union or remote-file overwrite was used. Offline metadata checking stopped because metadata was absent; approved registry metadata retrieval then passed pnpm supply-chain checks. The combined graph was reviewed (14 added/16 removed package-version keys, no changes to metadata for retained keys). Frozen-lockfile installation passed, using one cached package and fourteen downloaded packages; lifecycle scripts were disabled. These policy checks do not certify the application or eliminate all dependency risk.
+
+Validation against the reconciled dependencies: **81 offline tests passed, zero failures/skips** across seller catalogue/native/image/draft, secure auth/session, submission boundaries, appointment lifecycle, buyer history and locale fallback. Mobile TypeScript passed. Focused TypeScript passed for moderation-session and seller catalogue/image/product/business APIs. Web compilation passed (23.48 seconds). Android and iOS offline JavaScript exports passed, one worker and `--no-bytecode`. Native binaries/Hermes, device execution, protected storage, real hosted sessions and backend concurrency/idempotency remain unverified. No missing application implementation was recreated or silently substituted.
+
+Before integration, 336 tracked files and five untracked paths were hashed, all branch history was saved in a verified Git bundle, and manifests/mobile locks/untracked reports were separately copied. Comparison after install showed only the approved two dependency files changed; all existing feature sources, mobile locks, archives and untracked reports stayed unchanged. The historical cloud variants and original archive comparisons remain preserved; this merge integrates dependency history, not every archived alternative. The original Changes-view patch/base provenance remains unresolved.
+
+Evidence directory: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\dependency-integration-20261020-b0e56a3`. It contains `before-all-branches.bundle`, `before-source-hashes.json`, exact `before/` copies, `combined-lock-review.json`, `affected-tests.tap`, new `android/` and `ios/` outputs and `integration-readiness.json`. Earlier evidence was not replaced.
+
+The two untracked audit documents, supplied ZIPs and CLI temporary artifact remain excluded from the merge checkpoint. No push, hosted account creation, database access/modification, migration, production configuration change or deployment occurred. Local generated build output is not a deployment. Local main and the existing backup/service branches remain unchanged.
+
+Next approval required: a narrowly scoped **read-only** preflight of the named Supabase Test project's identity, migration ledger, selected schema/RPC/RLS and Storage configuration to compare with the candidate release. This does not authorize creating accounts, applying SQL or changing policies. Only after that comparison and separate approvals should real synthetic-account/device acceptance or migration application proceed. Do not apply historical SQL or the default migration directory blindly.
+
+On return from iPhone, verify access to this same laptop, path, branch, new HEAD and status before editing. If unavailable, pause; do not use a cloud checkout or guessed D-drive repository. Keep English default and regional-language extension points unchanged.
+
+---
+
 # Vetit Online laptop handover — 20 October 2026
 
 ## Latest continuation — native seller refresh safety
