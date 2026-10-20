@@ -18,7 +18,7 @@ export function mountNativeComponent(filename,exportName,props,extraModules={}){
  };
  const native=Object.fromEntries(['View','Text','TextInput','Pressable','ActivityIndicator'].map(name=>[name,name]));
  const lifecycle=new Set();native.AppState={addEventListener:(_event,callback)=>{lifecycle.add(callback);return{remove:()=>lifecycle.delete(callback)};}};
- const modules={react:{__esModule:true,default:react,...react},'react-native':native,'../../src/lib/moderation/workflow.js':workflow,'../../src/lib/moderation/session-workspace.js':workspace,'../../src/lib/marketplace/workspace-copy.js':buyerCopy,'./provider-appointment-actions.js':providerAppointmentActions,...extraModules};
+ const modules={react:{__esModule:true,default:react,...react},'react-native':native,'../../src/lib/moderation/workflow.js':workflow,'../../src/lib/moderation/session-workspace.js':workspace,'../../src/lib/marketplace/workspace-copy.js':buyerCopy,'./provider-appointment-actions.js':providerAppointmentActions,'./NativeProviderSchedule':{NativeProviderSchedule:'NativeProviderSchedule'},...extraModules};
  const source=fs.readFileSync(new URL('../mobile/src/'+filename,import.meta.url),'utf8');
  const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
  const exports={};new Function('require','exports',compiled)(name=>{if(!(name in modules))throw Error('Unexpected component dependency');return modules[name];},exports);

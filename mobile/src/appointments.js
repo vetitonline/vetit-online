@@ -1,9 +1,9 @@
 import {resolveMobileApiBase} from '../../src/lib/supabase/test-endpoints.js';
-import {appointmentId,AppointmentLifecycleError} from '../../src/lib/services/appointment-lifecycle.js';
+import {appointmentId,AppointmentLifecycleError,normalizeAppointmentPolicy,normalizeAppointmentResourceKey} from '../../src/lib/services/appointment-lifecycle.js';
 import {getAppointmentDashboard} from '../../src/lib/services/appointment-lifecycle-client.js';
 import {resolveIndianLocale} from '../../src/lib/i18n/locales.js';
 
-const empty=phase=>({phase,businessId:null,businesses:[],bookings:[],services:[],slots:[],truncated:false});
+const empty=phase=>({phase,businessId:null,businesses:[],bookings:[],services:[],slots:[],policies:[],truncated:false});
 const rows=(value,max)=>{if(!Array.isArray(value)||value.length>max||value.some(x=>!x||typeof x!=='object'||Array.isArray(x)))throw new AppointmentLifecycleError('Invalid appointment response.',503);return value;};
 const label=value=>{if(typeof value!=='string'||!value.trim()||value.length>256)throw new AppointmentLifecycleError('Invalid appointment label.',503);return value;};
 const instant=value=>{if(typeof value!=='string'||!/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(value)||!Number.isFinite(Date.parse(value)))throw new AppointmentLifecycleError('Invalid appointment time.',503);return value;};
@@ -17,8 +17,9 @@ function project(data,businessId){
   return{id:appointmentId(x.id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),revision:x.lifecycle_revision,...interval(x.requested_start,x.requested_end),priceMinor:x.price_minor,currency:x.currency_code};
  });
  const services=rows(data.services,200).map(x=>({id:appointmentId(x.id),title:label(x.title)}));
- const slots=rows(data.slots,200).map(x=>({id:appointmentId(x.id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),...interval(x.starts_at,x.ends_at)}));
- return{phase:bookings.length||slots.length?'ready':'empty',businessId,businesses,bookings,services:businessId?services:[],slots:businessId?slots:[],truncated:data.truncated};
+ const slots=rows(data.slots,200).map(x=>({id:appointmentId(x.id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),resourceKey:normalizeAppointmentResourceKey(x.lifecycle_resource_key??'default'),...interval(x.starts_at,x.ends_at)}));
+ const policies=rows(data.policies,200).map(x=>({serviceId:appointmentId(x.service_listing_id),policy:normalizeAppointmentPolicy(x.policy)}));
+ return{phase:bookings.length||slots.length?'ready':'empty',businessId,businesses,bookings,services:businessId?services:[],slots:businessId?slots:[],policies:businessId?policies:[],truncated:data.truncated};
 }
 
 /** Read-only native view. Identity is reverified; no tokens/private raw rows enter snapshots. */

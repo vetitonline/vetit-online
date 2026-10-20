@@ -1,0 +1,11 @@
+# Provider schedule milestone — 20 October 2026
+
+Local checkpoint of prior development: `3b2368905db2579905b60f45d9d2c2a18bcd3f14`. Archives, secrets and recovery evidence excluded.
+
+Native provider schedule now supports future slot creation (explicit timezone, resource key, within 30 days), blocking/reopening available/blocked future slots, and all cancellation/reschedule policy fields. Shared web/API validators remain authoritative. Each write requires a review/confirmation and fresh readback. Unknown outcomes cannot be retried in the active controller. Policy readback compares all normalized fields; slot readback compares service/resource/instants or exact slot status. Controls share a UI write lock with booking actions and remain mounted during refresh. Complete provider views and returned services/memberships are required.
+
+Checks: 20 appointment/read/action/schedule tests passed, then the added native schedule TSX handler test passed (21 total); mobile TypeScript passed. Android JavaScript export passed outside sandbox after sandbox Metro stalled; output is separate under `.codex/visualizations/2026/10/20/01a158a4-4a1d-7bb2-9119-365e6b275fa7/provider-schedule-android-check-20261020`. No hosted requests or SQL execution.
+
+Limitations: existing policy/slot server commands have no expected revision or idempotency key. Readback establishes current matching state, not exclusive authorship; concurrent managers can supersede it. There is no persistent native mutation journal, so app termination remains a hosted/device acceptance concern. Dashboard slots are capped at 200; no absence-based recovery is claimed. English default is retained; reviewed Hindi and all official Indian-language locale fallback remain extensible, with new field copy currently English. Device execution, protected storage, native binaries/Hermes and real hosted-session acceptance remain outstanding. This milestone does not deploy the proposed appointment runtime.
+
+Next: native seller draft catalogue creation/editing and moderation submission using existing seller validation/RPCs; retain web image/onboarding tools. No production deployment, database change, environment change or push is authorized.
