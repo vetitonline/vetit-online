@@ -13,11 +13,11 @@ export function createConfirmedWrite({session,validate,send,refresh,matches,rend
  function confirm(){
   if(pending)return pending;if(disposed||state.phase!=='confirm'||!operation)return Promise.resolve();
   const currentOperation=operation;try{validate(currentOperation.command);}catch{operation=null;emit('invalid');return Promise.resolve();}
-  const generation=++epoch,controller=new AbortController();abort=controller;let sent=false,timer,accepted=false;
+  const generation=++epoch,controller=new AbortController();abort=controller;let sent=false,completed=false,timer,accepted=false;
   const current=()=>!disposed&&generation===epoch;
   emit('saving');
-  const work=async()=>{const auth=await session.getSession();if(!current()||controller.signal.aborted||auth.userId!==owner||auth.userId!==currentOperation.owner)throw Object.assign(Error('Session changed'),{status:401});sent=true;await send(currentOperation.command,auth.accessToken,controller.signal);const latest=await session.getSession();if(!current()||latest.userId!==owner)throw Error('Session changed');};
-  pending=Promise.race([work(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Unconfirmed write')),timeoutMs);})]).then(()=>{if(current()){accepted=true;emit('uncertain');}}).catch(error=>{if(!current())return;if(!sent||[400,401,403,409,415,422].includes(error?.status)){operation=null;emit('rejected');}else emit('uncertain');}).finally(async()=>{clearTimeout(timer);controller.abort();if(current()){pending=null;if(accepted)await reconcile();}});
+  const work=async()=>{const auth=await session.getSession();if(!current()||controller.signal.aborted||auth.userId!==owner||auth.userId!==currentOperation.owner)throw Object.assign(Error('Session changed'),{status:401});sent=true;await send(currentOperation.command,auth.accessToken,controller.signal);completed=true;const latest=await session.getSession();if(!current()||latest.userId!==owner)throw Error('Session changed');};
+  pending=Promise.race([work(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Unconfirmed write')),timeoutMs);})]).then(()=>{if(current()){accepted=true;emit('uncertain');}}).catch(error=>{if(!current())return;if(!sent||(!completed&&[400,401,403,409,415,422].includes(error?.status))){operation=null;emit('rejected');}else emit('uncertain');}).finally(async()=>{clearTimeout(timer);controller.abort();if(current()){pending=null;if(accepted)await reconcile();}});
   return pending;
  }
  return{prepare,confirm,reconcile,cancel:()=>{if(state.phase==='confirm'){operation=null;emit('idle');}},clear,snapshot:()=>state,dispose:()=>{disposed=true;clear();unsubscribe();}};

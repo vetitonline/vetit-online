@@ -6,7 +6,7 @@ import ts from 'typescript';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const roots=[path.join(root,'node_modules/@types'),path.join(process.env.USERPROFILE??'','.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/@types')];
 const typeRoot=roots.find(dir=>existsSync(path.join(dir,'node/package.json')));
-const allowed=['src/pages/api/moderation-session.ts','src/pages/api/seller/business.ts','src/pages/api/seller/product.ts'];
+const allowed=['src/pages/api/moderation-session.ts','src/pages/api/seller/business.ts','src/pages/api/seller/product.ts','src/pages/api/seller/catalogue.ts','src/pages/api/seller/image-reservation.ts'];
 const requested=process.argv.slice(2),targets=requested.length?requested:[allowed[0]];
 if(targets.some(file=>!allowed.includes(file))){console.error('Only explicit local moderation/seller API targets are supported.');process.exitCode=1;}
 else if(!typeRoot){console.error('Existing Node typings not found; no installation attempted.');process.exitCode=1;}

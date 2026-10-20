@@ -23,6 +23,7 @@
     "test:draft-locale": "node --test --test-isolation=none tests/seller-draft-recovery.test.mjs tests/indian-locale-fallback.test.mjs",
     "test:native-appointments": "node --test --test-isolation=none tests/native-appointments.test.mjs",
     "test:native-provider-appointments": "node --test --test-isolation=none tests/native-provider-appointments.test.mjs tests/native-appointments.test.mjs",
+    "test:seller-catalogue": "node --test --test-isolation=none tests/seller-catalogue.test.mjs tests/native-seller-catalogue.test.mjs tests/seller-image-management.test.mjs tests/seller-draft-recovery.test.mjs",
     "test:seller": "node --test --test-isolation=none tests/seller-validation.test.mjs tests/seller-test-support.test.mjs",
     "test:seller:integration": "node --test --test-isolation=none tests/seller-backend.integration.test.mjs",
     "test:seller:cleanup": "node tests/seller-test-cleanup.mjs"

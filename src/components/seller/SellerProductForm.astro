@@ -49,6 +49,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
         <label>Option<input name="variant_name" maxlength="60" value={Object.keys(variant.option_attributes ?? {})[0] ?? ''} placeholder="Size" /></label>
         <label>Value<input name="variant_value" maxlength="120" value={Object.values(variant.option_attributes ?? {})[0] ?? ''} placeholder="1 kg" /></label>
         <label>Price (₹)<input name="variant_amount_minor" type="number" min="1" max="99999999" step="1" inputmode="numeric" value={variant.amountMinor ? variant.amountMinor / 100 : ''} /></label>
+        <button type="button" class="button button-secondary small-button" data-remove-variant>Remove variant</button>
       </div>)}
     </div>
     <button class="button button-secondary small-button" type="button" data-add-variant>Add another variant</button>
@@ -70,6 +71,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
 <script>
   import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
   import { validateSellerImageSelection } from '../../lib/seller/image-selection.js';
+  import { isCanonicalSellerImagePath, sellerImageExtension } from '../../lib/seller/validation.js';
 
   const form = document.querySelector<HTMLFormElement>('[data-seller-product-form]');
   const imageInput = form?.querySelector<HTMLInputElement>('[data-product-images]');
@@ -110,7 +112,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
     if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.remove('is-error'); imageStatus.textContent = 'Saving your product draft…'; }
     try {
       const payload = new FormData(form);
-      const response = await fetch(form.action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
+      const response = await fetch(form.action, { method: 'POST', body: payload, credentials:'same-origin', redirect:'error', headers: { Accept: 'application/json' } });
       if (!response.ok) { rejected = response.status >= 400 && response.status < 500; throw new Error('The product draft was not accepted.'); }
       const { listingId } = await response.json();
       if (!validId(listingId)) throw new Error('Draft confirmation unavailable.');
@@ -124,11 +126,12 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
         const supabase = createSupabaseBrowserClient();
         for (const [index, file] of files.entries()) {
           const reservationResponse = await fetch('/api/seller/image-reservation', {
-            method: 'POST', headers: { 'content-type': 'application/json', accept: 'application/json' },
+            method: 'POST', credentials:'same-origin', redirect:'error', headers: { 'content-type': 'application/json', accept: 'application/json' },
             body: JSON.stringify({ listing_id: listingId, content_type: file.type, alt_text: `${String(payload.get('title') ?? 'Product')} photo ${index + 1}` }),
           });
           if (!reservationResponse.ok) { imageFailure = true; continue; }
           const { path } = await reservationResponse.json();
+          if (!isCanonicalSellerImagePath(path,String(payload.get('business_id')),listingId) || !path.endsWith('.'+sellerImageExtension(file.type))) throw new Error('Photo reservation confirmation unavailable.');
           const { error: uploadError } = await supabase.storage.from('listing-images').upload(path, file, { contentType: file.type, upsert: false });
           if (uploadError) {
             imageFailure = true;
@@ -168,6 +171,14 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
 
   const addVariant = document.querySelector<HTMLButtonElement>('[data-add-variant]');
   const variantList = document.querySelector<HTMLElement>('[data-variant-list]');
+  variantList?.addEventListener('click', event=>{
+    if(!(event.target instanceof HTMLElement))return;
+    const button=event.target.closest('[data-remove-variant]');
+    const row=button?.closest('.seller-variant-row');
+    if(!(row instanceof HTMLElement))return;
+    if(variantList.querySelectorAll('.seller-variant-row').length>1)row.remove();
+    else row.querySelectorAll<HTMLInputElement>('input').forEach(input=>{input.value='';});
+  });
   addVariant?.addEventListener('click', () => {
     const rows = variantList?.querySelectorAll<HTMLElement>('.seller-variant-row');
     if (!variantList || !rows?.length || rows.length >= 20) return;

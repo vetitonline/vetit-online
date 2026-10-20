@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
+import * as sellerValidation from '../src/lib/seller/validation.js';
 import {validateSellerImageSelection} from '../src/lib/seller/image-selection.js';
 const id='10000000-0000-4000-8000-000000000001';
 class Element{
@@ -21,7 +22,7 @@ function mount({fetchImpl,upload=async()=>({error:null}),files=[{type:'image/png
  const window={addEventListener(){},location:{assign:url=>navigations.push(url)}};
  const source=fs.readFileSync(new URL('../src/components/seller/SellerProductForm.astro',import.meta.url),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
  const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
- const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection}};
+ const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection},'../../lib/seller/validation.js':sellerValidation};
  new Function('require','exports','document','window','fetch','FormData',compiled)(name=>{if(!(name in modules))throw Error('Unexpected dependency');return modules[name];},{},document,window,fetchImpl,SyntheticFormData);
  return{button,status,navigations,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
 }
@@ -36,6 +37,7 @@ test('definite validation/conflict rejection keeps the form editable and permits
  for(const code of [422,409]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>++calls===1?new Response('{}',{status:code}):new Response(JSON.stringify({listingId:id}))});await ui.submit();assert.equal(ui.button.disabled,false);await ui.submit();assert.equal(calls,2);assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);}
 });
 test('double submit and failed upload responses preserve existing objects and reservations',async()=>{
- let finish,started,saves=0;const ready=new Promise(resolve=>{started=resolve;});const ui=mount({fetchImpl:async url=>{if(url.includes('image-reservation'))return new Response(JSON.stringify({imageId:id,path:'synthetic.png'}));saves++;started();return new Promise(resolve=>{finish=resolve;});},upload:async()=>({error:Error('unconfirmed')})});
+ let finish,started,saves=0;const ready=new Promise(resolve=>{started=resolve;});const ui=mount({fetchImpl:async url=>{if(url.includes('image-reservation'))return new Response(JSON.stringify({imageId:id,path:`${id}/${id}/${id}.png`}));saves++;started();return new Promise(resolve=>{finish=resolve;});},upload:async()=>({error:Error('unconfirmed')})});
  const pending=ui.submit();await ready;await ui.submit();finish(new Response(JSON.stringify({listingId:id})));await pending;assert.equal(saves,1);assert.equal(ui.deletes(),0);assert.match(ui.navigations[0],/images=unavailable/);
 });
+test('validated photo paths upload with replacement disabled; forged reservation paths preserve the saved draft and never upload',async()=>{for(const valid of [true,false]){let uploads=0;const ui=mount({fetchImpl:async url=>new Response(JSON.stringify(url.includes('image-reservation')?{imageId:id,path:valid?`${id}/${id}/${id}.png`:`${id}/${id}/../foreign.png`}:{listingId:id})),upload:async(path,_file,options)=>{uploads++;assert.equal(path,`${id}/${id}/${id}.png`);assert.equal(options.upsert,false);return{error:null};}});await ui.submit();assert.equal(uploads,valid?1:0);assert.equal(ui.listingField().value,id);assert.equal(ui.deletes(),0);if(valid)assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);else{assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/Draft saved/);}}});

@@ -12,8 +12,9 @@ let listing: Awaited<ReturnType<typeof loadSellerDashboard>>['products'][number]
 let speciesIds: string[] = [];
 let baseRupees: number | null = null;
 let variants: Array<{ seller_sku: string; option_attributes: Record<string, string>; amountMinor: number | null }> = [];
-let images: Array<{ url: string | null; alt: string }> = [];
+let images: Array<{ id:string; url: string | null; alt: string }> = [];
 let unavailable = false;
+let safelyRepresentable = true;
 if (!getSupabasePublicConfig()) {
   Astro.response.status = 503;
   unavailable = true;
@@ -30,19 +31,25 @@ if (!getSupabasePublicConfig()) {
         dashboard.supabase.from('listing_species').select('species_id').eq('listing_id', listing.id),
         dashboard.supabase.from('listing_prices').select('product_variant_id, amount_minor, currency_code, status, valid_from, valid_to').eq('listing_id', listing.id).eq('market_code', 'IN').eq('status', 'active').order('valid_from', { ascending: false }),
         dashboard.supabase.from('product_variants').select('id, seller_sku, option_attributes, active_status').eq('listing_id', listing.id).eq('active_status', true),
-        dashboard.supabase.from('listing_images').select('storage_object_path, alt_text, sort_order').eq('listing_id', listing.id).order('sort_order'),
+        dashboard.supabase.from('listing_images').select('id, storage_object_path, alt_text, sort_order').eq('listing_id', listing.id).order('sort_order'),
       ]);
       if (speciesError || priceError || variantsError || imagesError) throw speciesError ?? priceError ?? variantsError ?? imagesError;
       speciesIds = (species ?? []).map(item => item.species_id);
       const activeVariants = productVariants ?? [];
+      safelyRepresentable = activeVariants.every(variant=>{
+        const options=variant.option_attributes;
+        return options && typeof options==='object' && !Array.isArray(options) && Object.keys(options).length===1 && typeof Object.values(options)[0]==='string';
+      });
       const now = Date.now();
       const currentPrices = (prices ?? []).filter(price => new Date(price.valid_from).getTime() <= now && (!price.valid_to || new Date(price.valid_to).getTime() > now));
       baseRupees = currentPrices.find(price => price.product_variant_id === null)?.amount_minor ? Number(currentPrices.find(price => price.product_variant_id === null)!.amount_minor) / 100 : null;
-      variants = activeVariants.flatMap(variant => {
+      safelyRepresentable = safelyRepresentable && currentPrices.every(price=>price.currency_code==='INR' && Number.isSafeInteger(price.amount_minor) && price.amount_minor>0 && price.amount_minor%100===0);
+      variants = activeVariants.map(variant => {
         const price = currentPrices.find(item => item.product_variant_id === variant.id);
-        return price ? [{ seller_sku: variant.seller_sku, option_attributes: variant.option_attributes as Record<string, string>, amountMinor: Number(price.amount_minor) }] : [];
+        return { seller_sku: variant.seller_sku, option_attributes: variant.option_attributes as Record<string, string>, amountMinor: price ? Number(price.amount_minor) : null };
       });
       images = await Promise.all((listingImages ?? []).map(async image => ({
+        id: image.id,
         url: await sellerSignedImageUrl(dashboard!.supabase, image.storage_object_path),
         alt: image.alt_text ?? listing!.title,
       })));
@@ -52,7 +59,7 @@ if (!getSupabasePublicConfig()) {
     unavailable = true;
   }
 }
-const canEdit = listing && canEditSellerProduct(listing.moderation_status) && hasSellerCatalogRole(listing.memberRole);
+const canEdit = listing && safelyRepresentable && canEditSellerProduct(listing.moderation_status) && hasSellerCatalogRole(listing.memberRole);
 const businesses = listing && dashboard ? dashboard.businesses.filter(business => business.id === listing!.business_id) : [];
 ---
 <!doctype html>
@@ -66,9 +73,19 @@ const businesses = listing && dashboard ? dashboard.businesses.filter(business =
     {Astro.url.searchParams.has('saved') && <p class="seller-feedback" role="status">Product draft saved.</p>}
     {Astro.url.searchParams.has('submitted') && <p class="seller-feedback" role="status">Your listing was sent to Vetit for review. It is not published yet.</p>}
     {Astro.url.searchParams.has('images') && <p class="seller-feedback is-error" role="status">The draft was saved, but at least one image could not be uploaded.</p>}
+    {!safelyRepresentable && <p role="alert">This listing has pricing or option data this editor cannot safely preserve. Contact Vetit support before editing; existing data has been retained.</p>}
     {images.length > 0 && <div class="seller-image-grid">{images.map(image => image.url ? <figure><img src={image.url} alt={image.alt}><figcaption>Seller supplied photo</figcaption></figure> : null)}</div>}
+    {canEdit && images.length>0 && <details aria-label="Photo reservation recovery"><summary>Inspect unconfirmed photo reservations</summary><p role="status">Use this only for failed or unconfirmed photos. A failed image or signed link does not prove the upload is missing. Refresh first; the server only permits removing reservations without an uploaded object.</p>{images.map(image=><div><button type="button" data-cancel-image-reservation={image.id}>Remove incomplete photo reservation</button><span role="status" aria-live="polite" data-reservation-status></span></div>)}</details>}
     {canEdit && taxonomy && taxonomy.state === 'available' ? <SellerProductForm product={listing} businesses={businesses} selectedBusinessId={listing.business_id} categories={taxonomy.categories} animals={taxonomy.animals} selectedSpeciesIds={speciesIds} baseAmountRupees={baseRupees} variants={variants} existingImageCount={images.length} /> : <div class="seller-review-status"><p>Current status: <strong>{listing.moderation_status}</strong></p><p>Products in review or published cannot be edited here. Contact Vetit support if a change is needed.</p></div>}
     {canEdit && <form method="post" action="/api/seller/submit" class="seller-submit-form"><input type="hidden" name="business_id" value={listing.business_id}><input type="hidden" name="listing_id" value={listing.id}><button class="button button-secondary" type="submit">Submit for Vetit review</button><p class="seller-form-hint">Vetit will review the listing before any marketplace publication.</p></form>}
     <a class="seller-back-link" href="/seller">← Back to seller dashboard</a>
   </section>}
 </main></div><script src="../../../../script.js"></script></body></html>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-cancel-image-reservation]').forEach(button=>button.addEventListener('click',async()=>{
+    if(button.disabled||!window.confirm('Remove this reservation only if no uploaded photo exists? Existing uploaded photos will be preserved.'))return;
+    button.disabled=true;const status=button.parentElement?.querySelector<HTMLElement>('[data-reservation-status]');
+    try{const response=await fetch('/api/seller/image-reservation',{method:'DELETE',credentials:'same-origin',redirect:'error',headers:{'content-type':'application/json',accept:'application/json'},body:JSON.stringify({image_id:button.dataset.cancelImageReservation})});if(!response.ok)throw Error('Unconfirmed');const result=await response.json();if(result.ok!==true)throw Error('Unconfirmed');window.location.reload();}
+    catch{if(status)status.textContent='Removal unconfirmed or refused. Refresh this draft before another attempt. Uploaded photos cannot be removed by this control.';}
+  }));
+</script>

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerImage } from '../../../lib/seller/permissions.js';
-import { sellerImageExtension } from '../../../lib/seller/validation.js';
+import { sellerImageExtension, isSellerUuid } from '../../../lib/seller/validation.js';
 import { readJsonBody } from '../../../lib/api/json-body.js';
 import { isSameOriginMutation } from '../../../lib/api/request-security.js';
 
@@ -26,7 +26,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const listingId = String(input?.listing_id ?? '').trim();
     const extension = sellerImageExtension(input?.content_type);
     const altText = String(input?.alt_text ?? '').trim();
-    if (!/^[0-9a-f-]{36}$/i.test(listingId) || !extension || altText.length > 500) return json({ error: 'invalid_image_request' }, 400);
+    if (!isSellerUuid(listingId) || !extension || altText.length > 500) return json({ error: 'invalid_image_request' }, 400);
 
     const { data: listing, error: listingError } = await supabase.from('listings')
       .select('id, business_id, kind, moderation_status, archived_at').eq('id', listingId).maybeSingle();
@@ -73,7 +73,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     const input = body.value as Record<string, unknown> | null;
     if (!input || typeof input !== 'object' || Array.isArray(input)) return json({ error: 'invalid_image_request' }, 400);
     const imageId = String(input?.image_id ?? '').trim();
-    if (!/^[0-9a-f-]{36}$/i.test(imageId)) return json({ error: 'invalid_image_request' }, 400);
+    if (!isSellerUuid(imageId)) return json({ error: 'invalid_image_request' }, 400);
     const { error } = await supabase.rpc('cancel_seller_image_reservation', { p_image_id: imageId });
     if (error) {
       console.error('[seller] Photo reservation cleanup failed.', error.message);

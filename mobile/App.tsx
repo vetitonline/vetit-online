@@ -5,6 +5,7 @@ import {NativeModeration,type NativeModerationProps} from './src/NativeModeratio
 import {NativeBuyerOrders} from './src/NativeBuyerOrders';
 import {NativeCheckoutReview} from './src/NativeCheckoutReview';
 import {NativeAppointments} from './src/NativeAppointments';
+import {NativeSellerCatalogue} from './src/NativeSellerCatalogue';
 import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
 import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
 import { workspaceCopy, formatWorkspaceMoney } from '../src/lib/marketplace/workspace-copy.js';
@@ -330,6 +331,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     {nativeModeration?<NativeModeration {...nativeModeration} language={language}/>:moderation&&<ModerationWorkspace {...moderation} language={language}/>}
     {nativeModeration&&<NativeBuyerOrders session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
     {nativeModeration&&<NativeAppointments session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
+    {nativeModeration&&<NativeSellerCatalogue session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
     <Pressable onPress={() => openWeb('/login')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Continue to sign in online</Text></Pressable>
     <Pressable onPress={() => openWeb('/seller')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{language === 'hi' ? 'विक्रेता स्थिति और समीक्षा ऑनलाइन' : 'Seller status and review online'}</Text></Pressable>
     <Pressable onPress={() => openWeb('/appointments')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Appointment history and notifications online</Text></Pressable>
