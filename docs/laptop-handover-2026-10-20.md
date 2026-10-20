@@ -1,5 +1,21 @@
 # Vetit Online laptop handover — 20 October 2026
 
+## Latest continuation — native seller refresh safety
+
+Authoritative laptop/repository/branch verified again at `daa35575ce2b5da73aaa68cee3a8589146b174e6`. There were **no tracked modified files**, rather than the reported ten. All 22 seller checkpoint source hashes and both prior bundle hashes matched the saved receipt. Existing ZIPs and CLI temporary file remained untracked; no recovered work or prior evidence was discarded.
+
+New local change: refreshed listing publication/status, saved timestamp or business permission changes now lock the native editor while preserving form values for inspection. Explicit discard/reopen is available even for an unchanged stale form. Malformed parallel variant arrays fail closed rather than creating a partial editor. Existing API/server checks remain authoritative; this does not add an atomic concurrency guarantee. English-first shared copy and regional-language fallback remain intact. No native photo feature was substituted or added.
+
+Validation: **11 native seller tests passed** (nine prior plus two new regressions); mobile TypeScript passed; Android/iOS JavaScript exports passed. Existing eight seller service/API/contract tests, three image tests, five web draft tests, six provider regressions, focused API type checks and web compilation are reused for unchanged code. Web/API inputs, dependencies, SQL and website source did not change, so those builds/checks were not repeated. No device, protected-storage, hosted-session, backend concurrency or idempotency acceptance was performed.
+
+GitHub was checked read-only. Cached baseline `origin/main` is `d50bf63fd2b2e87d8e6ff991d6aeaa24cbc38cf5`, an ancestor of local HEAD (seven local commits beyond it before this follow-up). **Live main is `00a064b2dae94a3d1b06222db9d3cddedac89edb`**, six remote commits beyond that baseline. GitHub compare lists only `package.json` and `pnpm-lock.yaml` changes; the remote package raises Astro `^7.3.5` → `^7.3.7`, Vercel adapter `^11.0.11` → `^11.0.12`, Supabase JS `^2.117.2` → `^2.117.3`. Local feature work is preserved but **not synchronized with current main**. No fetch, pull, merge, dependency installation, push or remote mutation occurred. Review those dependency/lockfile updates as a separate deliberate local milestone; do not replace the expanded local test scripts or recovered work with the remote package file.
+
+This follow-up changes only `mobile/src/NativeSellerCatalogue.tsx`, `mobile/src/seller-catalogue.js`, `src/lib/seller/catalogue-copy.js`, `tests/native-seller-catalogue.test.mjs` and this handover. Local checkpoint title: `Guard native seller editor against refreshed stale records`; the final chat reports its hash.
+
+New separate durable evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\seller-refresh-20261020\seller-refresh-readiness.json`, with source/bundle hashes and GitHub comparison details. Earlier evidence stays unchanged. Original new exports also exist under `C:\Users\DELL\AppData\Local\Temp\vetit-seller-refresh-android-20261020` and `vetit-seller-refresh-ios-20261020`.
+
+Next priorities: (1) approved coordinated Test-session/device and storage acceptance with synthetic accounts; (2) review new GitHub dependency updates without merging automatically; (3) backend atomic concurrency/idempotency design before claiming safe retry across app termination. Production deployments, hosted database writes/migrations and production environment changes still require explicit approval. On iPhone return, verify the laptop host/path/branch/HEAD/status before any edits; pause if inaccessible.
+
 ## Verify access before editing
 
 Authoritative repository: **C:\Users\DELL\vetit-online**, on **DESKTOP-UN1B38N** (the DELL laptop). Branch: `codex/appointment-availability-contract-fixes`. On return from iPhone, verify execution-host access, this exact readable folder, Git top-level, branch, HEAD and status. Chat visibility is insufficient. If laptop/repository access is unavailable, stop and report; do not recreate or switch to cloud/D-drive/another checkout. Preserve all untracked work and do not repeat completed recovery searches or valid tests without new evidence.

@@ -15,6 +15,7 @@ function project(data){
   if(typeof p.editable!=='boolean'||!Number.isFinite(Date.parse(p.updatedAt))||!businesses.some(b=>b.id===p.businessId))throw Error('Invalid catalogue');
   const fields={};for(const key of ['title','description','category_id','base_amount_minor'])fields[key]=text(p.fields?.[key],key==='description'?5000:160);
   for(const key of ['species_ids','variant_sku','variant_name','variant_value','variant_amount_minor'])fields[key]=list(p.fields?.[key],20).map(v=>text(v,160));
+  if(['variant_name','variant_value','variant_amount_minor'].some(key=>fields[key].length!==fields.variant_sku.length))throw Error('Incomplete variant response');
   if(!Number.isInteger(p.imageCount)||p.imageCount<0||p.imageCount>5)throw Error('Invalid image count');
   return{id:id(p.id),businessId:id(p.businessId),status:text(p.status,40),updatedAt:p.updatedAt,editable:p.editable&&['draft','rejected'].includes(p.status),imageCount:p.imageCount,fields};
  });return{phase:'ready',businesses,animals,categories,products};
