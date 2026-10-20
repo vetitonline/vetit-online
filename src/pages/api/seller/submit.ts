@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerBusiness, canSellerTransitionListing } from '../../../lib/seller/permissions.js';
 import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
+import { executeModeration } from '../../../lib/moderation/workflow.js';
+import type { QueueClient } from '../../../lib/moderation/queue.js';
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
 
@@ -12,11 +14,15 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   if (!['application/x-www-form-urlencoded', 'multipart/form-data'].includes(request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() ?? '')) {
     return new Response('Seller submission form is invalid.', { status: 415 });
   }
-  const form = await request.formData();
+  let form:FormData;
+  try { form = await request.formData(); }
+  catch { return new Response('Invalid seller submission form.', { status: 400 }); }
+  if (form.getAll('listing_id').length !== 1 || form.getAll('business_id').length !== 1) return new Response('Ambiguous seller submission.', { status: 400 });
   const listingId = String(form.get('listing_id') ?? '').trim();
   const businessId = String(form.get('business_id') ?? '').trim();
   const returnPath = `/seller/products/${listingId}?error=submit`;
-  if (!/^[0-9a-f-]{36}$/i.test(listingId) || !/^[0-9a-f-]{36}$/i.test(businessId)) return new Response('Invalid seller product.', { status: 400 });
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuid.test(listingId) || !uuid.test(businessId)) return new Response('Invalid seller product.', { status: 400 });
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -31,11 +37,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (listingError || !listing || listing.business_id !== businessId || listing.kind !== 'product' || !canSellerTransitionListing(listing.moderation_status, 'submitted')) {
       return new Response('Only your draft or rejected product listings can be submitted for review.', { status: 403 });
     }
-    const { error } = await supabase.rpc('submit_seller_product', { p_business_id: businessId, p_listing_id: listingId });
-    if (error) throw error;
+    // The database operation submits through the existing validated product RPC
+    // and opens its durable case atomically; no second HTTP write can be lost.
+    await executeModeration(supabase as unknown as QueueClient, { action: 'open', kind: 'product', subject: listingId });
     return redirect(request, `/seller/products/${listingId}?submitted=1`);
   } catch (error) {
-    console.error('[seller] Product review submission failed.', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[seller] Product review submission failed.');
     return redirect(request, returnPath);
   }
 };

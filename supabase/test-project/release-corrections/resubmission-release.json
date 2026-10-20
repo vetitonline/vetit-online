@@ -1,0 +1,33 @@
+{
+  "target": "apfyfmokcynqiaxqvvxx",
+  "releaseOrder": 7,
+  "version": "20261019095631",
+  "name": "vetit_seller_rejected_resubmission",
+  "migrationPath": "supabase/test-project/migrations/20261019095631_vetit_seller_rejected_resubmission.sql",
+  "sha256": "5db67abd9cc9ecf84fff16c69afa1cb8a61113f60344e668cadb1fdd9155413d",
+  "proposalPath": "supabase/test-project/release-corrections/seller-rejected-resubmission.proposal.sql",
+  "proposalSha256": "221049b9b33f56065aed033b79acc1950dadce8a27787ef917a02241284cd963",
+  "generatedWith": "Supabase CLI 2.120.0 migration new (isolated local directory)",
+  "baseCandidate": "vetit-test-2026.10.18-rc1",
+  "afterVersion": "20261018115348",
+  "dependsOn": [
+    "20261009082833",
+    "20261018115337"
+  ],
+  "scope": "replace guard_seller_catalog_mutations only; no RLS policy or table grant changes",
+  "hostedApproved": false,
+  "hostedApplied": false,
+  "localInstallation": "rollback-only validation; not persisted",
+  "localAcceptance": {
+    "date": "2026-10-19",
+    "database": "vetit_disposable_corrections_20261018_1302",
+    "scope": "authenticated-role synthetic claims; rollback-only",
+    "migrationReplayCount": 2,
+    "migrationSourceTestsPassed": 5,
+    "sellerReviewGroupsPassed": 7,
+    "originalGuardRestored": true,
+    "fixtureAbsent": true,
+    "hostedRuntimeVerified": false
+  },
+  "previousGuardedBundleIncludesThisMigration": false
+}

@@ -1,0 +1,86 @@
+{
+  "format": 1,
+  "target": "apfyfmokcynqiaxqvvxx",
+  "status": "local-validated-source-plan-not-hosted-approval",
+  "foundation": [
+    {
+      "version": "20261008223605",
+      "name": "vetit_marketplace_baseline_20261009000000",
+      "path": "supabase/test-project/20261009000000_vetit_marketplace_baseline.sql",
+      "sha256": "473cfde9c6264efeb0ed5ad26f78a3c36d40fe5cd025e232379d2f9852a4dc54",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261008233606",
+      "name": "vetit_business_private_fields",
+      "path": "supabase/test-project/20261009010000_business_private_fields.sql",
+      "sha256": "1f10c8089cdf43d08f4b5ad1faf3321a04bd42d1a78d3e391ed49564e4bd320d",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009000613",
+      "name": "vetit_seller_backend_foundation",
+      "path": "supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql",
+      "sha256": "44079918eb9286611175a0a9239380d35b876a9eddb9d6ba60396366f49d48d9",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009082833",
+      "name": "vetit_seller_security_hardening",
+      "path": "supabase/migrations/20261008210707_vetit_seller_security_hardening.sql",
+      "sha256": "2897a1872fae48e575b7cb39d789a390518771e9059d4940b8072735171310a0",
+      "existingTest": "preserve-do-not-replay"
+    }
+  ],
+  "additive": [
+    {
+      "order": 1,
+      "path": "supabase/test-project/release-corrections/seller-variant-key-count.proposal.sql",
+      "sha256": "0e1ed0f396eaa8f0057fb8b8d40b74d16f94dd71a8138eb310774298ee2a15a6",
+      "releaseVersion": null
+    },
+    {
+      "order": 2,
+      "path": "supabase/test-project/release-corrections/booking-participant-rls.proposal.sql",
+      "sha256": "688b2a0934e6c5801f2af46ac9a5543e2037ff141f5314a575087ed517dca4be",
+      "releaseVersion": null
+    },
+    {
+      "order": 3,
+      "path": "supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sha256": "ac10ba8aa0fcbfcab74c86be323a80e3ba21ef59f94d75aca0dca972420d0d72",
+      "releaseVersion": null
+    },
+    {
+      "order": 4,
+      "path": "supabase/test-project/20261009110000_vetit_service_booking_transaction.sql",
+      "sha256": "35c81d282a1e397d1785c0b2fe8edf772f8d3f01228a8634437179233685144b",
+      "releaseVersion": null
+    },
+    {
+      "order": 5,
+      "path": "supabase/test-project/appointment-lifecycle.proposal.sql",
+      "sha256": "d0c5e70582ba87d135fb6ddc25e5ccbb053d92ab9eb2f84eea5d83d8474e3f2f",
+      "releaseVersion": null
+    },
+    {
+      "order": 6,
+      "path": "supabase/test-project/appointment-operations.proposal.sql",
+      "sha256": "4e44d5236674c1b92250fa232424639eaf962048e6c7432f16393ba0b32671bf",
+      "releaseVersion": null
+    }
+  ],
+  "excluded": [
+    "supabase/migrations/20261004000000_initial_marketplace.sql",
+    "supabase/migrations/20261005000000_service_marketplace_foundation.sql",
+    "marketplace-fixtures.sql",
+    "seller-integration-cleanup-proposal.sql",
+    "test_worker_fault"
+  ],
+  "rules": [
+    "No migration repair, history rewriting, default db push or hosted execution authorized.",
+    "Foundation is used only to create a new empty synthetic local validation database.",
+    "Release versions must be generated using Supabase CLI migration new in a separate reviewed release directory.",
+    "Revalidate hashes and hosted ledger/schema before any later approved release."
+  ]
+}

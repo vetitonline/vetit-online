@@ -33,3 +33,11 @@ test('shared service client rejects invalid API origins, malformed responses and
   await assert.rejects(() => requestServices({ fetchImpl: async () => new Response('{bad') }), ServiceClientError);
   await assert.rejects(() => requestServices({ fetchImpl: async () => { throw new Error('network'); } }), ServiceClientError);
 });
+
+test('web and mobile discovery reject null service/category entries through the shared error contract',async()=>{
+  for(const body of [ {...responseBody,services:[null]}, {...responseBody,categories:[null]}, {...responseBody,categories:[{}]} ]) {
+    await assert.rejects(()=>requestServices({fetchImpl:async()=>new Response(JSON.stringify(body))}),error=>error instanceof ServiceClientError && /unsupported response/.test(error.message));
+  }
+  const categories=[{slug:'grooming',name:'Grooming',parentSlug:null,requiresProfessionalVerification:false,requiresLegalReview:false}];
+  const result=await requestServices({fetchImpl:async()=>new Response(JSON.stringify({...responseBody,categories}))});assert.deepEqual(result.categories,categories);
+});

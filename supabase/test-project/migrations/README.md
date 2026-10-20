@@ -1,0 +1,13 @@
+# Supplemental Test migrations
+
+This directory is separate from the incompatible legacy root migration chain. The resubmission migration is release step **7**, following the existing six-file `vetit-test-2026.10.18-rc1` candidate. Its CLI-generated version/hash is recorded in `../release-corrections/resubmission-release.json`.
+
+It changes only the existing seller guard definition: authorized draft/rejected → submitted transitions may clear both old review fields. Content/identity/parent restrictions, authorization, empty search path and execution revocation remain intact. It does not change RLS or grant direct writes.
+
+Do not run a blanket push from this directory or the repository root. Assemble a separately reviewed Test candidate with historical aliases and all required predecessors. The old RC1 archive and guarded bundle are preserved snapshots and do not include this migration. No hosted execution, ledger repair, production change or deployment is approved.
+
+Supplemental step **8**: `20261019100841_vetit_admin_listing_queue.sql` adds only the protected read-only listing queue RPC. SHA256: `8d5cbe53db246bc0eba003c83915b57dcb43ec4603ad5ab08176d091f2453541`. It was replaced twice and tested under authenticated roles in one local rollback-only transaction. It does not add moderation decisions, evidence storage, notes, appeals or automatic publication. See `../../../docs/moderation-local-batch.md` for exact scope and remaining publication safeguards. This file is not included in the old six-file executor or step-7 release record.
+
+Supplemental step **9**: `20261019102037_vetit_durable_moderation.sql` adds durable moderation enforcement. SHA256: `635f7cf0cb6be30f868aa2b9acaa3eeacb350f4fcb7b4ef1447f3db1694ff335`. See `../release-corrections/durable-moderation-release.json`. Applied and definition-replayed only in `vetit_disposable_corrections_20261018_1302` on local port 55432; no hosted ledger entry or execution. Default policies/reviewers/providers remain unconfigured by the migration. Retained local configuration/evidence is explicitly synthetic. Do not apply the concurrency fixture to hosted Test. Current reviewer grants are required in addition to trusted JWT claims; old review RPCs cannot bypass evidence/audit gates. Automatic publication has no enabled operation.
+
+Supplemental steps **10–11** add disabled-by-default automatic approval (never publication), and correct service Storage boundaries/private membership reads. Exact filenames/hashes: `../release-corrections/automatic-moderation-release.json`. Both installed locally only; previous migration files remain unchanged. Requires all steps 1–9 and explicit hosted approval; old executors omit these files.

@@ -1,0 +1,41 @@
+// Actual component browser script, synthetic DOM/storage/fetch only. No browser,
+// hosted upload, deletion or database operation is performed by this harness.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+import {validateSellerImageSelection} from '../src/lib/seller/image-selection.js';
+const id='10000000-0000-4000-8000-000000000001';
+class Element{
+ constructor(){this.disabled=false;this.dataset={};this.children=[];this.listeners={};this.classList={add(){},remove(){},toggle(){}};this.value='';}
+ set textContent(value){this.text=value;this.children=[];}get textContent(){return this.text??'';}
+ addEventListener(name,callback){this.listeners[name]=callback;}append(...children){this.children.push(...children);}
+}
+function mount({fetchImpl,upload=async()=>({error:null}),files=[{type:'image/png',size:100,name:'synthetic.png'}]}={}){
+ const button=new Element(),status=new Element(),images=new Element(),form=new Element();images.files=files;images.dataset.maxImages='5';form.action='http://localhost:4321/api/seller/product';
+ let listingField=null,deletes=0;const navigations=[];
+ form.querySelector=selector=>({'[data-product-images]':images,'[data-image-status]':status,'button[type="submit"]':button,'input[name="species_ids"]:checked':{checked:true},'input[name="listing_id"]':listingField})[selector]??null;
+ form.append=element=>{listingField=element;};
+ class SyntheticFormData extends FormData{constructor(){super();this.set('title','Synthetic draft');this.set('business_id',id);if(listingField)this.set('listing_id',listingField.value);}}
+ const document={querySelector:selector=>selector==='[data-seller-product-form]'?form:null,createElement:()=>new Element()};
+ const window={addEventListener(){},location:{assign:url=>navigations.push(url)}};
+ const source=fs.readFileSync(new URL('../src/components/seller/SellerProductForm.astro',import.meta.url),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+ const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+ const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection}};
+ new Function('require','exports','document','window','fetch','FormData',compiled)(name=>{if(!(name in modules))throw Error('Unexpected dependency');return modules[name];},{},document,window,fetchImpl,SyntheticFormData);
+ return{button,status,navigations,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
+}
+test('a confirmed draft survives thrown upload failure without a second save or automatic cleanup',async()=>{
+ let saves=0;const ui=mount({fetchImpl:async url=>url.includes('image-reservation')?new Response(JSON.stringify({imageId:id,path:`${id}/${id}/${id}.png`})):(saves++,new Response(JSON.stringify({listingId:id}))),upload:async()=>{throw Error('private upload diagnostic');}});
+ await ui.submit();assert.equal(ui.listingField().value,id);assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/Draft saved/);assert.ok(!ui.status.textContent.includes('private'));const link=ui.status.children.find(c=>typeof c!=='string');assert.equal(link.href,`/seller/products/${id}?images=unavailable`);await ui.submit();assert.equal(saves,1);assert.equal(ui.deletes(),0);
+});
+test('uncertain save responses lock retry and preserve a draft-inspection route',async()=>{
+ for(const response of [()=>{throw Error('network diagnostic');},()=>new Response('{}',{status:503}),()=>new Response(JSON.stringify({listingId:'invalid'}))]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>{calls++;return response();}});await ui.submit();await ui.submit();assert.equal(calls,1);assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/confirmation unavailable/);assert.equal(ui.status.children.find(c=>typeof c!=='string').href,'/seller');}
+});
+test('definite validation/conflict rejection keeps the form editable and permits an explicit corrected retry',async()=>{
+ for(const code of [422,409]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>++calls===1?new Response('{}',{status:code}):new Response(JSON.stringify({listingId:id}))});await ui.submit();assert.equal(ui.button.disabled,false);await ui.submit();assert.equal(calls,2);assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);}
+});
+test('double submit and failed upload responses preserve existing objects and reservations',async()=>{
+ let finish,started,saves=0;const ready=new Promise(resolve=>{started=resolve;});const ui=mount({fetchImpl:async url=>{if(url.includes('image-reservation'))return new Response(JSON.stringify({imageId:id,path:'synthetic.png'}));saves++;started();return new Promise(resolve=>{finish=resolve;});},upload:async()=>({error:Error('unconfirmed')})});
+ const pending=ui.submit();await ready;await ui.submit();finish(new Response(JSON.stringify({listingId:id})));await pending;assert.equal(saves,1);assert.equal(ui.deletes(),0);assert.match(ui.navigations[0],/images=unavailable/);
+});

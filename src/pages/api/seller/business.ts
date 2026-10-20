@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
-import { sellerBusinessInput } from '../../../lib/seller/validation.js';
+import { sellerBusinessInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canManageSellerBusiness } from '../../../lib/seller/permissions.js';
 import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
 
@@ -18,8 +18,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return redirect(request, '/login?mode=join&next=%2Fseller');
-    const form = await request.formData();
+    let form:FormData;
+    try { form = await request.formData(); assertSingleSellerFields(form, ['business_id']); }
+    catch { return new Response('Invalid seller business form.', { status: 400 }); }
     const existingBusinessId = String(form.get('business_id') ?? '').trim();
+    if (existingBusinessId && !isSellerUuid(existingBusinessId)) return new Response('Invalid seller profile.', { status: 400 });
     if (existingBusinessId) {
       failurePath = '/seller?error=save';
       const { data: membership, error: membershipError } = await supabase.from('business_memberships')
@@ -53,7 +56,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (error) throw error;
     return redirect(request, '/seller?saved=business');
   } catch (error) {
-    console.error('[seller] Business profile operation failed.', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[seller] Business profile operation failed.');
     return redirect(request, failurePath);
   }
 };

@@ -16,6 +16,9 @@ const isAdmin = user.app_metadata?.vetit_admin === true || user.app_metadata?.ve
 if (!isAdmin) Astro.response.status = 403;
 const taxonomy = isAdmin ? await getProductTaxonomy(Astro.request, Astro.cookies) : null;
 const roots = taxonomy?.categories.filter((category) => !category.parentId) ?? [];
+const search = (Astro.url.searchParams.get('q') ?? '').trim().slice(0,120);
+const matches = (label:string) => label.toLocaleLowerCase().includes(search.toLocaleLowerCase());
+const groups = roots.map(root => ({root,children:taxonomy?.categories.filter(category => category.parentId===root.id && (matches(root.label) || matches(category.label))) ?? []})).filter(group => matches(group.root.label) || group.children.length);
 ---
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vetit Admin | Master taxonomy</title></head>
@@ -26,10 +29,14 @@ const roots = taxonomy?.categories.filter((category) => !category.parentId) ?? [
       <p class="admin-notice">This panel is gated by the trusted <code>app_metadata.vetit_admin</code> claim. Categories are managed through protected backend permissions; seller accounts can select categories when creating listings but cannot change the master taxonomy.</p>
       <section class="admin-category-list" aria-label="Current master categories">
         <h2>Master category overview</h2>
-        {roots.map((root) => <article class="admin-category-group"><h2>{root.label}</h2><ul>{taxonomy?.categories.filter((category) => category.parentId === root.id).map((category) => <li>{category.label}</li>)}</ul></article>)}
+        <form method="get"><label>Find category / श्रेणी खोजें <input type="search" name="q" value={search} maxlength="120" /></label><button class="button button-secondary small-button" type="submit">Search</button> <a href="/admin">Clear</a></form>
+        <p>{groups.length} matching category groups. This overview uses the existing published taxonomy reader; it is not a complete inactive-category administration inventory.</p>
+        {groups.map(({root,children}) => <article class="admin-category-group"><h2>{root.label}</h2><ul>{children.map((category) => <li>{category.label}</li>)}</ul></article>)}
+        {!groups.length && taxonomy?.state === 'available' && <p>No categories match this search. / कोई श्रेणी नहीं मिली।</p>}
         {taxonomy?.state === 'error' && <p class="product-empty-state">The current category overview is temporarily unavailable.</p>}
       </section>
-      <p class="admin-notice">Category imagery controls, moderation workflows and taxonomy editing tools are not enabled in this foundation phase.</p>
+      <p class="admin-notice">Category imagery controls and taxonomy editing tools are not enabled. <a href="/admin/cases">Open moderation cases / समीक्षा मामले</a> or <a href="/admin/review">the listing overview / लिस्टिंग सूची</a>. Decisions require the durable Test candidate, current reviewer permission and trusted screening evidence.</p>
+      <section class="seller-panel"><h2>Seller and listing review controls</h2><p>Open a moderation case to inspect reason codes and history, request corrections, escalate or make an audited decision. Missing policy, screening or credentials blocks approval. Automatic publication is disabled.</p><a href="/admin/cases">Review cases / मामलों की समीक्षा करें</a></section>
     </> : <section class="admin-entry-card"><span class="section-label dark-label"><span></span>Access denied</span><h1>Admin access required</h1><p>This account is signed in but does not have the trusted Vetit administrator claim.</p><a href="/">Return to Vetit Online</a></section>}
   </main>
 </div></body></html>

@@ -1,28 +1,40 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { resolveMobileApiBase } from '../src/lib/supabase/test-endpoints.js';
+import {ModerationWorkspace,type ModerationWorkspaceProps} from './src/ModerationWorkspace';
+import {NativeModeration,type NativeModerationProps} from './src/NativeModeration';
+import {NativeBuyerOrders} from './src/NativeBuyerOrders';
+import {NativeCheckoutReview} from './src/NativeCheckoutReview';
+import {NativeAppointments} from './src/NativeAppointments';
+import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
+import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
+import { workspaceCopy, formatWorkspaceMoney } from '../src/lib/marketplace/workspace-copy.js';
+import { categoryNavigation } from '../src/lib/marketplace/category-navigation.js';
 import {
   ActivityIndicator, Image, Linking, Pressable, ScrollView, StatusBar, StyleSheet,
   Text, TextInput, View,
 } from 'react-native';
 import type { CatalogApiResponse, CatalogRequestFilters } from '../src/lib/marketplace/catalog-client';
 import { CatalogClientError, fetchCatalog } from '../src/lib/marketplace/catalog-client';
-import type { FeaturedProduct, ProductAnimal, ProductCategory } from '../src/lib/marketplace/featured-products';
+import type { FeaturedProduct, ProductAnimal, ProductCategory } from '../src/lib/marketplace/catalog-types';
 import type { ServiceSearchResponse } from '../src/lib/services/service-client';
 import { requestServices, ServiceClientError } from '../src/lib/services/service-client';
+import { requestAppointmentSlots, formatAppointmentAvailability, AppointmentClientError } from '../src/lib/services/appointment-client.js';
 
 type Tab = 'home' | 'shop' | 'services' | 'cart' | 'account';
-type CartLine = { product: FeaturedProduct; quantity: number };
+type CartLine = PreviewCartLine;
 type LoadState = { loading: boolean; data: CatalogApiResponse | null; error: string | null };
 type ServiceLoadState = { loading: boolean; data: ServiceSearchResponse | null; error: string | null };
+type AvailabilityState = { loading: boolean; message: string };
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_VETIT_API_BASE_URL?.trim() || 'https://vetit.online';
-const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+const API_BASE_URL = resolveMobileApiBase(process.env.EXPO_PUBLIC_VETIT_API_BASE_URL, process.env.EXPO_PUBLIC_VETIT_TEST_API_ORIGIN);
+const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 });
 const tabs: { id: Tab; label: string }[] = [
   { id: 'home', label: 'Home' }, { id: 'shop', label: 'Shop' }, { id: 'services', label: 'Services' },
   { id: 'cart', label: 'Cart' }, { id: 'account', label: 'Account' },
 ];
 
 function money(product: FeaturedProduct) {
-  return product.priceMinor === null ? 'Price on request' : currency.format(product.priceMinor / 100);
+  return product.priceMinor === null ? 'Price on request' : `${product.priceIsFrom ? 'From ' : ''}${currency.format(product.priceMinor / 100)}`;
 }
 
 function openWeb(path: string) {
@@ -47,8 +59,8 @@ function ProductTile({ product, onPress, onAdd }: { product: FeaturedProduct; on
         <Text style={styles.productPrice}>{money(product)}</Text>
       </View>
     </Pressable>
-    <Pressable disabled={product.priceIsFrom} onPress={onAdd} style={[styles.addButton, product.priceIsFrom && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={`Add ${product.title} to preview cart`}>
-      <Text style={styles.addButtonText}>{product.priceIsFrom ? 'Choose option online' : 'Add to cart'}</Text>
+    <Pressable disabled={!canAddPreviewProduct(product)} onPress={onAdd} style={[styles.addButton, !canAddPreviewProduct(product) && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={`Add ${product.title} to preview cart`}>
+      <Text style={styles.addButtonText}>{product.priceIsFrom ? 'Choose option online' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
     </Pressable>
   </View>;
 }
@@ -64,14 +76,19 @@ function ProductDetail({ product, onBack, onAdd }: { product: FeaturedProduct; o
     <Text style={styles.sellerName}>{product.sellerName}</Text>
     <Text style={styles.productPrice}>{money(product)}</Text>
     <Text style={styles.description}>{product.description || 'Product details have not been provided.'}</Text>
-    <Pressable onPress={product.priceIsFrom ? () => openWeb(`/products/${encodeURIComponent(product.slug || product.id)}`) : onAdd} style={styles.primaryButton}>
-      <Text style={styles.primaryButtonText}>{product.priceIsFrom ? 'View options on Vetit Online' : 'Add to cart'}</Text>
+    <Pressable disabled={!product.priceIsFrom && !canAddPreviewProduct(product)} onPress={product.priceIsFrom ? () => openWeb(`/products/${encodeURIComponent(product.slug || product.id)}`) : onAdd} style={[styles.primaryButton, !product.priceIsFrom && !canAddPreviewProduct(product) && styles.buttonDisabled]}>
+      <Text style={styles.primaryButtonText}>{product.priceIsFrom ? 'View options on Vetit Online' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
     </Pressable>
     {product.priceIsFrom && <Text style={styles.note}>Variant selection is not available in the mobile preview yet.</Text>}
   </View>;
 }
 
-export default function App() {
+// A trusted native session host may inject moderation. The default Expo preview
+// keeps the existing signed-in web handoff; it never invents a native session.
+export default function App({moderation,nativeModeration}: {moderation?:ModerationWorkspaceProps;nativeModeration?:NativeModerationProps} = {}) {
+  const [language, setLanguage] = useState<'en'|'hi'>('en');
+  const copy = workspaceCopy(language);
+  const [cartMessage, setCartMessage] = useState('');
   const [tab, setTab] = useState<Tab>('home');
   const [detailKey, setDetailKey] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -88,6 +105,7 @@ export default function App() {
   const [serviceCategory, setServiceCategory] = useState('');
   const [serviceReload, setServiceReload] = useState(0);
   const [serviceResults, setServiceResults] = useState<ServiceLoadState>({ loading: false, data: null, error: null });
+  const [availability, setAvailability] = useState<Record<string, AvailabilityState>>({});
   const [cart, setCart] = useState<CartLine[]>([]);
   const [catalog, setCatalog] = useState<LoadState>({ loading: true, data: null, error: null });
   const [detail, setDetail] = useState<LoadState>({ loading: false, data: null, error: null });
@@ -114,7 +132,7 @@ export default function App() {
     const timer = setTimeout(() => {
       setCatalog((current) => ({ ...current, loading: true, error: null }));
       void loadBrowse(controller.signal).then((data) => {
-        setCatalog({ loading: false, data, error: null });
+        if (!controller.signal.aborted) setCatalog({ loading: false, data, error: null });
       }).catch((error: unknown) => {
         if (controller.signal.aborted) return;
         const message = error instanceof CatalogClientError ? error.message : 'The catalogue is unavailable right now.';
@@ -129,7 +147,7 @@ export default function App() {
     const controller = new AbortController();
     setDetail({ loading: true, data: null, error: null });
     void fetchCatalog({ product: detailKey, pageSize: 1 }, { baseUrl: API_BASE_URL, signal: controller.signal })
-      .then((data) => setDetail({ loading: false, data, error: null }))
+      .then((data) => { if (!controller.signal.aborted) setDetail({ loading: false, data, error: null }); })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         setDetail({ loading: false, data: null, error: error instanceof Error ? error.message : 'Product details are unavailable.' });
@@ -145,7 +163,7 @@ export default function App() {
       baseUrl: API_BASE_URL,
       filters: { city: serviceCity, postalCode: servicePostalCode, category: serviceCategory },
       signal: controller.signal,
-    }).then((data) => setServiceResults({ loading: false, data, error: null }))
+    }).then((data) => { if (!controller.signal.aborted) setServiceResults({ loading: false, data, error: null }); })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
         setServiceResults((current) => ({ ...current, loading: false, error: error instanceof ServiceClientError ? error.message : 'Service discovery is unavailable.' }));
@@ -154,10 +172,23 @@ export default function App() {
   }, [tab, serviceReload]);
 
   const products = catalog.data?.products ?? [];
+
+  const checkAvailability = useCallback(async (serviceListingId: string) => {
+    setAvailability((current) => ({ ...current, [serviceListingId]: { loading: true, message: 'Loading available times…' } }));
+    try {
+      const result = await requestAppointmentSlots({ baseUrl: API_BASE_URL, serviceListingId });
+      const message = formatAppointmentAvailability(result);
+      setAvailability((current) => ({ ...current, [serviceListingId]: { loading: false, message } }));
+    } catch (error) {
+      const message = error instanceof AppointmentClientError ? error.message : 'Availability could not be loaded.';
+      setAvailability((current) => ({ ...current, [serviceListingId]: { loading: false, message } }));
+    }
+  }, []);
   const selectedProduct = detail.data?.products[0] ?? null;
   const taxonomy = catalog.data?.taxonomy;
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
-  const cartTotal = cart.reduce((sum, line) => sum + (line.product.priceMinor ?? 0) * line.quantity, 0);
+  const cartTotal = previewCartSubtotal(cart);
+  const categoryTree = categoryNavigation(taxonomy?.categories ?? [], taxonomy?.animals.find(item => item.slug === animalSlug)?.id, categorySlug);
 
   const browseCategory = (category: ProductCategory) => {
     setCategorySlug(category.slug); setAnimalSlug(''); setPage(1); setTab('shop'); setDetailKey(null);
@@ -166,11 +197,13 @@ export default function App() {
     setAnimalSlug(animal?.slug ?? ''); setCategorySlug(''); setPage(1); setTab('shop'); setDetailKey(null);
   };
   const addToCart = (product: FeaturedProduct) => {
-    if (product.priceIsFrom) return;
+    if (!canAddPreviewProduct(product)) return;
+    if (cart.length >= 50 && !cart.some(line => line.product.id === product.id)) { setCartMessage(language === 'hi' ? 'कार्ट में अधिकतम 50 उत्पाद रख सकते हैं।' : 'The preview cart supports up to 50 products.'); return; }
+    if (cart.some(line => line.product.id === product.id && line.quantity >= 99)) { setCartMessage(language === 'hi' ? 'अधिकतम मात्रा 99 है।' : 'Maximum quantity is 99.'); return; }
+    setCartMessage(language === 'hi' ? 'उत्पाद स्थानीय कार्ट में जोड़ा गया।' : 'Product added to the local preview cart.');
     setCart((current) => {
-      const existing = current.find((line) => line.product.id === product.id);
-      if (existing) return current.map((line) => line.product.id === product.id ? { ...line, quantity: Math.min(99, line.quantity + 1) } : line);
-      return [...current, { product, quantity: 1 }];
+      try { return changePreviewCart(current,{action:'add',product}); }
+      catch { return current; }
     });
   };
 
@@ -219,8 +252,12 @@ export default function App() {
     <Text style={styles.filterLabel}>Categories</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
       <Chip label="All categories" selected={!categorySlug} onPress={() => { setCategorySlug(''); setPage(1); }} />
-      {(taxonomy?.categories ?? []).filter((category) => !animalSlug || category.species.includes(taxonomy?.animals.find((item) => item.slug === animalSlug)?.id ?? '')).map((category) => <Chip key={category.id} label={category.label} selected={categorySlug === category.slug} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
+      {categoryTree.roots.map((category) => <Chip key={category.id} label={category.label} selected={categoryTree.breadcrumbs[0]?.id === category.id} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
     </ScrollView>
+    {!!categoryTree.breadcrumbs.length && <Text style={styles.note}>{categoryTree.breadcrumbs.map(category => category.label).join(' › ')}</Text>}
+    {!!categoryTree.children.length && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
+      {categoryTree.children.map(category => <Chip key={category.id} label={category.label} selected={categorySlug === category.slug} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
+    </ScrollView>}
     <View style={styles.filterRow}>
       <TextInput value={minPrice} onChangeText={(value) => { setMinPrice(value); setPage(1); }} placeholder="Min ₹" keyboardType="numeric" style={[styles.input, styles.priceInput]} accessibilityLabel="Minimum price in rupees" />
       <TextInput value={maxPrice} onChangeText={(value) => { setMaxPrice(value); setPage(1); }} placeholder="Max ₹" keyboardType="numeric" style={[styles.input, styles.priceInput]} accessibilityLabel="Maximum price in rupees" />
@@ -228,24 +265,32 @@ export default function App() {
         {(['newest', 'price-asc', 'price-desc'] as const).map((option) => <Chip key={option} label={option === 'newest' ? 'Recent' : option === 'price-asc' ? '₹ Low' : '₹ High'} selected={sort === option} onPress={() => { setSort(option); setPage(1); }} />)}
       </View>
     </View>
+    {catalog.loading && catalog.data && <Text style={styles.note} accessibilityLiveRegion="polite">Updating results… / परिणाम अपडेट हो रहे हैं…</Text>}
     {catalog.loading && !catalog.data ? <LoadingState /> : catalog.error ? <ErrorState message={catalog.error} onRetry={() => setBrowseReload((current) => current + 1)} /> : productList(products)}
-    {catalog.data && <View style={styles.pagination}>
-      <Pressable disabled={!catalog.data.pagination.hasPrevious} onPress={() => setPage((current) => Math.max(1, current - 1))}><Text style={catalog.data.pagination.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
+    {catalog.data && !catalog.error && <View style={styles.pagination}>
+      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasPrevious} onPress={() => setPage((current) => Math.max(1, current - 1))}><Text style={catalog.data.pagination.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
       <Text style={styles.muted}>Page {catalog.data.pagination.page} of {catalog.data.pagination.pageCount}</Text>
-      <Pressable disabled={!catalog.data.pagination.hasNext} onPress={() => setPage((current) => current + 1)}><Text style={catalog.data.pagination.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
+      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasNext} onPress={() => setPage((current) => current + 1)}><Text style={catalog.data.pagination.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
     </View>}
   </>;
 
   const renderCart = () => <>
-    <Text style={styles.pageTitle}>Your cart</Text>
-    <Text style={styles.muted}>This preview stays in memory on this device.</Text>
+    <Text style={styles.pageTitle}>{copy.cart}</Text>
+    <Text style={styles.muted}>{copy.preview} {language === 'hi' ? 'यह कार्ट केवल ऐप खुला रहने तक रहती है।' : 'This basket stays in memory while the app is open.'}</Text>
     {cart.length === 0 ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Your cart is empty</Text><Pressable onPress={() => setTab('shop')}><Text style={styles.inlineLink}>Browse products</Text></Pressable></View> : <>
       {cart.map((line) => <View key={line.product.id} style={styles.cartLine}>
-        <View style={styles.cartLineText}><Text style={styles.productTitle}>{line.product.title}</Text><Text style={styles.muted}>{money(line.product)} · Qty {line.quantity}</Text></View>
-        <Pressable onPress={() => setCart((items) => items.filter((item) => item.product.id !== line.product.id))}><Text style={styles.inlineLink}>Remove</Text></Pressable>
+        <View style={styles.cartLineText}><Text style={styles.productTitle}>{line.product.title}</Text><Text style={styles.muted}>{money(line.product)} · {copy.qty} {line.quantity}</Text>
+          <View style={styles.filterRow}>
+            <Pressable disabled={line.quantity <= 1} accessibilityRole="button" accessibilityLabel={`${copy.decrease}: ${line.product.title}`} onPress={() => setCart(items => changePreviewCart(items,{action:'quantity',id:line.product.id,quantity:line.quantity-1}))}><Text style={line.quantity <= 1 ? styles.disabledLink : styles.inlineLink}>−</Text></Pressable>
+            <Pressable disabled={line.quantity >= 99} accessibilityRole="button" accessibilityLabel={`${copy.increase}: ${line.product.title}`} onPress={() => setCart(items => changePreviewCart(items,{action:'quantity',id:line.product.id,quantity:line.quantity+1}))}><Text style={line.quantity >= 99 ? styles.disabledLink : styles.inlineLink}>＋</Text></Pressable>
+          </View>
+        </View>
+        <Pressable onPress={() => setCart(items => changePreviewCart(items,{action:'remove',id:line.product.id}))}><Text style={styles.inlineLink}>{copy.remove}</Text></Pressable>
       </View>)}
-      <Text style={styles.productPrice}>Priced items: {currency.format(cartTotal / 100)}</Text>
-      <Text style={styles.note}>Checkout, order submission and payment are not enabled.</Text>
+      <Text style={styles.productPrice}>{copy.subtotal}: {cartTotal === null ? '—' : formatWorkspaceMoney(cartTotal,'INR',language)}</Text>
+      <Text style={styles.note}>{copy.unknownTotal} {copy.unavailable}</Text>
+      {nativeModeration&&<NativeCheckoutReview session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} lines={cart.map(line=>({listingId:line.product.id,quantity:line.quantity}))} language={language}/>}
+      <Pressable disabled style={[styles.primaryButton,styles.buttonDisabled]} accessibilityRole="button" accessibilityState={{disabled:true}}><Text style={styles.primaryButtonText}>{copy.checkout}</Text></Pressable>
       <Pressable onPress={() => setCart([])} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Clear preview cart</Text></Pressable>
     </>}
   </>;
@@ -261,6 +306,7 @@ export default function App() {
       <Chip label="All services" selected={!serviceCategory} onPress={() => { setServiceCategory(''); setServiceReload((current) => current + 1); }} />
       {(serviceResults.data?.categories ?? []).map((category) => <Chip key={category.slug} label={category.name} selected={serviceCategory === category.slug} onPress={() => { setServiceCategory(category.slug); setServiceReload((current) => current + 1); }} />)}
     </ScrollView>
+    {serviceResults.loading && serviceResults.data && <Text style={styles.note} accessibilityLiveRegion="polite">Updating services… / सेवाएँ अपडेट हो रही हैं…</Text>}
     {serviceResults.loading && !serviceResults.data ? <LoadingState /> : serviceResults.error ? <ErrorState message={serviceResults.error} onRetry={() => setServiceReload((current) => current + 1)} /> : (serviceResults.data?.services.length ?? 0) === 0 ?
       <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No matching services</Text><Text style={styles.muted}>Try another city or postcode. Only published provider listings are shown.</Text></View> :
       <View style={styles.serviceList}>{serviceResults.data?.services.map((service) => <View key={service.id} style={styles.serviceCard}>
@@ -270,21 +316,32 @@ export default function App() {
         <Text style={styles.muted}>{[service.locality, service.city].filter(Boolean).join(', ') || 'Location details not listed'}</Text>
         <Text style={styles.productPrice}>{service.pricePaise === null ? 'Price not listed' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: service.currencyCode, maximumFractionDigits: 2 }).format(service.pricePaise / 100)}</Text>
         {service.distanceKm !== null && <Text style={styles.muted}>{service.distanceKm} km away</Text>}
+        <Pressable disabled={availability[service.id]?.loading} onPress={() => void checkAvailability(service.id)} style={[styles.secondaryButton, availability[service.id]?.loading && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={`Check appointment availability for ${service.title}`}><Text style={styles.secondaryButtonText}>Check availability</Text></Pressable>
+        {!!availability[service.id]?.message && <Text style={styles.muted} accessibilityLiveRegion="polite">{availability[service.id].message}</Text>}
+        <Pressable onPress={() => openWeb(`/appointments?service=${encodeURIComponent(service.id)}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Appointments and waiting list online</Text></Pressable>
         <Pressable onPress={() => openWeb(`/providers/${encodeURIComponent(service.providerSlug || service.businessId)}`)} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>View provider</Text></Pressable>
       </View>)}</View>}
-    <Text style={styles.note}>Appointment slots can be checked online. Booking remains unavailable until the verified booking database migration is enabled.</Text>
+    <Text style={styles.note}>Availability can be checked here. Booking, changes and waiting-list offers use your signed-in web account and require appointment management to be enabled.</Text>
     <Pressable onPress={() => openWeb('/services')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Use device location online</Text></Pressable>
   </>;
 
   const renderOther = () => <View style={styles.infoCard}>
-    <Text style={styles.pageTitle}>Your Vetit account</Text><Text style={styles.description}>Sign-in uses Vetit’s existing secure OTP flow on the website. Seller and admin tools are not enabled in this mobile preview.</Text>
+    <Text style={styles.pageTitle}>Your Vetit account</Text><Text style={styles.description}>{nativeModeration?'Use the approved native Test sign-in below. Orders and moderation verify your session for each operation.':'Sign-in uses Vetit’s existing secure OTP flow on the website. Native account features require a verified Test session.'}</Text>
+    {nativeModeration?<NativeModeration {...nativeModeration} language={language}/>:moderation&&<ModerationWorkspace {...moderation} language={language}/>}
+    {nativeModeration&&<NativeBuyerOrders session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
+    {nativeModeration&&<NativeAppointments session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
     <Pressable onPress={() => openWeb('/login')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Continue to sign in online</Text></Pressable>
+    <Pressable onPress={() => openWeb('/seller')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{language === 'hi' ? 'विक्रेता स्थिति और समीक्षा ऑनलाइन' : 'Seller status and review online'}</Text></Pressable>
+    <Pressable onPress={() => openWeb('/appointments')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Appointment history and notifications online</Text></Pressable>
+    <Pressable onPress={() => openWeb(`/orders?lang=${language}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{copy.account}</Text></Pressable>
+    <Text style={styles.note}>{nativeModeration?(language==='hi'?'ऑर्डर सत्यापित टेस्ट सत्र से दिखाए जाते हैं। कार्ट केवल स्थानीय पूर्वावलोकन है।':'Orders use the verified Test session. The basket remains a local preview; no order is placed.'):(language === 'hi' ? 'ऑर्डर देखने के लिए ब्राउज़र में लॉग इन करें। ऐप की कार्ट ब्राउज़र में नहीं भेजी जाती।' : 'Orders use your signed-in browser account. The app basket is not transferred to the browser.')}</Text>
   </View>;
 
   return <View style={styles.app}>
     <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-    <View style={styles.topBar}><Image source={require('../Vetit-online-transparent.png')} style={styles.topLogo} resizeMode="contain" /><Pressable onPress={() => setTab('cart')}><Text style={styles.cartBadge}>Cart · {cartCount}</Text></Pressable></View>
+    <View style={styles.topBar}><Image source={require('../Vetit-online-transparent.png')} style={styles.topLogo} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Switch English or Hindi" onPress={() => setLanguage(current => current === 'en' ? 'hi' : 'en')}><Text style={styles.inlineLink}>{language === 'en' ? 'हिन्दी' : 'English'}</Text></Pressable><Pressable onPress={() => setTab('cart')}><Text style={styles.cartBadge}>{copy.cart} · {cartCount}</Text></Pressable></View>
     <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
+      {!!cartMessage && <Text style={styles.note} accessibilityLiveRegion="polite">{cartMessage}</Text>}
       {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
         : tab === 'home' ? renderHome() : tab === 'shop' ? renderShop() : tab === 'cart' ? renderCart() : tab === 'services' ? renderServices() : renderOther()}
     </ScrollView>

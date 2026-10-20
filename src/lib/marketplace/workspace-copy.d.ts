@@ -1,0 +1,3 @@
+export function workspaceCopy(language?: string): Record<'orders'|'ordersIntro'|'loading'|'empty'|'signin'|'notfound'|'error'|'retry'|'more'|'back'|'view'|'date'|'total'|'subtotal'|'delivery'|'tax'|'items'|'tracking'|'noTracking'|'noItems'|'carrier'|'reference'|'shipped'|'delivered'|'partial'|'shop'|'qty'|'cart'|'preview'|'checkout'|'unavailable'|'unknownTotal'|'remove'|'increase'|'decrease'|'account'|'options'|'unpriced',string>;
+export function orderStatusLabel(status: string, language?: string): string;
+export function formatWorkspaceMoney(minor: number, currency?: string, language?: string): string;

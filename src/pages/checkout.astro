@@ -1,0 +1,57 @@
+---
+import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Price review | Vetit Online</title></head><body><div class="page-shell"><SiteHeader/>
+<main class="product-showcase checkout-review"><h1>Review current product prices / मौजूदा कीमतें देखें</h1>
+<p>This is a read-only price review of this browser’s cart. It does not reserve stock, calculate a final payable total, create an order or take payment.</p>
+<noscript>Price review needs JavaScript. / कीमतों की समीक्षा के लिए JavaScript सक्षम करें।</noscript>
+<p>यह केवल इस ब्राउज़र की कार्ट की कीमतों की समीक्षा है। इससे स्टॉक आरक्षित, ऑर्डर या भुगतान नहीं होता।</p>
+<p id="quote-status" role="status" aria-live="polite">Select “Check current prices” to request a quote.</p>
+<p><a href="/cart">Return to cart / कार्ट पर लौटें</a> · <a href="/orders">Your orders / आपके ऑर्डर</a></p>
+<a id="quote-signin" href="/login?next=%2Fcheckout" hidden>Sign in to review prices / लॉग इन करें</a>
+<div id="quote-lines"></div><p id="quote-subtotal"></p>
+<button id="quote-refresh" class="button button-secondary" type="button">Check current prices / मौजूदा कीमतें देखें</button>
+<button id="quote-payment" class="button button-primary" type="button" disabled>Order and payment unavailable / ऑर्डर और भुगतान उपलब्ध नहीं हैं</button>
+<p>Delivery, tax and final total: not calculated. Any quoted subtotal is informational and can change.</p>
+</main></div>
+<script>
+  import { requestCheckoutQuote, QuoteClientError } from '../lib/commerce/quote-client.js';
+  import { normalizeQuoteLines } from '../lib/commerce/checkout-quote.js';
+  import { formatWorkspaceMoney } from '../lib/marketplace/workspace-copy.js';
+  const status = document.getElementById('quote-status')!;
+  const lines = document.getElementById('quote-lines')!;
+  const subtotal = document.getElementById('quote-subtotal')!;
+  const signin = document.getElementById('quote-signin')!;
+  const refresh = document.getElementById('quote-refresh') as HTMLButtonElement;
+  let active: AbortController | undefined;
+  const invalidate = () => { active?.abort(); active = undefined; lines.replaceChildren(); subtotal.textContent = ''; refresh.disabled = false; };
+  refresh.addEventListener('click', async () => {
+    invalidate(); signin.hidden = true;
+    let input;
+    try {
+      const saved = JSON.parse(localStorage.getItem('vetit-cart-v1') || '[]');
+      if (!Array.isArray(saved) || !saved.length) { status.textContent = 'Your browser cart is empty. / आपकी कार्ट खाली है।'; return; }
+      input = normalizeQuoteLines({lines:saved.map(item => ({listingId:item?.id,quantity:item?.quantity}))});
+    } catch { status.textContent = 'The saved cart cannot be reviewed. Return to the cart and check its items. / कार्ट की वस्तुओं की जाँच करें।'; return; }
+    const controller = new AbortController(); active = controller; refresh.disabled = true;
+    status.textContent = 'Checking current prices… / कीमतें जाँची जा रही हैं…';
+    try {
+      const quote = await requestCheckoutQuote(input,{signal:controller.signal});
+      if (controller.signal.aborted) return;
+      quote.lines.forEach(item => { const row = document.createElement('article'); row.className = 'seller-panel';
+        const title = document.createElement('h2'); title.textContent = item.title;
+        const detail = document.createElement('p'); detail.textContent = `${item.sellerName} · ${item.quantity} × ${formatWorkspaceMoney(item.unitAmountMinor)} = ${formatWorkspaceMoney(item.lineAmountMinor)}`;
+        row.append(title,detail); lines.append(row);
+      });
+      subtotal.textContent = `Current items subtotal / वस्तुओं का मूल्य: ${formatWorkspaceMoney(quote.subtotalMinor)}`;
+      status.textContent = 'Price review complete. Checkout remains unavailable. / कीमतों की समीक्षा पूरी हुई। चेकआउट उपलब्ध नहीं है।';
+    } catch(error) {
+      if (controller.signal.aborted) return;
+      status.textContent = error instanceof QuoteClientError ? error.message : 'Price review is unavailable. Please retry.';
+      signin.hidden = !(error instanceof QuoteClientError && error.status === 401);
+    } finally { if (active === controller) refresh.disabled = false; }
+  });
+  window.addEventListener('storage', event => { if (event.key === 'vetit-cart-v1' || event.key === null) { invalidate(); status.textContent = 'The cart changed. Check current prices again. / कार्ट बदल गई है। कीमतें फिर जाँचें।'; } });
+  window.addEventListener('pagehide', invalidate, {once:true});
+</script><style>[hidden] {display:none!important;} .checkout-review {max-width:1000px;} button {margin:12px 12px 12px 0;} article {overflow-wrap:anywhere;}</style></body></html>

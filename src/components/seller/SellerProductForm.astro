@@ -25,7 +25,8 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
       {businesses.map((business) => <option value={business.id} selected={business.id === selectedBusinessId}>{business.display_name}</option>)}
     </select>
   </label>
-  <label>Product name<input name="title" required minlength="3" maxlength="160" value={product?.title ?? ''} autocomplete="off" /></label>
+  <label>Product name / उत्पाद का नाम<input name="title" required minlength="3" maxlength="160" value={product?.title ?? ''} autocomplete="off" /></label>
+  <p class="seller-form-hint">Product names can use Indian regional scripts. Interface translations and moderation language coverage are enabled progressively. / उत्पाद के नाम भारतीय क्षेत्रीय लिपियों में लिख सकते हैं।</p>
   <label>Product details<textarea name="description" rows="5" maxlength="5000">{product?.description ?? ''}</textarea></label>
   <label>Vetit product category
     <select name="category_id" data-seller-category required>
@@ -53,40 +54,70 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
     <button class="button button-secondary small-button" type="button" data-add-variant>Add another variant</button>
   </fieldset>
   <label>Product photos<input type="file" data-product-images data-max-images={remainingImageSlots} accept="image/jpeg,image/png,image/webp,image/avif" multiple disabled={remainingImageSlots === 0} /></label>
+  <ul data-image-previews aria-label="Selected photos — local preview only" class="seller-image-previews"></ul>
   <p class="seller-form-hint">{remainingImageSlots === 0 ? 'This product already has the maximum of 5 photos.' : `Photos are optional. Add up to ${remainingImageSlots} JPEG, PNG, WebP or AVIF files, 5 MB each. They remain private until Vetit publishes the listing.`}</p>
   <p class="seller-feedback" data-image-status role="status" aria-live="polite" hidden></p>
   <button class="button button-primary" type="submit">{product ? 'Save draft changes' : 'Save product draft'}</button>
   <p class="seller-form-hint">Saving creates or updates a draft. It will not appear in the marketplace until Vetit reviews and publishes it.</p>
 </form>
+<style>
+  .seller-image-previews {display:flex;flex-wrap:wrap;gap:12px;list-style:none;padding:0;}
+  .seller-image-previews :global(li) {max-width:150px;overflow-wrap:anywhere;}
+  .seller-image-previews :global(img) {display:block;object-fit:contain;background:#f2ecfa;border-radius:8px;}
+  .seller-image-previews :global(span) {display:block;font-size:.8rem;}
+</style>
 
 <script>
   import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+  import { validateSellerImageSelection } from '../../lib/seller/image-selection.js';
 
   const form = document.querySelector<HTMLFormElement>('[data-seller-product-form]');
   const imageInput = form?.querySelector<HTMLInputElement>('[data-product-images]');
   const maxImages = Number(imageInput?.dataset.maxImages ?? 5);
   const imageStatus = form?.querySelector<HTMLElement>('[data-image-status]');
   const submitButton = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const previews = form?.querySelector<HTMLElement>('[data-image-previews]');
+  let previewUrls: string[] = [];
+  let saving = false, saveUncertain = false;
+  let savedListingId: string | null = null;
+  const validId = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+  const clearPreviews = () => { previewUrls.forEach(url => URL.revokeObjectURL(url)); previewUrls = []; previews?.replaceChildren(); };
+  imageInput?.addEventListener('change', () => {
+    clearPreviews();
+    const files = [...(imageInput.files ?? [])];
+    const error = validateSellerImageSelection(files,maxImages);
+    if (imageStatus) { imageStatus.hidden = !files.length; imageStatus.classList.toggle('is-error',Boolean(error)); imageStatus.textContent = error ?? `${files.length} photo(s) selected locally. Upload starts only when you save the draft. / तस्वीरें केवल ड्राफ्ट सहेजने पर अपलोड होंगी।`; }
+    if (error) return;
+    files.forEach(file => { const url = URL.createObjectURL(file); previewUrls.push(url); const row = document.createElement('li'); const image = document.createElement('img'); image.src = url; image.alt = file.name; image.width = 120; image.height = 100; const name = document.createElement('span'); name.textContent = file.name; row.append(image,name); previews?.append(row); });
+  });
+  window.addEventListener('pagehide', clearPreviews, {once:true});
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (saving || saveUncertain) return;
     if (!form.querySelector('input[name="species_ids"]:checked')) {
       if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = 'Choose at least one pet or livestock type for this product.'; }
       return;
     }
     const files = [...(imageInput?.files ?? [])];
-    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
-    if (files.length > maxImages || files.some(file => !allowedTypes.has(file.type) || file.size > 5 * 1024 * 1024)) {
+    if (validateSellerImageSelection(files,maxImages)) {
       if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = `Choose up to ${maxImages} JPEG, PNG, WebP or AVIF photos under 5 MB each.`; }
       return;
     }
+    saving = true;
+    let rejected = false;
     if (submitButton) submitButton.disabled = true;
     if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.remove('is-error'); imageStatus.textContent = 'Saving your product draft…'; }
     try {
       const payload = new FormData(form);
       const response = await fetch(form.action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error('The product draft could not be saved.');
+      if (!response.ok) { rejected = response.status >= 400 && response.status < 500; throw new Error('The product draft was not accepted.'); }
       const { listingId } = await response.json();
+      if (!validId(listingId)) throw new Error('Draft confirmation unavailable.');
+      savedListingId = listingId;
+      let listingField = form.querySelector<HTMLInputElement>('input[name="listing_id"]');
+      if (!listingField) { listingField = document.createElement('input'); listingField.type = 'hidden'; listingField.name = 'listing_id'; form.append(listingField); }
+      listingField.value = listingId;
       let imageFailure = false;
       if (files.length) {
         if (imageStatus) imageStatus.textContent = 'Draft saved. Uploading your photos…';
@@ -97,23 +128,26 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
             body: JSON.stringify({ listing_id: listingId, content_type: file.type, alt_text: `${String(payload.get('title') ?? 'Product')} photo ${index + 1}` }),
           });
           if (!reservationResponse.ok) { imageFailure = true; continue; }
-          const { imageId, path } = await reservationResponse.json();
+          const { path } = await reservationResponse.json();
           const { error: uploadError } = await supabase.storage.from('listing-images').upload(path, file, { contentType: file.type, upsert: false });
           if (uploadError) {
             imageFailure = true;
-            await supabase.storage.from('listing-images').remove([path]);
-            await fetch('/api/seller/image-reservation', {
-              method: 'DELETE', headers: { 'content-type': 'application/json', accept: 'application/json' },
-              body: JSON.stringify({ image_id: imageId }),
-            });
+            // A lost upload response may conceal a successful write. Preserve
+            // the reservation/object for explicit owner inspection and recovery.
           }
         }
       }
       window.location.assign(`/seller/products/${listingId}?saved=1${imageFailure ? '&images=unavailable' : ''}`);
-    } catch (error) {
-      if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = error instanceof Error ? error.message : 'The draft could not be saved. Please try again.'; }
-      if (submitButton) submitButton.disabled = false;
+    } catch {
+      saveUncertain = Boolean(savedListingId) || !rejected;
+      if (imageStatus) {
+        imageStatus.hidden = false; imageStatus.classList.add('is-error');
+        imageStatus.textContent = savedListingId ? 'Draft saved; photo upload is unconfirmed. Open the saved draft before retrying.' : rejected ? 'Draft not accepted. Check the fields and any conflicting product name.' : 'Save confirmation unavailable. Check your drafts before trying again.';
+        if (saveUncertain) { const link = document.createElement('a'); link.textContent = savedListingId ? 'Open saved draft' : 'Check your drafts'; link.href = savedListingId ? `/seller/products/${savedListingId}?images=unavailable` : '/seller'; imageStatus.append(' ',link); }
+      }
+      if (submitButton) submitButton.disabled = saveUncertain;
     }
+    finally { saving = false; }
   });
 
   const category = document.querySelector<HTMLSelectElement>('[data-seller-category]');

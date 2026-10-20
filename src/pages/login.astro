@@ -53,6 +53,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
   </div>
   <script>
     import { createSupabaseBrowserClient } from '../lib/supabase/browser';
+    import { safeNextPath } from '../lib/auth/navigation.js';
     import { sendEmailOtp, sendIndianPhoneOtp, verifyEmailOtp, verifyIndianPhoneOtp } from '../lib/auth/otp';
 
     const emailForm = document.querySelector<HTMLFormElement>('[data-email-form]')!;
@@ -66,10 +67,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
     let client: ReturnType<typeof createSupabaseBrowserClient> | undefined;
     let challenge: { method: 'email' | 'phone', contact: string } | undefined;
 
-    function safeNextPath() {
-      const requested = new URLSearchParams(window.location.search).get('next');
-      return requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : '/';
-    }
+    const nextPath = safeNextPath(new URLSearchParams(window.location.search).get('next'), window.location.origin);
 
     function showStatus(message: string, isError = false) {
       status.textContent = message;
@@ -98,7 +96,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
       try {
         const authClient = getClient();
         const { error } = method === 'email'
-          ? await sendEmailOtp(authClient, contact)
+          ? await sendEmailOtp(authClient, contact, `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`)
           : await sendIndianPhoneOtp(authClient, contact);
         if (error) throw error;
         challenge = { method, contact };
@@ -131,7 +129,7 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
           : await verifyIndianPhoneOtp(authClient, challenge.contact, token);
         if (error) throw error;
         showStatus('You are signed in. Redirecting…');
-        window.location.replace(safeNextPath());
+        window.location.replace(nextPath);
       } catch (error) {
         onError(error);
       } finally {
@@ -145,6 +143,10 @@ const joining = Astro.url.searchParams.get('mode') === 'join';
       methods.hidden = false;
       showStatus('');
     });
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    if (reason === 'session-expired') showStatus('Your session has ended. Sign in again to continue.');
+    if (reason === 'signed-out') showStatus('You are signed out on this device.');
+    if (reason === 'callback-failed') showStatus('That sign-in link could not be completed. Request a new code.', true);
   </script>
 </body>
 </html>

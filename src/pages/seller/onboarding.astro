@@ -27,11 +27,12 @@ if (!getSupabasePublicConfig()) {
     <span class="section-label dark-label"><span></span>Seller onboarding</span><h1>Create your seller profile</h1><p>Use your existing Vetit account. Your business begins as pending verification, and all products start as drafts.</p>
     {Astro.url.searchParams.has('error') && <p class="seller-feedback is-error" role="alert">We could not create that seller profile. Check the details and try again.</p>}
     <form class="seller-form" method="post" action="/api/seller/business">
-      <label>Business display name<input name="display_name" minlength="2" maxlength="120" required autocomplete="organization" placeholder="Your shop or farm name"></label>
+      <label>Business display name / व्यवसाय का नाम<input name="display_name" minlength="2" maxlength="120" required autocomplete="organization" placeholder="Your shop or farm name"></label>
       <label>Legal name (optional)<input name="legal_name" maxlength="180" autocomplete="organization-title"></label>
       <label>Business type<select name="business_type" required><option value="individual">Individual seller</option><option value="company">Company</option><option value="farm">Farm or livestock business</option><option value="other">Other seller</option></select></label>
       <label>Public email (optional)<input name="public_email" type="email" maxlength="254" autocomplete="email"></label>
-      <label>Public phone (optional)<input name="public_phone" type="tel" maxlength="32" autocomplete="tel"></label>
+      <label>Public phone (optional) / सार्वजनिक फ़ोन (वैकल्पिक)<input name="public_phone" type="tel" maxlength="32" autocomplete="tel" placeholder="+91 98765 43210"></label>
+      <p class="seller-form-hint">Use 7–15 digits; spaces, brackets and dashes are allowed. / 7–15 अंक लिखें; स्पेस, कोष्ठक और डैश स्वीकार हैं।</p>
       <label>Website (optional)<input name="website_url" type="url" placeholder="https://example.in" autocomplete="url"></label>
       <button class="button button-primary" type="submit">Create seller profile</button>
     </form>

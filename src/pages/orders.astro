@@ -1,0 +1,74 @@
+---
+import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Orders | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader/><main class="product-showcase order-workspace">
+  <label>Language / भाषा <select id="orders-language"><option value="en">English</option><option value="hi">हिन्दी</option></select></label>
+  <h1 id="orders-title">Your orders</h1><p id="orders-intro"></p>
+  <noscript>Order history needs JavaScript. / ऑर्डर देखने के लिए JavaScript सक्षम करें।</noscript>
+  <p id="orders-status" role="status" aria-live="polite"></p>
+  <nav aria-label="Order navigation"><a id="orders-back" href="/orders">All orders</a> · <a id="orders-shop" href="/products">Browse products</a></nav>
+  <p><a id="orders-signin" href="/login?next=%2Forders" hidden>Sign in</a></p>
+  <div id="orders-content"></div>
+  <button class="button button-secondary" id="orders-retry" type="button" hidden>Retry</button>
+  <button class="button button-primary" id="orders-more" type="button" hidden>Load more</button>
+</main></div>
+<script>
+  import { createOrderWorkspace } from '../lib/buyer/order-workspace.js';
+  import type { OrderWorkspaceState } from '../lib/buyer/order-workspace.js';
+  import { workspaceCopy, orderStatusLabel, formatWorkspaceMoney } from '../lib/marketplace/workspace-copy.js';
+  import {resolveIndianLocale} from '../lib/i18n/locales.js';
+  const get = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(`orders-${id}`) as T;
+  const language = get<HTMLSelectElement>('language');
+  language.value = resolveIndianLocale(new URLSearchParams(location.search).get('lang')).language;
+  const id = new URLSearchParams(location.search).get('orderId') || undefined;
+  let snapshot: OrderWorkspaceState;
+  const money = (amount: number, currency: string) => formatWorkspaceMoney(amount, currency, language.value);
+  function paragraph(parent: HTMLElement, value: string, tag = 'p') { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; }
+  function render(state: OrderWorkspaceState) {
+    snapshot = state;
+    const copy = workspaceCopy(language.value);
+    document.documentElement.lang = language.value;
+    get('title').textContent = copy.orders; get('intro').textContent = copy.ordersIntro;
+    get('back').textContent = copy.back; get('back').setAttribute('href', `/orders?lang=${language.value}`); get('shop').textContent = copy.shop;
+    get('status').textContent = ['loading','empty','signin','notfound','error'].includes(state.phase) ? copy[state.phase as 'loading'|'empty'|'signin'|'notfound'|'error'] : '';
+    get('signin').hidden = state.phase !== 'signin'; get('signin').textContent = copy.signin;
+    get('signin').setAttribute('href', `/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+    get<HTMLButtonElement>('retry').hidden = state.phase !== 'error'; get('retry').textContent = copy.retry;
+    get<HTMLButtonElement>('more').hidden = state.mode !== 'list' || !state.nextCursor;
+    get<HTMLButtonElement>('more').disabled = state.phase === 'loading'; get('more').textContent = copy.more;
+    const content = get('content'); content.replaceChildren(); content.setAttribute('aria-busy', String(state.phase === 'loading'));
+    state.orders.forEach(order => {
+      const card = paragraph(content, '', 'article'); card.className = 'seller-panel';
+      paragraph(card, orderStatusLabel(order.order_status, language.value), 'h2');
+      paragraph(card, `${copy.date}: ${new Date(order.created_at).toLocaleString(language.value === 'hi' ? 'hi-IN' : 'en-IN')}`);
+      paragraph(card, `${copy.total}: ${money(order.total_minor, order.currency_code)}`);
+      const link = document.createElement('a'); link.href = `/orders?orderId=${encodeURIComponent(order.id)}&lang=${language.value}`; link.textContent = `${copy.view} · ${order.id}`; card.append(link);
+    });
+    if (!state.detail) return;
+    const { order, items, fulfilments, truncated } = state.detail;
+    paragraph(content, `${order.id} · ${orderStatusLabel(order.order_status,language.value)}`, 'h2');
+    for (const [label,amount] of [[copy.subtotal,order.subtotal_minor],[copy.delivery,order.delivery_minor],[copy.tax,order.tax_minor],[copy.total,order.total_minor]] as const) paragraph(content, `${label}: ${money(amount,order.currency_code)}`);
+    paragraph(content,copy.items,'h2');
+    if (!items.length) paragraph(content,copy.noItems);
+    items.forEach(item => { const card = paragraph(content,'','article'); card.className = 'seller-panel'; paragraph(card,item.title_snapshot,'h3'); paragraph(card,`${copy.qty}: ${item.quantity} · ${money(item.unit_price_minor,item.currency_code)}`); });
+    paragraph(content,copy.tracking,'h2');
+    if (!fulfilments.length) paragraph(content,copy.noTracking);
+    fulfilments.forEach(item => { const card = paragraph(content,'','article'); card.className = 'seller-panel'; paragraph(card,orderStatusLabel(item.status,language.value),'h3');
+      if(item.carrier) paragraph(card,`${copy.carrier}: ${item.carrier}`);
+      if(item.tracking_reference) paragraph(card,`${copy.reference}: ${item.tracking_reference}`);
+      if(item.shipped_at) paragraph(card,`${copy.shipped}: ${new Date(item.shipped_at).toLocaleString(language.value === 'hi' ? 'hi-IN' : 'en-IN')}`);
+      if(item.delivered_at) paragraph(card,`${copy.delivered}: ${new Date(item.delivered_at).toLocaleString(language.value === 'hi' ? 'hi-IN' : 'en-IN')}`);
+    });
+    if(truncated) paragraph(content,copy.partial);
+  }
+  const workspace = createOrderWorkspace({render});
+  get('retry').addEventListener('click', () => void workspace.load({orderId:id, more: !id && Boolean(snapshot.nextCursor)}));
+  get('more').addEventListener('click', () => void workspace.load({more:true}));
+  language.addEventListener('change', () => { const url = new URL(location.href); url.searchParams.set('lang',language.value); history.replaceState(null,'',url); render(snapshot); });
+  window.addEventListener('pagehide', () => workspace.dispose(), {once:true});
+  void workspace.load({orderId:id});
+</script>
+<style>.order-workspace { max-width: 1000px; } [hidden] {display:none!important;} #orders-content article {margin-block:16px; overflow-wrap:anywhere;} button {margin:12px 12px 12px 0;}</style>
+</body></html>

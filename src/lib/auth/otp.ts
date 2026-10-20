@@ -17,8 +17,8 @@ export function normalizeIndianPhone(input: string): string {
 }
 
 /** Supabase sends email OTPs/magic links using the configured Auth email provider. */
-export async function sendEmailOtp(client: SupabaseClient, email: string) {
-  return client.auth.signInWithOtp({ email: email.trim().toLowerCase() });
+export async function sendEmailOtp(client: SupabaseClient, email: string, emailRedirectTo?: string) {
+  return client.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { emailRedirectTo } });
 }
 
 /** SMS delivery is configured in Supabase Auth; no SMS vendor is hard-coded here. */

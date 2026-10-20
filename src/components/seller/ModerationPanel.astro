@@ -1,0 +1,52 @@
+---
+import type {ModerationStatus,SubjectKind} from '../../lib/moderation/workflow.js';
+import {moderationNeedsReview} from '../../lib/moderation/workflow.js';
+interface Props{status:ModerationStatus;kind:SubjectKind;subject:string;reviewer?:boolean;}
+const {status,kind,subject,reviewer=false}=Astro.props;
+const c=status.case;
+const automaticallyApproved=c?.automaticApproval?.status==='approved';
+const labels={pending:'Pending / लंबित',screened:'Screened; review required / समीक्षा आवश्यक',eligible:automaticallyApproved?'Automatically approved; publication pending / स्वतः अनुमोदित; प्रकाशन लंबित':'Eligible; approval required / अनुमोदन आवश्यक',approved:'Approved / अनुमोदित',rejected:'Rejected / अस्वीकृत',corrections:'Corrections requested / सुधार आवश्यक',escalated:'Escalated / उच्च समीक्षा',blocked:'Blocked / अवरुद्ध'};
+---
+<section class="seller-panel moderation-workspace" data-kind={kind} data-subject={subject} data-case-id={c?.caseId} data-version={c?.version}>
+<h2>Moderation / समीक्षा</h2>
+{c ? <><p role="status">{labels[c.state]}</p><p>Policy / नीति: {c.policyVersion ?? 'Not configured / उपलब्ध नहीं'}</p><ul>{c.reasons.map(reason=><li><code>{reason}</code></li>)}</ul>{c.correction&&<p>Required changes / आवश्यक सुधार: {c.correction}</p>}</> : <p>No moderation case is open. / समीक्षा शुरू नहीं हुई है।</p>}
+<p>Automatic publication is disabled. Missing screening or verification blocks approval.</p>
+{c?.automaticApproval?.status==='review_required'&&<p>Previous automatic approval requires a fresh review. / पिछले स्वतः अनुमोदन की नई समीक्षा आवश्यक है।</p>}
+{(!c||['rejected','corrections'].includes(c.state))&&<button type="button" class="button button-secondary" data-moderation-action="open">Submit / resubmit · समीक्षा के लिए भेजें</button>}
+{c&&!['approved','rejected','corrections'].includes(c.state)&&<button type="button" class="button button-secondary" data-moderation-action="screen">Check screening / जाँचें</button>}
+{reviewer&&c&&moderationNeedsReview(c)&&!['approved','rejected','corrections'].includes(c.state)&&<>
+<label>Reason code / कारण कोड<input class="moderation-reason" maxlength="64" placeholder="CORRECTION_REQUIRED" /></label>
+<label>Private reviewer note / निजी समीक्षा टिप्पणी<textarea class="moderation-note" maxlength="1000"></textarea></label>
+<label>Seller correction requirements / विक्रेता के लिए सुधार<textarea class="moderation-correction" maxlength="1000"></textarea></label>
+<div>{['approve','reject','corrections','escalate'].map(action=><button class="button button-secondary small-button" type="button" data-moderation-action={action}>{action==='approve'&&automaticallyApproved?'Review and publish / समीक्षा करके प्रकाशित करें':({approve:'Approve / अनुमोदित करें',reject:'Reject / अस्वीकार करें',corrections:'Request corrections / सुधार माँगें',escalate:'Escalate / उच्च समीक्षा'})[action]}</button>)}</div>
+</>}
+<p class="moderation-feedback" role="alert"></p>
+<h3>Recent audit history / हाल की समीक्षा</h3><ol>{status.events.map(event=><li>{event.operation} · {event.state} · <time datetime={event.at}>{event.at}</time>{reviewer&&event.note&&<p>{event.note}</p>}{reviewer&&event.reviewer&&<p>Reviewer: {event.reviewer}</p>}</li>)}</ol>
+</section>
+<script>
+import {requestModeration,ModerationError,type ModerationCommand} from '../../lib/moderation/workflow.js';
+document.querySelectorAll<HTMLElement>('.moderation-workspace').forEach(panel=>{
+ let busy=false,refreshRequired=false;
+ let lastPayload='',lastRequestId='';
+ panel.querySelectorAll<HTMLButtonElement>('[data-moderation-action]').forEach(button=>button.addEventListener('click',async()=>{
+  if(busy||refreshRequired)return;busy=true;
+  const buttons=panel.querySelectorAll<HTMLButtonElement>('button');buttons.forEach(item=>item.disabled=true);
+  const feedback=panel.querySelector<HTMLElement>('.moderation-feedback')!;feedback.textContent='Checking / जाँच जारी है…';
+  try{
+   const action=button.dataset.moderationAction!;
+   const payload={action:action as 'screen'|'approve'|'reject'|'corrections'|'escalate',caseId:panel.dataset.caseId!,version:Number(panel.dataset.version),reasons:panel.querySelector<HTMLInputElement>('.moderation-reason')?.value.trim()?[panel.querySelector<HTMLInputElement>('.moderation-reason')!.value.trim()]:[],note:panel.querySelector<HTMLTextAreaElement>('.moderation-note')?.value??'',correction:panel.querySelector<HTMLTextAreaElement>('.moderation-correction')?.value??''};
+   const serialized=JSON.stringify(payload);if(serialized!==lastPayload){lastPayload=serialized;lastRequestId=crypto.randomUUID();}
+   const command:ModerationCommand=action==='open'?{action:'open',kind:panel.dataset.kind as 'seller'|'product'|'service',subject:panel.dataset.subject!}:{...payload,requestId:lastRequestId};
+   await requestModeration({baseUrl:location.origin,testOrigin:location.origin},command);location.reload();
+  }catch(error){
+   const status=error instanceof ModerationError?error.status:503;
+   refreshRequired=status===409||status===401||status===403;
+   feedback.textContent=status===409?'Case changed. Refresh before retrying. / समीक्षा बदल गई है। पृष्ठ फिर खोलें।':status===401?'Session expired. Sign in again. / सत्र समाप्त हुआ। फिर साइन इन करें।':'Action not accepted. Check requirements and current screening. / कार्रवाई स्वीकार नहीं हुई। आवश्यक जाँच और कारण कोड देखें।';
+   if(status===409){const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Refresh / फिर खोलें';refresh.addEventListener('click',()=>location.reload());feedback.append(' ',refresh);}
+   if(status===401){const link=document.createElement('a');link.textContent='Sign in / साइन इन';link.href='/login?next='+encodeURIComponent(location.pathname+location.search);feedback.append(' ',link);}
+   if(status===403)feedback.textContent='Access denied. Your review permission may have changed. / अनुमति नहीं है। समीक्षा की अनुमति बदल सकती है।';
+  }
+  finally{busy=false;buttons.forEach(item=>item.disabled=refreshRequired);}
+ }));
+});
+</script>

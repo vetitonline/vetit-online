@@ -1,0 +1,36 @@
+{
+  "candidate": "vetit-durable-moderation-2026-10-19",
+  "targetProjectRef": "apfyfmokcynqiaxqvvxx",
+  "releaseOrder": 9,
+  "version": "20261019102037",
+  "path": "supabase/test-project/migrations/20261019102037_vetit_durable_moderation.sql",
+  "sha256": "635f7cf0cb6be30f868aa2b9acaa3eeacb350f4fcb7b4ef1447f3db1694ff335",
+  "requires": ["original-six-correction-candidate", "20261019095631", "20261019100841"],
+  "hostedApproved": false,
+  "hostedApplied": false,
+  "automaticPublicationEnabled": false,
+  "seedsOperationalPolicyOrReviewers": false,
+  "localValidation": {
+    "database": "vetit_disposable_corrections_20261018_1302",
+    "host": "127.0.0.1",
+    "port": 55432,
+    "installed": true,
+    "definitionReplayPassed": true,
+    "offlineTestsPassed": 16,
+    "mainRollbackSqlGroupsPassed": 5,
+    "workerContextRollbackGroupPassed": true,
+    "crossSubmissionHistoryGroupPassed": true,
+    "realTwoSessionDecisionRacePassed": true,
+    "committedAuditDurabilityPassed": true,
+    "duplicateReplayPassed": true,
+    "retainedSyntheticBusinessId": "20000000-0000-4000-8000-000000000029",
+    "webAndNativeRuntimeVerified": false
+  },
+  "oldSixFileExecutorIncludesThisMigration": false,
+  "requiredBeforeHostedUse": [
+    "approve exact ordered candidate and migration-history reconciliation",
+    "approve category/market legal policy and reviewer provisioning",
+    "configure approved trusted text/image/legal/credential adapters and data sharing",
+    "approve bounded synthetic Test runtime acceptance"
+  ]
+}

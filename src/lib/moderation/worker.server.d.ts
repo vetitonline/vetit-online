@@ -1,0 +1,6 @@
+import type {QueueClient} from './queue.js';
+import type {Evidence,CheckStatus} from './policy.js';
+export type AutomaticDecision={caseId:string;version:number;outcome:'disabled'|'review_required'|'approved'|'already_approved';published:false;validUntil?:string};
+export function screenModerationBatch(client:QueueClient,caseIds:string[],options?:Parameters<typeof screenModerationCase>[2]):Promise<Array<{caseId:string;state:'completed';result:Awaited<ReturnType<typeof screenModerationCase>>}|{caseId:string;state:'failed';status:number}>>;
+export function requestAutomaticApproval(client:QueueClient,caseId:string,version:number,requestId:string):Promise<AutomaticDecision>;
+export function screenModerationCase(client:QueueClient,caseId:string,options?:{providers?:Partial<Record<'content'|'images'|'legal'|'credentials',{screen(input:object,options?:{signal:AbortSignal}):Promise<Evidence & {validUntil?:string}>}>>;issuer?:string;timeoutMs?:number;attemptAutomaticApproval?:boolean;textRules?:{policyVersion:string;prohibited:string[];restricted:string[];suspicious:string[]}}):Promise<{state:'recorded'|'unavailable';reasons?:string[];checks:Array<{check:string;status:CheckStatus}>;automaticApproval?:AutomaticDecision}>;

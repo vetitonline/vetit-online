@@ -1,0 +1,10 @@
+---
+import { sellerListingState } from '../../lib/seller/workspace.js';
+interface Props { status: string }
+const {status} = Astro.props;
+const state = sellerListingState(status);
+---
+<div class="seller-review-status" role="status">
+  <span class="seller-status">{state.label}</span>
+  <p>{state.hint}</p>
+</div>

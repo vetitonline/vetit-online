@@ -41,6 +41,7 @@ const selectedCategory = result.categories.find((item) => item.slug === category
             <span class="section-label dark-label"><span></span>Pet &amp; Vet Services</span>
             <h1>Find trusted services.</h1>
             <p>Discover verified pet, veterinary and livestock providers by service and location.</p>
+            <p><a href="/appointments">Your appointments, waiting lists and notifications</a></p>
           </div>
         </div>
 
@@ -97,6 +98,9 @@ const selectedCategory = result.categories.find((item) => item.slug === category
                       <strong>{formatPrice(service.pricePaise, service.currencyCode)}</strong>
                       {service.durationMinutes && <span>{service.durationMinutes} min</span>}
                       {service.distanceKm !== null && <span>{service.distanceKm} km away</span>}
+                      <button class="button button-secondary small-button" type="button" data-slot-service-id={service.id}>Check availability</button>
+                      <a class="button button-secondary small-button" href={`/appointments?service=${encodeURIComponent(service.id)}`}>Appointments and waiting list</a>
+                      <p class="service-slot-status" data-slot-status={service.id} role="status" aria-live="polite"></p>
                       {service.providerSlug ? <a class="button button-secondary small-button" href={`/providers/${service.providerSlug}`}>View provider</a> : <span>Provider profile coming soon</span>}
                     </div>
                   </article>
@@ -112,24 +116,62 @@ const selectedCategory = result.categories.find((item) => item.slug === category
           )}
         </div>
         {result.truncated && <p class="service-booking-note">Showing a limited set of matching services. Add a city or postcode to narrow your search.</p>}
-        <p class="service-booking-note">Appointment requests and live availability are not enabled yet. No booking is created from this page.</p>
+        <p class="service-booking-note">Published future times can be viewed. Appointment management requires sign-in and an enabled provider policy. If management is unavailable, no booking is created.</p>
       </section>
     </main>
   </div>
   <script src="../../script.js"></script>
   <script>
-    const serviceForm = document.querySelector('#service-search-form');
-    const locationButton = document.querySelector('#service-use-location');
-    const locationStatus = document.querySelector('#service-location-status');
-    const results = document.querySelector('#service-results');
-    const escapeText = (value) => String(value ?? '');
-    const appendText = (parent, tag, className, value) => {
+    import { requestAppointmentSlots, formatAppointmentAvailability } from '../lib/services/appointment-client.js';
+
+    const serviceForm = document.querySelector<HTMLFormElement>('#service-search-form')!;
+    const locationButton = document.querySelector<HTMLButtonElement>('#service-use-location')!;
+    const locationStatus = document.querySelector<HTMLParagraphElement>('#service-location-status')!;
+    const results = document.querySelector<HTMLDivElement>('#service-results')!;
+    const escapeText = (value: unknown) => String(value ?? '');
+    const appendText = (parent: HTMLElement, tag: 'h2' | 'p' | 'span' | 'strong', className: string, value: unknown) => {
       const element = document.createElement(tag);
       if (className) element.className = className;
       element.textContent = escapeText(value);
       parent.append(element);
       return element;
     };
+    const addAvailabilityControl = (parent: HTMLElement, serviceId: string) => {
+      const button = document.createElement('button');
+      button.className = 'button button-secondary small-button';
+      button.type = 'button';
+      button.dataset.slotServiceId = serviceId;
+      button.textContent = 'Check availability';
+      const status = document.createElement('p');
+      status.className = 'service-slot-status';
+      status.dataset.slotStatus = serviceId;
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      parent.append(button, status);
+      const manage = document.createElement('a');
+      manage.className = 'button button-secondary small-button';
+      manage.href = `/appointments?service=${encodeURIComponent(serviceId)}`;
+      manage.textContent = 'Appointments and waiting list';
+      parent.append(manage);
+    };
+    results?.addEventListener('click', async (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-slot-service-id]') : null;
+      if (!(target instanceof HTMLButtonElement)) return;
+      const serviceId = target.dataset.slotServiceId;
+      if (!serviceId) return;
+      const status = results.querySelector(`[data-slot-status="${CSS.escape(serviceId)}"]`);
+      if (!status) return;
+      target.disabled = true;
+      status.textContent = 'Loading available times…';
+      try {
+        const availability = await requestAppointmentSlots({ baseUrl: window.location.origin, serviceListingId: serviceId });
+        status.textContent = formatAppointmentAvailability(availability);
+      } catch {
+        status.textContent = 'Availability could not be loaded. Please try again later.';
+      } finally {
+        target.disabled = false;
+      }
+    });
     locationButton?.addEventListener('click', () => {
       if (!navigator.geolocation) {
         locationStatus.textContent = 'Location is not available in this browser. Search by city or postcode instead.';
@@ -143,7 +185,7 @@ const selectedCategory = result.categories.find((item) => item.slug === category
           ...formValues,
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-          radiusKm: Number(document.querySelector('#service-radius').value),
+          radiusKm: Number(document.querySelector<HTMLSelectElement>('#service-radius')!.value),
           limit: 60,
         };
         try {
@@ -181,6 +223,7 @@ const selectedCategory = result.categories.find((item) => item.slug === category
               link.href = `/providers/${encodeURIComponent(service.providerSlug)}`;
               link.textContent = 'View provider';
               meta.append(link);
+              addAvailabilityControl(meta, service.id);
               card.append(details, meta);
               list.append(card);
             }

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { getSellerTaxonomy } from '../../../lib/seller/data';
-import { sellerProductInput } from '../../../lib/seller/validation.js';
+import { sellerProductInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canEditSellerProduct, canManageSellerBusiness } from '../../../lib/seller/permissions.js';
 import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
 
@@ -15,14 +15,17 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return new Response('Seller product form is invalid.', { status: 415 });
   }
   let listingPath = '/seller/products/new?error=save';
+  let saveStarted = false;
   try {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return redirect(request, '/login?mode=join&next=%2Fseller%2Fproducts%2Fnew');
-    const form = await request.formData();
+    let form:FormData;
+    try { form = await request.formData(); assertSingleSellerFields(form, ['business_id', 'listing_id']); }
+    catch { return new Response('Invalid seller product form.', { status: 400 }); }
     const businessId = String(form.get('business_id') ?? '').trim();
     const listingId = String(form.get('listing_id') ?? '').trim() || null;
-    if (!/^[0-9a-f-]{36}$/i.test(businessId) || (listingId && !/^[0-9a-f-]{36}$/i.test(listingId))) throw new Error('Choose a valid seller profile.');
+    if (!isSellerUuid(businessId) || (listingId && !isSellerUuid(listingId))) return new Response('Choose a valid seller profile.', { status: 400 });
     const { data: membership, error: membershipError } = await supabase.from('business_memberships')
       .select('profile_id, business_id, member_role, membership_status').eq('business_id', businessId).eq('profile_id', user.id)
       .eq('membership_status', 'active').maybeSingle();
@@ -41,6 +44,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const categorySpecies = new Map(taxonomy.categories.map(category => [category.id, new Set(category.species)]));
     const product = sellerProductInput(form, categorySpecies);
     listingPath = listingId ? `/seller/products/${listingId}?error=save` : '/seller/products/new?error=save';
+    saveStarted = true;
     const { data: savedListingId, error: saveError } = await supabase.rpc('save_seller_product', {
       p_listing_id: listingId,
       p_business_id: businessId,
@@ -52,6 +56,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       p_base_amount_minor: product.baseAmountMinor,
       p_variants: product.variants,
     });
+    if (saveError?.code === '23505' && request.headers.get('accept')?.includes('application/json')) return new Response(JSON.stringify({ error: 'draft_conflict' }), { status: 409, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
     if (saveError || !savedListingId) throw saveError ?? new Error('Product draft could not be saved.');
     listingPath = `/seller/products/${savedListingId}?saved=1`;
     if (request.headers.get('accept')?.includes('application/json')) {
@@ -59,9 +64,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
     return redirect(request, listingPath);
   } catch (error) {
-    console.error('[seller] Product draft operation failed.', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[seller] Product draft operation failed.');
     if (request.headers.get('accept')?.includes('application/json')) {
-      return new Response(JSON.stringify({ error: 'draft_save_failed' }), { status: 422, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+      return new Response(JSON.stringify({ error: saveStarted ? 'draft_save_unconfirmed' : 'draft_save_failed' }), { status: saveStarted ? 503 : 422, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
     }
     return redirect(request, listingPath);
   }

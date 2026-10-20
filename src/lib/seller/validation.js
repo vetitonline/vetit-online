@@ -2,8 +2,23 @@
  * Input validation shared by the seller forms and their server handlers.
  * Database constraints and RLS remain authoritative.
  */
+export function isSellerUuid(value) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
+/** Reject ambiguous/file-valued scalar fields; repeated species/variant rows
+ * are intentionally handled separately. Object adapters may expose get/has. */
+export function assertSingleSellerFields(formData, fields) {
+  for (const field of fields) {
+    if (typeof formData.getAll === 'function' && formData.getAll(field).length > 1) throw new Error('Seller form contains duplicate fields.');
+    const value = formData.get(field);
+    if (value !== null && value !== undefined && typeof value !== 'string') throw new Error('Seller form fields must contain text.');
+  }
+}
+
 /** @param {FormData} formData @param {string | null} [existingBusinessType] */
 export function sellerBusinessInput(formData, existingBusinessType = null) {
+  assertSingleSellerFields(formData, ['display_name', 'legal_name', 'business_type', 'public_email', 'public_phone', 'website_url']);
   const displayName = String(formData.get('display_name') ?? '').trim();
   const legalName = String(formData.get('legal_name') ?? '').trim() || null;
   const hasBusinessType = formData.has('business_type');
@@ -18,18 +33,27 @@ export function sellerBusinessInput(formData, existingBusinessType = null) {
   if (legalName && legalName.length > 180) throw new Error('Legal business name must be 180 characters or fewer.');
   if (!allowedTypes.has(businessType)) throw new Error('Choose a valid business type.');
   if (publicEmail && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(publicEmail) || publicEmail.length > 254)) throw new Error('Enter a valid public email address.');
-  if (publicPhone && publicPhone.length > 32) throw new Error('Enter a public phone number under 33 characters.');
+  if (publicPhone && (!/^\+?[0-9 ()-]{7,32}$/.test(publicPhone) || publicPhone.replace(/\D/g, '').length < 7 || publicPhone.replace(/\D/g, '').length > 15)) throw new Error('Enter a valid public phone number with 7 to 15 digits.');
   if (websiteUrl) {
     let parsed;
     try { parsed = new URL(websiteUrl); } catch { throw new Error('Enter a valid website URL.'); }
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Website URL must use HTTPS or HTTP.');
+    if (parsed.username || parsed.password) throw new Error('Website URLs cannot contain embedded credentials.');
   }
   return { displayName, legalName, businessType, publicEmail, publicPhone, websiteUrl };
 }
 
 export function slugifySellerProduct(title) {
-  return String(title ?? '').normalize('NFKD').toLowerCase().trim()
-    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100);
+  const normalized = String(title ?? '').normalize('NFKC').toLowerCase().trim();
+  const ascii = normalized.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100).replace(/-+$/g, '');
+  if (ascii) return ascii;
+  if (!/[\p{L}\p{N}]/u.test(normalized)) return '';
+  // Stable ASCII URL identifier for Hindi/other scripts; never an auth/security
+  // hash. Existing DB uniqueness remains authoritative for every slug.
+  let checksum = 2166136261;
+  for (const character of normalized) checksum = Math.imul(checksum ^ character.codePointAt(0), 16777619) >>> 0;
+  const prefix = Array.from(normalized).map(character => character.codePointAt(0).toString(16)).join('-').slice(0, 70).replace(/-+$/g, '');
+  return `item-${prefix}-${checksum.toString(16)}`;
 }
 
 export function normalizeSellerSku(value) {
@@ -51,14 +75,15 @@ export function isCanonicalSellerImagePath(path, businessId, listingId) {
 }
 
 export function sellerProductInput(formData, allowedCategorySpecies = new Map()) {
+  assertSingleSellerFields(formData, ['title', 'description', 'category_id', 'base_amount_minor']);
   const title = String(formData.get('title') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim();
   const categoryId = String(formData.get('category_id') ?? '').trim();
   const speciesIds = [...new Set(formData.getAll('species_ids').map(String).map(value => value.trim()).filter(Boolean))];
   if (title.length < 3 || title.length > 160) throw new Error('Enter a product name between 3 and 160 characters.');
   if (description.length > 5000) throw new Error('Product details must be 5,000 characters or fewer.');
-  if (!/^[0-9a-f-]{36}$/i.test(categoryId)) throw new Error('Choose a product category.');
-  if (speciesIds.length < 1 || speciesIds.length > 8 || speciesIds.some(id => !/^[0-9a-f-]{36}$/i.test(id))) throw new Error('Choose between 1 and 8 pets or livestock types.');
+  if (!isSellerUuid(categoryId)) throw new Error('Choose a product category.');
+  if (speciesIds.length < 1 || speciesIds.length > 8 || speciesIds.some(id => !isSellerUuid(id))) throw new Error('Choose between 1 and 8 pets or livestock types.');
   const permittedSpecies = allowedCategorySpecies.get(categoryId);
   if (!permittedSpecies) throw new Error('That category is not available for seller listings.');
   if (permittedSpecies.size && speciesIds.some(id => !permittedSpecies.has(id))) throw new Error('Choose a pet or livestock type supported by this category.');

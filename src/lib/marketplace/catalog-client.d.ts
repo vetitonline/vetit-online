@@ -1,4 +1,4 @@
-import type { FeaturedProduct, ProductAnimal, ProductCategory } from './featured-products';
+import type { FeaturedProduct, ProductAnimal, ProductCategory } from './catalog-types.js';
 
 export type CatalogRequestFilters = {
   query?: string;

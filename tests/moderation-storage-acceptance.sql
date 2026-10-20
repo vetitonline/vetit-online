@@ -1,0 +1,55 @@
+-- Real Storage-table RLS under synthetic authenticated/anon roles, rollback only.
+begin;
+set local statement_timeout='15s';set local lock_timeout='3s';
+do $storage$
+declare s uuid; path text; result jsonb; rows_changed integer; c vetit_moderation.cases%rowtype; code text;
+begin
+ if current_database()<>'vetit_disposable_corrections_20261018_1302' or current_user<>'vetit_test_admin' or inet_server_addr()<>'127.0.0.1'::inet or inet_server_port()<>55432 then raise exception 'Wrong disposable target.';end if;
+ if not exists(select 1 from pg_class pc join pg_namespace n on n.oid=pc.relnamespace where n.nspname='storage' and pc.relname='objects' and pc.relrowsecurity) then raise exception 'Storage RLS is not enabled.';end if;
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);perform set_config('request.jwt.claims','{}',true);set local role authenticated;
+ s:=public.save_seller_service(null,'20000000-0000-4000-8000-000000000001','Synthetic storage moderation','synthetic-storage-moderation-20261019','Synthetic only','30000000-0000-4000-8000-000000000001',array['70000000-0000-4000-8000-000000000001'::uuid],12000,30,null,'remote');
+ path:=public.reserve_seller_service_image(s,gen_random_uuid(),'jpg');
+ insert into storage.objects(bucket_id,name) values('listing-images',path);
+ if (select count(*) from storage.objects where bucket_id='listing-images' and name=path)<>1 then raise exception 'Owner draft Storage read failed.';end if;
+ update storage.objects set name=name||'-overwrite' where bucket_id='listing-images' and name=path;get diagnostics rows_changed=row_count;
+ if rows_changed<>0 then raise exception 'Service object overwrite allowed.';end if;
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000006',true);
+ if exists(select 1 from storage.objects where bucket_id='listing-images' and name=path) then raise exception 'Outsider read private object.';end if;
+ begin insert into storage.objects(bucket_id,name) values('listing-images',path||'-unreserved');raise exception 'Unreserved outsider upload allowed.';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+ result:=public.moderation_open('service',s);
+ delete from storage.objects where bucket_id='listing-images' and name=path;get diagnostics rows_changed=row_count;
+ if rows_changed<>0 then raise exception 'Submitted service object deletion allowed.';end if;
+ update storage.objects set name=name||'-overwrite' where bucket_id='listing-images' and name=path;get diagnostics rows_changed=row_count;
+ if rows_changed<>0 then raise exception 'Submitted service overwrite allowed.';end if;
+ set local role anon;
+ perform set_config('request.jwt.claim.sub','',true);perform set_config('request.jwt.claims','{}',true);
+ if exists(select 1 from storage.objects where bucket_id='listing-images' and name=path) then raise exception 'Anonymous reader saw submitted image.';end if;
+ set local role authenticated;
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000007',true);perform set_config('request.jwt.claims','{"app_metadata":{"vetit_admin":true}}',true);
+ perform public.moderation_decide((result->>'caseId')::uuid,(result->>'version')::bigint,'corrections',gen_random_uuid(),array['IMAGE_CORRECTION'],'Synthetic only','Replace the synthetic image.');
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);perform set_config('request.jwt.claims','{}',true);
+ -- Delete only the object created above in this transaction, never existing data.
+ delete from storage.objects where bucket_id='listing-images' and name=path;get diagnostics rows_changed=row_count;
+ if rows_changed<>1 then raise exception 'Correction image deletion denied.';end if;
+ reset role;
+ insert into vetit_moderation.policies(version,subject_kind,market,category_id,classification) values('synthetic-storage-product','product','IN','30000000-0000-4000-8000-000000000001','ordinary');
+ set local role authenticated;
+ s:=public.save_seller_product(null,'20000000-0000-4000-8000-000000000001','Synthetic public storage product','synthetic-storage-product-20261019','Synthetic only','30000000-0000-4000-8000-000000000001',array['70000000-0000-4000-8000-000000000001'::uuid],12000,'[]');
+ path:='20000000-0000-4000-8000-000000000001/'||s::text||'/'||gen_random_uuid()::text||'.jpg';
+ insert into public.listing_images(listing_id,storage_object_path) values(s,path);
+ insert into storage.objects(bucket_id,name) values('listing-images',path);
+ result:=public.moderation_open('product',s);reset role;select * into c from vetit_moderation.cases where id=(result->>'caseId')::uuid;
+ foreach code in array array['content','images','legal'] loop set local role service_role;perform public.moderation_attest(c.id,c.revision,c.policy_id,code,'passed','synthetic_only',now()+interval '1 hour',gen_random_uuid());reset role;end loop;
+ select * into c from vetit_moderation.cases where id=c.id;
+ perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000007',true);perform set_config('request.jwt.claims','{"app_metadata":{"vetit_admin":true}}',true);set local role authenticated;
+ result:=public.moderation_decide(c.id,c.version,'screen',gen_random_uuid());perform public.moderation_decide(c.id,(result->>'version')::bigint,'approve',gen_random_uuid());
+ perform set_config('request.jwt.claim.sub','',true);perform set_config('request.jwt.claims','{}',true);set local role anon;
+ if (select count(*) from storage.objects where bucket_id='listing-images' and name=path)<>1 then raise exception 'Published product image is not publicly readable.';end if;
+ begin perform profile_id from public.business_memberships;raise exception 'Anonymous membership access was granted.';exception when insufficient_privilege then null;end;
+ reset role;
+ raise notice 'PASS actual Storage RLS: reserved owner insert/read, denied overwrite/outsider/anon access, submitted lock and correction replacement';
+end;
+$storage$;
+rollback;
+select not exists(select 1 from public.listings where slug='synthetic-storage-moderation-20261019') as storage_fixture_rolled_back;

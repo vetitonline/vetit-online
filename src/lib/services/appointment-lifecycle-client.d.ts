@@ -1,0 +1,20 @@
+import type { AppointmentCommand, AppointmentPolicy } from './appointment-lifecycle.js';
+export { AppointmentLifecycleError } from './appointment-lifecycle.js';
+export type Booking = { id: string; service_listing_id: string; appointment_slot_id: string | null; status: string; requested_start: string; requested_end: string; price_minor: number; currency_code: string; lifecycle_revision: number; lifecycle_policy_snapshot: AppointmentPolicy | null };
+export type AppointmentDashboard = {
+  bookings: Booking[]; events: Array<{ id: string; booking_id: string; event_type: string; created_at: string; details: Record<string, unknown> }>;
+  waitlist: Array<{ id: string; service_listing_id: string; status: string; starts_at: string; ends_at: string }>;
+  offers: Array<{ id: string; slot_id: string; expires_at: string; status: string; starts_at: string; ends_at: string; price_minor: number; currency_code: string; policy_snapshot: AppointmentPolicy }>;
+  notifications: Array<{ id: string; event_type: string; created_at: string; read_at: string | null; payload: Record<string, unknown> }>;
+  providerBusinesses: Array<{ id: string; display_name: string }>;
+  services: Array<{ id: string; title: string }>;
+  slots: Array<{ id: string; service_listing_id: string; starts_at: string; ends_at: string; status: string; lifecycle_resource_key: string }>;
+  policies: Array<{ service_listing_id: string; policy: AppointmentPolicy }>;
+  payments: Array<{ booking_id: string; status: string; amount_minor: number; currency_code: string }>;
+  refunds: Array<{ booking_id: string; status: string; refund_minor: number; proposed_retained_minor: number; charge_status: string; action: string }>;
+  truncated: boolean;
+};
+type Options = { baseUrl?: string; businessId?: string; accessToken?: string; signal?: AbortSignal; fetchImpl?: typeof fetch };
+export function getAppointmentDashboard(options?: Options): Promise<AppointmentDashboard>;
+export function getAppointmentPolicy(serviceListingId: string, options?: Options): Promise<{ policy: AppointmentPolicy; title: string; priceMinor: number; currencyCode: string }>;
+export function sendAppointmentCommand(input: AppointmentCommand, options?: Options): Promise<{ bookingId?: string; entryId?: string; slotId?: string; status?: string }>;

@@ -1,0 +1,34 @@
+{
+  "candidate": "vetit-local-automatic-moderation-2026-10-19",
+  "targetProjectRef": "apfyfmokcynqiaxqvvxx",
+  "requires": "original six corrections, step 7 resubmission, step 8 queue, step 9 durable moderation",
+  "migrations": [
+    {
+      "releaseOrder": 10,
+      "path": "supabase/test-project/migrations/20261019111343_vetit_low_risk_automatic_approval.sql",
+      "sha256": "00895d7525cc4714be9f7f7aa1428b7e52eda09730f645d3aad52576691889ea"
+    },
+    {
+      "releaseOrder": 11,
+      "path": "supabase/test-project/migrations/20261019120413_vetit_service_storage_boundaries.sql",
+      "sha256": "ec0794441b825679806cb7ed88772e75ef2049d64489fd66770c71d7b2e09f7f"
+    }
+  ],
+  "hostedApproved": false,
+  "hostedApplied": false,
+  "localInstalled": true,
+  "automaticApprovalEnabled": false,
+  "automaticPublicationEnabled": false,
+  "localValidation": {
+    "newNodeChecksPassed": 28,
+    "affectedExistingProviderTestsPassed": 2,
+    "targetedTypeScriptPassed": true,
+    "mobileTypeScriptPassed": true,
+    "realProviderVerified": false,
+    "changedAstroComponentsCompiled": 2,
+    "storageRollbackGroupsPassed": 1,
+    "actualBrowserVerified": false,
+    "automaticRollbackGroupsPassed": 3
+  },
+  "oldSixFileExecutorIncludesThese": false
+}

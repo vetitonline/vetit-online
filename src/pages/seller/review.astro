@@ -1,0 +1,14 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import ModerationPanel from '../../components/seller/ModerationPanel.astro';
+import {authenticateApiRequest} from '../../lib/supabase/api-auth';
+import {loadModerationStatus,moderationSubject,ModerationError} from '../../lib/moderation/workflow.js';
+import type {QueueClient} from '../../lib/moderation/queue.js';
+Astro.response.headers.set('Cache-Control','private, no-store');Astro.response.headers.set('Vary','Cookie, Authorization');
+const auth=await authenticateApiRequest(Astro.request,Astro.cookies);
+if(auth.state==='unauthenticated')return Astro.redirect('/login?next='+encodeURIComponent(Astro.url.pathname+Astro.url.search),302);
+let data=null;let target=null;
+try{target=moderationSubject(Astro.url.searchParams.get('kind'),Astro.url.searchParams.get('subject'));if(auth.state!=='authenticated')throw new ModerationError('Unavailable',503);data=await loadModerationStatus(auth.supabase as unknown as QueueClient,target.kind,target.subject);}catch(error){Astro.response.status=error instanceof ModerationError?error.status:503;}
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Seller review status | Vetit Online</title></head><body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page"><a href="/seller">Seller workspace / विक्रेता कार्यक्षेत्र</a>{data&&target?<ModerationPanel status={data} kind={target.kind} subject={target.subject}/>:<p role="alert">Review status unavailable or access denied. / समीक्षा उपलब्ध नहीं है या अनुमति नहीं है।</p>}</main></div></body></html>

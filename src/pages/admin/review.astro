@@ -1,0 +1,41 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import { authenticateApiRequest } from '../../lib/supabase/api-auth';
+import { loadReviewQueue, ReviewQueueError, type QueueClient, type QueuePage } from '../../lib/moderation/queue.js';
+Astro.response.headers.set('Cache-Control','private, no-store');
+Astro.response.headers.set('Vary','Cookie, Authorization');
+const auth = await authenticateApiRequest(Astro.request,Astro.cookies);
+if (auth.state === 'unauthenticated') return Astro.redirect('/admin/login',302);
+let page: QueuePage | null = null;
+let message = 'Review queue unavailable. Its supplemental Test migration and runtime verification are required.';
+try {
+  if (auth.state !== 'authenticated') throw new ReviewQueueError(message);
+  page = await loadReviewQueue(auth.supabase as unknown as QueueClient,auth.user,Astro.url.searchParams);
+} catch (error) {
+  Astro.response.status = error instanceof ReviewQueueError ? error.status : 503;
+  if (Astro.response.status === 403) message = 'Administrator access required. / प्रशासक की अनुमति आवश्यक है।';
+  if (Astro.response.status === 400) message = 'Invalid filters. Clear the filters and try again.';
+}
+const params = Astro.url.searchParams;
+const last = page?.items.at(-1);
+const next = new URLSearchParams(params);
+if (last) { next.set('before',last.created_at); next.set('id',last.id); }
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Listing review | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader adminMode /><main class="seller-page">
+<section class="seller-panel"><h1>Listing review / लिस्टिंग समीक्षा</h1><a href="/admin">Administration</a> · <a href="/admin/cases">Seller and listing moderation cases / समीक्षा मामले</a>
+<p>Open an item for current screening, audit history and protected decisions. The durable moderation Test candidate and trusted evidence are required. No item is assumed low risk from this summary.</p>
+{page ? <>
+<form method="get" class="seller-business-form">
+<label>Status / स्थिति<select name="status">{['submitted','draft','rejected','published'].map(status => <option value={status} selected={(params.get('status') ?? 'submitted')===status}>{status}</option>)}</select></label>
+<label>Type / प्रकार<select name="kind"><option value="">All</option>{['product','service'].map(kind => <option value={kind} selected={params.get('kind')===kind}>{kind}</option>)}</select></label>
+<label>Market / बाज़ार<input name="market" maxlength="2" pattern="[A-Z]{2}" value={params.get('market') ?? ''} placeholder="IN" /></label>
+<label>Category ID<input name="category" value={params.get('category') ?? ''} maxlength="36" /></label>
+<button class="button button-secondary" type="submit">Filter / छाँटें</button><a href="/admin/review">Clear</a></form>
+<p role="status">{page.items.length} items on this page.</p>
+{page.items.map(item => <article class="seller-panel"><h2>{item.title}</h2><p>{item.seller_name} · {item.seller_verification} · {item.kind}</p><p>Status: {item.moderation_status}</p><p>Created: <time datetime={item.created_at}>{item.created_at}</time> · Updated: <time datetime={item.updated_at}>{item.updated_at}</time></p><p>Category: <code>{item.category_id}</code></p><a href={`/admin/moderation?kind=${item.kind}&subject=${item.id}`}>Review listing / लिस्टिंग की समीक्षा करें</a> · <a href={`/admin/moderation?kind=seller&subject=${item.business_id}`}>Seller review / विक्रेता समीक्षा</a></article>)}
+{!page.items.length && <p>No listings match these filters. / कोई लिस्टिंग नहीं मिली।</p>}
+{page.hasMore && last && <a class="button button-secondary" href={`/admin/review?${next}`}>Next page / अगला पृष्ठ</a>}
+</> : <p role="alert">{message}</p>}
+</section></main></div></body></html>

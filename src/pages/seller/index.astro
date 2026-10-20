@@ -4,6 +4,8 @@ import SiteHeader from '../../components/SiteHeader.astro';
 import { loadSellerDashboard } from '../../lib/seller/data';
 import { formatPrice } from '../../lib/marketplace/featured-products';
 import { getSupabasePublicConfig } from '../../lib/supabase/config';
+import { sellerListingState, filterSellerProducts } from '../../lib/seller/workspace.js';
+import SellerReviewStatus from '../../components/seller/SellerReviewStatus.astro';
 
 let dashboard = null;
 let loadFailed = false;
@@ -22,6 +24,8 @@ if (!getSupabasePublicConfig()) {
 const roleByBusiness = new Map((dashboard?.memberships ?? []).map(membership => [membership.business_id, membership.member_role]));
 const canCatalog = (businessId: string) => ['owner', 'admin', 'catalog_manager'].includes(roleByBusiness.get(businessId) ?? '');
 const query = Astro.url.searchParams;
+const filters = {status:query.get('status') ?? '',business:query.get('business') ?? '',query:query.get('q')?.slice(0,160) ?? ''};
+const visibleProducts = filterSellerProducts(dashboard?.products ?? [],filters);
 ---
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seller dashboard | Vetit Online</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin></head>
@@ -30,12 +34,13 @@ const query = Astro.url.searchParams;
     {loadFailed ? <section class="seller-panel"><span class="section-label dark-label"><span></span>Seller space</span><h1>Seller dashboard is unavailable</h1><p>Vetit could not reach the authenticated seller data. Please try again shortly.</p><a class="button button-secondary" href="/">Return to marketplace</a></section> : <>
       <section class="seller-heading"><div><span class="section-label dark-label"><span></span>Seller workspace</span><h1>Your Vetit business</h1><p>Manage your business details and product drafts. Vetit reviews products before marketplace publication.</p></div><a class="button button-primary" href="/seller/onboarding">Add seller profile</a></section>
       {query.has('saved') && <p class="seller-feedback" role="status">Your changes were saved.</p>}
+      <nav aria-label="Seller workspace"><a href="#seller-catalogue">Catalogue / उत्पाद</a> · <a href="/seller/onboarding">Onboarding / पंजीकरण</a> · <a href="/appointments">Provider appointments / अपॉइंटमेंट</a> · <a href="#seller-operations">Inventory and orders / स्टॉक और ऑर्डर</a></nav>
       {query.has('error') && <p class="seller-feedback is-error" role="alert">We could not save that change. Review the form and try again.</p>}
       {query.has('images') && <p class="seller-feedback is-error" role="status">Your product draft was saved, but one or more photos could not be uploaded.</p>}
       {!dashboard?.businesses.length ? <section class="seller-panel seller-empty"><h2>Start selling on Vetit</h2><p>Create your seller profile to manage your own product catalogue. Your profile will begin as pending verification.</p><a class="button button-primary" href="/seller/onboarding">Create a seller profile</a></section> : <div class="seller-business-grid">
         {dashboard.businesses.map((business) => <section class="seller-panel" aria-labelledby={`business-${business.id}`}>
           <div class="seller-business-title"><div><span class="seller-status">{business.verification_status.replace('_', ' ')}</span><h2 id={`business-${business.id}`}>{business.display_name}</h2></div>{canCatalog(business.id) && <a href={`/seller/products/new?business=${business.id}`} class="button button-secondary small-button">Add product</a>}</div>
-          <p class="seller-muted">Seller profile · India · {business.business_type}</p>
+          <p class="seller-muted">Seller profile · India · {business.business_type}</p><a href={`/seller/review?kind=seller&subject=${business.id}`}>Application review / आवेदन समीक्षा</a>
           <form class="seller-business-form" method="post" action="/api/seller/business">
             <input type="hidden" name="business_id" value={business.id}>
             <label>Business name<input name="display_name" maxlength="120" required value={business.display_name} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
@@ -49,14 +54,21 @@ const query = Astro.url.searchParams;
         </section>)}
       </div>}
 
-      {dashboard?.businesses.length ? <section class="seller-panel seller-products"><div class="seller-section-heading"><div><span class="section-label dark-label"><span></span>Your catalogue</span><h2>Products</h2></div></div>
-        {dashboard.products.length ? <div class="seller-product-list">{dashboard.products.map((product) => <article class="seller-product-row">
+      {dashboard?.businesses.length ? <section id="seller-catalogue" class="seller-panel seller-products"><div class="seller-section-heading"><div><span class="section-label dark-label"><span></span>Your catalogue</span><h2>Products</h2></div></div>
+        <form method="get" class="seller-business-form" aria-label="Filter your catalogue">
+          <label>Search / खोजें<input name="q" value={filters.query} maxlength="160" type="search" /></label>
+          <label>Review status / समीक्षा स्थिति<select name="status"><option value="">All statuses</option>{['draft','submitted','published','rejected'].map(status => <option value={status} selected={filters.status===status}>{sellerListingState(status).label}</option>)}</select></label>
+          <label>Business / व्यवसाय<select name="business"><option value="">All my businesses</option>{dashboard.businesses.map(business => <option value={business.id} selected={filters.business===business.id}>{business.display_name}</option>)}</select></label>
+          <button class="button button-secondary small-button" type="submit">Filter products / उत्पाद छाँटें</button><a href="/seller#seller-catalogue">Clear filters</a>
+        </form><p role="status">{visibleProducts.length} of {dashboard.products.length} products shown.</p>
+        {visibleProducts.length ? <div class="seller-product-list">{visibleProducts.map((product) => <article class="seller-product-row">
           <div><h3><a href={`/seller/products/${product.id}`}>{product.title}</a></h3><p>{product.businessName} · {product.categoryName}</p></div>
-          <div class="seller-product-state"><span class={`seller-status status-${product.moderation_status}`}>{product.moderation_status}</span><strong>{product.priceMinor === null ? 'Price not set' : formatPrice(product.priceMinor, product.currencyCode)}</strong></div>
-          {canCatalog(product.business_id) && <a class="seller-edit-link" href={`/seller/products/${product.id}`}>Manage <span aria-hidden="true">→</span></a>}
-        </article>)}</div> : <div class="seller-empty"><h3>No products yet</h3><p>Product drafts are visible only to your business until Vetit reviews and publishes them.</p><a href={`/seller/products/new?business=${dashboard.businesses[0].id}`}>Create your first product draft →</a></div>}
+          <div class="seller-product-state"><SellerReviewStatus status={product.moderation_status} /><strong>{product.priceMinor === null ? 'Price not set' : formatPrice(product.priceMinor, product.currencyCode)}</strong></div>
+          {canCatalog(product.business_id) && <div><a class="seller-edit-link" href={`/seller/products/${product.id}`}>Manage <span aria-hidden="true">→</span></a><a href={`/seller/review?kind=product&subject=${product.id}`}>Review / समीक्षा</a></div>}
+        </article>)}</div> : dashboard.products.length ? <p>No products match these filters. / कोई उत्पाद नहीं मिला। <a href="/seller#seller-catalogue">Clear filters</a></p> : <div class="seller-empty"><h3>No products yet</h3><p>Product drafts are visible only to your business until Vetit reviews and publishes them.</p><a href={`/seller/products/new?business=${dashboard.businesses[0].id}`}>Create your first product draft →</a></div>}
       </section> : null}
       <p class="seller-security-note">Vetit’s database policies check your signed-in account and active business membership on every seller operation. A seller profile never grants Vetit administrator access.</p>
+      <section id="seller-operations" class="seller-panel"><h2>Inventory and order operations</h2><p>Stock adjustments and fulfilment updates need the pending commerce release and verified operational access. Current stock and seller orders are not loaded here; no zero-stock or empty-order claim is made.</p><p>स्टॉक और विक्रेता ऑर्डर की जानकारी यहाँ अभी उपलब्ध नहीं है।</p><button class="button button-secondary small-button" disabled type="button">Inventory unavailable</button> <button class="button button-secondary small-button" disabled type="button">Order management unavailable</button></section>
     </>}
   </main>
 </div><script src="../../../script.js"></script></body></html>

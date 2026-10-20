@@ -11,6 +11,7 @@ export class ServiceSearchError extends Error {
 function optionalText(value, label, max = 100) {
   if (value == null || value === '') return '';
   if (typeof value !== 'string') throw new ServiceSearchError(`${label} is invalid.`);
+  if (/[\u0000-\u001f\u007f]/.test(value)) throw new ServiceSearchError(`${label} is invalid.`);
   const text = value.trim().replace(/\s+/g, ' ');
   if (text.length > max || /[\u0000-\u001f\u007f]/.test(text)) throw new ServiceSearchError(`${label} is invalid.`);
   return text;

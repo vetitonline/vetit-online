@@ -23,9 +23,12 @@ function isResponse(value) {
   return value && typeof value === 'object' && value.apiVersion === 1
     && ['available', 'unconfigured', 'error', 'invalid_request', 'unavailable'].includes(value.state)
     && Array.isArray(value.services) && Array.isArray(value.categories)
-    && value.services.every((service) => typeof service.id === 'string'
+    && value.services.every((service) => service !== null && typeof service === 'object' && !Array.isArray(service)
+      && typeof service.id === 'string'
       && typeof service.title === 'string' && typeof service.providerName === 'string'
-      && (service.distanceKm === null || Number.isFinite(service.distanceKm)));
+      && (service.distanceKm === null || Number.isFinite(service.distanceKm)))
+    && value.categories.every(category => category !== null && typeof category === 'object' && !Array.isArray(category)
+      && typeof category.slug === 'string' && typeof category.name === 'string');
 }
 
 /** Request published services through the shared public HTTP API; coordinates use POST, never URL query strings. */

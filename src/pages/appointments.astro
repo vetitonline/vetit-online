@@ -1,0 +1,139 @@
+---
+import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
+---
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Appointments | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader /><main class="appointment-workspace">
+  <h1>Your appointments</h1><p>Manage bookings and waiting-list offers with your signed-in Vetit account.</p>
+  <p id="appointment-status" role="status" aria-live="polite">Loading appointment management…</p>
+  <p><a id="appointment-signin" href="/login?next=%2Fappointments">Sign in</a> · <a href="/services">Find services</a></p>
+  <button id="appointment-refresh" type="button">Refresh</button>
+  <section id="appointment-booking" hidden><h2 id="appointment-title">Book a service</h2><p id="appointment-terms"></p><div id="appointment-slots"></div>
+    <form id="appointment-waitlist"><h3>Join waiting list</h3><p>Choose a window of up to 31 days. Acceptance of an offer creates a booking.</p>
+      <label>Earliest time<input name="startsAt" type="datetime-local" required /></label><label>Latest time<input name="endsAt" type="datetime-local" required /></label><button>Join waiting list</button>
+    </form>
+  </section>
+  <section id="appointment-customer" hidden><h2>Bookings and history</h2><div id="appointment-bookings"></div><h2>Waiting list and offers</h2><div id="appointment-offers"></div><h2>Notifications</h2><div id="appointment-notifications"></div></section>
+  <section id="appointment-provider" hidden><h2>Provider schedule</h2><label>Business<select id="appointment-business"><option value="">My customer appointments</option></select></label>
+    <div id="appointment-provider-controls" hidden>
+      <form id="appointment-policy"><h3>Service policy</h3><label>Service<select name="serviceListingId" class="appointment-service-select" required></select></label>
+        <p>Choose explicit terms before booking is enabled. Existing bookings keep their saved policy.</p>
+        <label><input type="checkbox" name="allowCustomerCancellation" /> Allow customer cancellation</label><label><input type="checkbox" name="allowReschedule" /> Allow rescheduling</label><label><input type="checkbox" name="allowLateCancellation" /> Allow late cancellation</label>
+        <label>Required notice (minutes)<input name="noticeMinutes" type="number" min="0" max="43200" required /></label>
+        <label>Timely refund (%)<input name="refundPercent" type="number" min="0" max="100" step="0.01" required /></label><label>Late refund (%)<input name="lateRefundPercent" type="number" min="0" max="100" step="0.01" required /></label>
+        <label>Offer expiry (minutes)<input name="offerExpiryMinutes" type="number" min="1" max="1440" required /></label>
+        <label><input type="checkbox" name="lateCancellationChargePermitted" /> Late cancellation charge is permitted under the provider's agreed terms</label>
+        <label>Late charge disclosure<input name="lateCancellationChargeDisclosure" maxlength="500" placeholder="Explain any retained amount before booking" /></label><p>Charges and refunds remain review-only; this page collects no cancellation charge.</p><button>Save policy</button>
+      </form>
+      <form id="appointment-schedule"><h3>Publish a slot</h3><label>Service<select name="serviceListingId" class="appointment-service-select" required></select></label>
+        <label>Resource key<input name="resourceKey" value="default" pattern="[a-zA-Z0-9_-]{1,80}" maxlength="80" required /></label>
+        <p>Use the same key for services sharing a clinician, groomer, room or daycare place. Each resource allows one simultaneous appointment.</p>
+        <label>Start<input name="startsAt" type="datetime-local" required /></label><label>End<input name="endsAt" type="datetime-local" required /></label><p>Times use this device’s timezone. Slots may last up to 24 hours.</p><button>Publish slot</button>
+      </form><div id="appointment-provider-slots"></div>
+    </div>
+  </section>
+  <p>Availability is not confirmation. Refunds and payment voids require review; no payments are charged or refunded by this page. Email, SMS and push delivery are not enabled.</p>
+  <noscript>Appointment management requires JavaScript. Public discovery remains available on the services page.</noscript>
+</main></div><script src="../../script.js"></script>
+<style>
+  .appointment-workspace { max-width: 1000px; margin: 2rem auto; padding: 1rem; }
+  .appointment-workspace section, .appointment-workspace article, .appointment-workspace form { border: 1px solid #e8e1ed; border-radius: 12px; padding: 1rem; margin: 1rem 0; }
+  .appointment-workspace label { display: block; margin: .7rem 0; }
+  .appointment-workspace input, .appointment-workspace select { padding: .5rem; max-width: 100%; }
+  .appointment-workspace button { margin: .4rem; padding: .6rem; }
+  .appointment-workspace [hidden] { display:none!important; }
+</style>
+<script>
+  import { getAppointmentDashboard, getAppointmentPolicy, sendAppointmentCommand } from '../lib/services/appointment-lifecycle-client.js';
+  import type { AppointmentDashboard, Booking } from '../lib/services/appointment-lifecycle-client.js';
+  import { INITIAL_APPOINTMENT_POLICY, previewAppointmentCancellation, previewAppointmentReschedule, formatAppointmentAmount } from '../lib/services/appointment-lifecycle.js';
+  import type { AppointmentCommand } from '../lib/services/appointment-lifecycle.js';
+  import { requestAppointmentSlots } from '../lib/services/appointment-client.js';
+  const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(`appointment-${id}`) as T;
+  const status = el('status'), business = el<HTMLSelectElement>('business');
+  el<HTMLAnchorElement>('signin').href = `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
+  const serviceId = new URLSearchParams(location.search).get('service');
+  let selectedBusiness = new URLSearchParams(location.search).get('business') || '', dashboard: AppointmentDashboard | null = null, busy = false;
+  let activeRefresh: AbortController | null = null;
+  const date = (value: string) => new Date(value).toLocaleString();
+  function text(parent: HTMLElement, value: string) { const p = document.createElement('p'); p.textContent = value; parent.append(p); }
+  function card(parent: HTMLElement) { const c = document.createElement('article'); parent.append(c); return c; }
+  function button(parent: HTMLElement, label: string, command: AppointmentCommand) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.addEventListener('click', () => void mutate(command)); parent.append(b); }
+  function localIso(value: FormDataEntryValue | null) { const d = new Date(String(value)); if (!Number.isFinite(d.getTime())) throw new Error('Choose a valid time.'); return d.toISOString(); }
+  async function mutate(command: AppointmentCommand) {
+    if (busy) return;
+    if (['cancel','reschedule'].includes(command.action) && !confirm(command.action === 'cancel' ? 'Cancel under the saved policy? Any refund requires review.' : 'Move to this slot, keeping the agreed service price?')) return;
+    activeRefresh?.abort();
+    busy = true; status.textContent = 'Saving…'; document.querySelectorAll<HTMLButtonElement>('.appointment-workspace button').forEach(b => b.disabled = true);
+    try { await sendAppointmentCommand(command); await refresh(); }
+    catch (e) { status.textContent = e instanceof Error ? e.message : 'Appointment change failed.'; }
+    finally { busy = false; document.querySelectorAll<HTMLButtonElement>('.appointment-workspace button').forEach(b => b.disabled = false); }
+  }
+  async function replacements(parent: HTMLElement, booking: Booking) {
+    const list = card(parent);
+    try { const result = await requestAppointmentSlots({ baseUrl: location.origin, serviceListingId: booking.service_listing_id });
+      const slots = result.slots.filter(s => s.id !== booking.appointment_slot_id); if (!slots.length) text(list,'No replacement times found in the next 14 days.');
+      slots.forEach(s => button(list,`Move to ${date(s.startsAt)}`,{ action:'reschedule', bookingId:booking.id, slotId:s.id, expectedRevision:booking.lifecycle_revision })); if (result.truncated) text(list,'Results are limited.');
+    } catch { text(list,'Replacement times could not be loaded.'); }
+  }
+  function render(data: AppointmentDashboard) {
+    const bookings = el('bookings'); bookings.replaceChildren(); if (!data.bookings.length) text(bookings,'No booking history found.');
+    data.bookings.forEach(b => { const c = card(bookings); text(c,`${date(b.requested_start)} – ${date(b.requested_end)} · ${b.status}`); text(c,`Booking ${b.id} · Agreed price ${formatAppointmentAmount(b.price_minor,b.currency_code)}`);
+      data.payments.filter(p => p.booking_id === b.id).forEach(p => text(c,`Payment: ${p.status} · ${formatAppointmentAmount(p.amount_minor,p.currency_code)}`));
+      data.refunds.filter(r => r.booking_id === b.id).forEach(r => text(c,`Payment action: ${r.action} · ${r.status} · Requested refund ${formatAppointmentAmount(r.refund_minor,b.currency_code)}. Proposed retained amount ${formatAppointmentAmount(r.proposed_retained_minor,b.currency_code)} · ${r.charge_status}; no cancellation charge collected.`));
+      if (['requested','confirmed'].includes(b.status)) {
+        if (selectedBusiness) { button(c,'Cancel as provider',{ action:'cancel', bookingId:b.id, expectedRevision:b.lifecycle_revision, providerCancellation:true }); if (b.status === 'requested') button(c,'Confirm',{ action:'confirm', bookingId:b.id, expectedRevision:b.lifecycle_revision }); if (b.status === 'confirmed' && Date.parse(b.requested_end) <= Date.now()) button(c,'Mark completed',{ action:'complete', bookingId:b.id, expectedRevision:b.lifecycle_revision }); }
+        else if (b.lifecycle_policy_snapshot) {
+          const capturedMinor = data.payments.filter(p => p.booking_id === b.id && p.status === 'captured').reduce((sum,p) => sum + p.amount_minor,0);
+          const preview = previewAppointmentCancellation({ policy:b.lifecycle_policy_snapshot, startsAt:b.requested_start, capturedMinor });
+          text(c,`Cancellation refund estimate: ${formatAppointmentAmount(preview.refundMinor,b.currency_code)}. The server checks final eligibility.`);
+          if (preview.allowed) button(c,'Cancel appointment',{ action:'cancel', bookingId:b.id, expectedRevision:b.lifecycle_revision });
+          if (previewAppointmentReschedule({ policy:b.lifecycle_policy_snapshot, startsAt:b.requested_start })) { const move = document.createElement('button'); move.type = 'button'; move.textContent = 'Find replacement times (next 14 days)'; move.addEventListener('click',() => { move.disabled = true; void replacements(c,b); }); c.append(move); }
+        } else text(c,'This earlier booking has no structured policy. Contact the provider for changes.');
+      }
+      data.events.filter(e => e.booking_id === b.id).forEach(e => {
+        text(c,`${date(e.created_at)} · ${e.event_type}`);
+        if (typeof e.details.oldStart === 'string' && typeof e.details.oldEnd === 'string') text(c,`Previous time: ${date(e.details.oldStart)} – ${date(e.details.oldEnd)}`);
+        if (typeof e.details.startsAt === 'string' && typeof e.details.endsAt === 'string') text(c,`Appointment time: ${date(e.details.startsAt)} – ${date(e.details.endsAt)}`);
+      });
+    });
+    if (data.truncated) text(bookings,'Showing recent history only; earlier records remain in the ledger.');
+    const offers = el('offers'); offers.replaceChildren();
+    data.waitlist.filter(w => ['waiting','offered'].includes(w.status)).forEach(w => { const c = card(offers); text(c,`${w.status} · ${date(w.starts_at)} – ${date(w.ends_at)}`); button(c,'Leave waiting list',{ action:'leaveWaitlist', entryId:w.id }); });
+    data.offers.filter(o => o.status === 'offered').forEach(o => { const c = card(offers); text(c,`Offered appointment: ${date(o.starts_at)} – ${date(o.ends_at)} · ${formatAppointmentAmount(o.price_minor,o.currency_code)}. Offer expires ${date(o.expires_at)}.`); text(c,`Saved terms: notice ${o.policy_snapshot.noticeMinutes} minutes; timely refund ${o.policy_snapshot.refundBasisPoints / 100}%; late refund ${o.policy_snapshot.lateRefundBasisPoints / 100}%. Customer cancellation ${o.policy_snapshot.allowCustomerCancellation ? 'allowed' : 'not allowed'}, late cancellation ${o.policy_snapshot.allowLateCancellation ? 'allowed' : 'not allowed'}, rescheduling ${o.policy_snapshot.allowReschedule ? 'allowed' : 'not allowed'}. Late charge terms: ${o.policy_snapshot.lateCancellationChargePermitted ? o.policy_snapshot.lateCancellationChargeDisclosure : 'No late charge authorized'}. Refunds require review.`); if (Date.parse(o.expires_at) > Date.now()) { button(c,'Accept offer',{ action:'acceptOffer', offerId:o.id }); button(c,'Decline offer',{ action:'declineOffer', offerId:o.id }); } else text(c,'Offer expired; pending expiry processing.'); });
+    if (!data.waitlist.some(w => ['waiting','offered'].includes(w.status)) && !data.offers.some(o => o.status === 'offered')) text(offers,'No active waiting-list entries or offers. / कोई सक्रिय प्रतीक्षा अनुरोध या प्रस्ताव नहीं है।');
+    const notices = el('notifications'); notices.replaceChildren(); if (!data.notifications.length) text(notices,'No notifications recorded. / कोई सूचना दर्ज नहीं है।'); data.notifications.forEach(n => { const c = card(notices); text(c,`${date(n.created_at)} · ${n.event_type.replaceAll('_',' ')}`); if (!n.read_at) button(c,'Mark read',{ action:'readNotification', notificationId:n.id }); });
+    el('provider').hidden = !data.providerBusinesses.length; business.replaceChildren(new Option('My customer appointments','')); data.providerBusinesses.forEach(b => business.add(new Option(b.display_name,b.id))); business.value = selectedBusiness;
+    el('provider-controls').hidden = !selectedBusiness;
+    document.querySelectorAll<HTMLSelectElement>('.appointment-service-select').forEach(s => { s.replaceChildren(new Option('Choose service','')); data.services.forEach(service => s.add(new Option(service.title,service.id))); });
+    const slots = el('provider-slots'); slots.replaceChildren(); data.slots.forEach(s => { const c = card(slots); text(c,`${date(s.starts_at)} – ${date(s.ends_at)} · ${s.lifecycle_resource_key} · ${s.status}`); if (['available','held'].includes(s.status)) button(c,'Block slot',{ action:'blockSlot', slotId:s.id }); if (s.status === 'cancelled') button(c,'Reopen slot',{ action:'reopenSlot', slotId:s.id }); });
+  }
+  async function refresh() {
+    activeRefresh?.abort(); const controller = new AbortController(); activeRefresh = controller;
+    try { const data = await getAppointmentDashboard({ businessId:selectedBusiness || undefined, signal:controller.signal }); if (controller.signal.aborted) return; dashboard = data; render(dashboard); el('customer').hidden = false; status.textContent = 'Appointment management loaded. Times use this device’s timezone.'; el('booking').hidden = true;
+      if (serviceId && !selectedBusiness) { try { const { policy:p, title, priceMinor, currencyCode } = await getAppointmentPolicy(serviceId,{signal:controller.signal}); const availability = await requestAppointmentSlots({ baseUrl:location.origin, serviceListingId:serviceId, signal:controller.signal }); if (controller.signal.aborted) return;
+        el('title').textContent = title; el('terms').textContent = `Service price: ${formatAppointmentAmount(priceMinor,currencyCode)}. Notice: ${p.noticeMinutes} minutes. Customer cancellation: ${p.allowCustomerCancellation ? 'allowed' : 'not allowed'}. Late cancellation: ${p.allowLateCancellation ? 'allowed' : 'not allowed'}. Rescheduling: ${p.allowReschedule ? 'allowed' : 'not allowed'}. Timely refund: ${p.refundBasisPoints / 100}%; late refund: ${p.lateRefundBasisPoints / 100}%. Late charge terms: ${p.lateCancellationChargePermitted ? p.lateCancellationChargeDisclosure : 'No late charge authorized'}. Offer expiry: ${p.offerExpiryMinutes} minutes or slot start, whichever is earlier. Refunds require review; no cancellation charges are collected.`;
+        const slots = el('slots'); slots.replaceChildren(); text(slots,'Available times in the next 14 days:'); availability.slots.forEach(s => button(slots,`Request ${date(s.startsAt)}`,{ action:'book', slotId:s.id, expectedPriceMinor:priceMinor, expectedCurrencyCode:currencyCode, expectedPolicy:p })); if (!availability.slots.length) text(slots,'No times found in the next 14 days. You can join the waiting list.'); if (availability.truncated) text(slots,'Results are limited.'); el('booking').hidden = false;
+      } catch { if (controller.signal.aborted) return; status.textContent = 'History loaded. This service is not ready for lifecycle booking yet.'; } }
+    } catch (e) {
+      if (controller.signal.aborted) return;
+      dashboard = null; ['customer','provider','booking'].forEach(id => el(id).hidden = true);
+      ['bookings','offers','notifications','provider-slots'].forEach(id => el(id).replaceChildren());
+      document.querySelectorAll<HTMLSelectElement>('.appointment-service-select').forEach(s => s.replaceChildren());
+      el<HTMLFormElement>('policy').reset(); business.replaceChildren(new Option('My customer appointments',''));
+      status.textContent = e instanceof Error ? e.message : 'Appointment management is unavailable.';
+    }
+  }
+  el('refresh').addEventListener('click',() => { if (!busy) void refresh(); }); business.addEventListener('change',() => { if (!busy) { selectedBusiness = business.value; void refresh(); } });
+  el<HTMLFormElement>('waitlist').addEventListener('submit',e => { e.preventDefault(); if (!serviceId) return; try { const f = new FormData(e.currentTarget as HTMLFormElement); void mutate({ action:'joinWaitlist', serviceListingId:serviceId, startsAt:localIso(f.get('startsAt')), endsAt:localIso(f.get('endsAt')) }); } catch { status.textContent = 'Choose a valid waiting-list window.'; } });
+  const policyForm = el<HTMLFormElement>('policy');
+  policyForm.querySelector<HTMLSelectElement>('[name=serviceListingId]')!.addEventListener('change', e => { const id = (e.target as HTMLSelectElement).value, saved = dashboard?.policies.find(p => p.service_listing_id === id)?.policy ?? INITIAL_APPOINTMENT_POLICY; policyForm.reset(); policyForm.querySelector<HTMLSelectElement>('[name=serviceListingId]')!.value = id;
+    for (const key of ['allowCustomerCancellation','allowReschedule','allowLateCancellation','lateCancellationChargePermitted'] as const) policyForm.querySelector<HTMLInputElement>(`[name=${key}]`)!.checked = saved[key];
+    for (const key of ['noticeMinutes','offerExpiryMinutes'] as const) policyForm.querySelector<HTMLInputElement>(`[name=${key}]`)!.value = String(saved[key]);
+    policyForm.querySelector<HTMLInputElement>('[name=refundPercent]')!.value = String(saved.refundBasisPoints / 100); policyForm.querySelector<HTMLInputElement>('[name=lateRefundPercent]')!.value = String(saved.lateRefundBasisPoints / 100);
+    policyForm.querySelector<HTMLInputElement>('[name=lateCancellationChargeDisclosure]')!.value = saved.lateCancellationChargeDisclosure;
+  });
+  policyForm.addEventListener('submit',e => { e.preventDefault(); const f = new FormData(policyForm); void mutate({ action:'setPolicy', serviceListingId:String(f.get('serviceListingId')), policy:{ allowCustomerCancellation:f.has('allowCustomerCancellation'), allowReschedule:f.has('allowReschedule'), allowLateCancellation:f.has('allowLateCancellation'), noticeMinutes:Number(f.get('noticeMinutes')), refundBasisPoints:Math.round(Number(f.get('refundPercent')) * 100), lateRefundBasisPoints:Math.round(Number(f.get('lateRefundPercent')) * 100), offerExpiryMinutes:Number(f.get('offerExpiryMinutes')), lateCancellationChargePermitted:f.has('lateCancellationChargePermitted'), lateCancellationChargeDisclosure:String(f.get('lateCancellationChargeDisclosure') || '') } }); });
+  el<HTMLFormElement>('schedule').addEventListener('submit',e => { e.preventDefault(); const f = new FormData(e.currentTarget as HTMLFormElement); try { void mutate({ action:'scheduleSlot', serviceListingId:String(f.get('serviceListingId')), resourceKey:String(f.get('resourceKey')), startsAt:localIso(f.get('startsAt')), endsAt:localIso(f.get('endsAt')) }); } catch { status.textContent = 'Choose valid schedule times.'; } });
+  void refresh();
+</script></body></html>
