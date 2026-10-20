@@ -21,9 +21,9 @@ async function request(url, options, fetchImpl) {
     throw new AppointmentLifecycleError(message, response.status);
   }
   let body;
-  try { body = await response.json(); } catch { throw new AppointmentLifecycleError('Appointment service returned an invalid response.'); }
+  try { body = await response.json(); } catch { throw new AppointmentLifecycleError('Appointment service returned an invalid response.',503); }
   if (!body || body.apiVersion !== 1 || !['available', 'accepted'].includes(body.state) || !body.data || typeof body.data !== 'object' || Array.isArray(body.data)) {
-    throw new AppointmentLifecycleError('Appointment service returned an unsupported response.');
+    throw new AppointmentLifecycleError('Appointment service returned an unsupported response.',503);
   }
   return body.data;
 }

@@ -21,7 +21,7 @@ export function NativeProviderSchedule({session,apiBaseUrl,testApiOrigin,view,ge
  return <View style={{gap:10}}><Text accessibilityRole="header">{language.startsWith('hi')?'समय और नीति बदलें':'Edit availability and policy'}</Text>
  <Text>Changes require confirmation and a fresh read. Times must include Z or an explicit offset such as +05:30. Schedule within the next 30 days.</Text>
  {view.services.map(s=><View key={s.id}>{button(`Edit service: ${s.title}`,()=>{setService(s.id);setPolicy({...INITIAL_APPOINTMENT_POLICY,...view.policies.find(p=>p.serviceId===s.id)?.policy});})}</View>)}
- {!!service&&<View><Text>{view.services.find(s=>s.id===service)?.title}</Text>
+ {!!service&&view.services.some(s=>s.id===service)&&<View><Text>{view.services.find(s=>s.id===service)?.title}</Text>
  {field('Slot start (ISO with timezone)',start,setStart)}{field('Slot end (ISO with timezone)',end,setEnd)}{field('Resource key',resource,setResource)}
  {button('Review new slot',()=>host.current?.prepare({action:'scheduleSlot',serviceListingId:service,startsAt:start,endsAt:end,resourceKey:resource}))}
  <Text accessibilityRole="header">Cancellation and rescheduling policy</Text>
