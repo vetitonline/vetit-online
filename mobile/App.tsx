@@ -6,6 +6,7 @@ import {NativeBuyerOrders} from './src/NativeBuyerOrders';
 import {NativeCheckoutReview} from './src/NativeCheckoutReview';
 import {NativeAppointments} from './src/NativeAppointments';
 import {NativeSellerCatalogue} from './src/NativeSellerCatalogue';
+import {ProductPhoto} from './src/ProductPhoto';
 import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
 import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
 import { workspaceCopy, formatWorkspaceMoney } from '../src/lib/marketplace/workspace-copy.js';
@@ -51,9 +52,7 @@ function Chip({ label, selected, onPress }: { label: string; selected?: boolean;
 function ProductTile({ product, onPress, onAdd }: { product: FeaturedProduct; onPress: () => void; onAdd: () => void }) {
   return <View style={styles.productCard}>
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`View ${product.title}`}>
-      {product.imageUrl
-        ? <Image source={{ uri: product.imageUrl }} style={styles.productImage} resizeMode="cover" accessibilityLabel={product.imageAlt || product.title} />
-        : <View style={styles.imageFallback}><Text style={styles.fallbackCategory}>{product.category}</Text><Text style={styles.fallbackCaption}>Vetit category artwork</Text></View>}
+      <ProductPhoto uri={product.imageUrl} style={styles.productImage} fallbackStyle={styles.imageFallback} label={product.imageAlt || product.title} fallback={`${product.category} · Seller photo unavailable`} />
       <View style={styles.productInfo}>
         <Text style={styles.sellerName} numberOfLines={1}>{product.sellerName}</Text>
         <Text style={styles.productTitle} numberOfLines={2}>{product.title}</Text>
@@ -69,9 +68,7 @@ function ProductTile({ product, onPress, onAdd }: { product: FeaturedProduct; on
 function ProductDetail({ product, onBack, onAdd }: { product: FeaturedProduct; onBack: () => void; onAdd: () => void }) {
   return <View>
     <Pressable onPress={onBack}><Text style={styles.backLink}>‹ Back to browsing</Text></Pressable>
-    {product.imageUrl
-      ? <Image source={{ uri: product.imageUrl }} style={styles.detailImage} resizeMode="cover" accessibilityLabel={product.imageAlt || product.title} />
-      : <View style={[styles.imageFallback, styles.detailFallback]}><Text style={styles.fallbackCategory}>{product.category}</Text><Text style={styles.fallbackCaption}>Category artwork · seller photo not supplied</Text></View>}
+    <ProductPhoto uri={product.imageUrl} style={styles.detailImage} fallbackStyle={[styles.imageFallback, styles.detailFallback]} label={product.imageAlt || product.title} fallback={`${product.category} · Seller photo unavailable`} />
     <Text style={styles.eyebrow}>{product.category}</Text>
     <Text style={styles.detailTitle}>{product.title}</Text>
     <Text style={styles.sellerName}>{product.sellerName}</Text>

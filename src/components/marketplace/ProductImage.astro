@@ -1,0 +1,23 @@
+---
+import ProductPlaceholder from './ProductPlaceholder.astro';
+interface Props { imageUrl?:string|null; imageAlt?:string|null; title:string; category:string; }
+const {imageUrl,imageAlt,title,category}=Astro.props;
+---
+<div class="product-photo" data-product-photo>
+  {imageUrl && <img data-seller-photo src={imageUrl} alt={imageAlt || title} loading="lazy" decoding="async" />}
+  <div data-photo-fallback hidden={Boolean(imageUrl)}><ProductPlaceholder title={title} category={category} /></div>
+</div>
+<style>
+  .product-photo {width:100%;height:100%;}
+  .product-photo > img {width:100%;height:100%;object-fit:cover;}
+  .product-photo [hidden] {display:none!important;}
+  [data-photo-fallback] {height:100%;}
+</style>
+<script>
+  import {attachProductImageFallback} from '../../lib/marketplace/image-fallback.js';
+  document.querySelectorAll<HTMLElement>('[data-product-photo]').forEach(container=>{
+    const image=container.querySelector<HTMLImageElement>('[data-seller-photo]');
+    const fallback=container.querySelector<HTMLElement>('[data-photo-fallback]');
+    if(image&&fallback)attachProductImageFallback(image,fallback);
+  });
+</script>
