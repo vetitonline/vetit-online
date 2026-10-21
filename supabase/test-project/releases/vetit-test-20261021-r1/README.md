@@ -2,7 +2,7 @@
 
 **Generated and reviewed locally; NOT approved or ready for hosted execution.**
 
-Repository: `C:\Users\DELL\vetit-online`; branch `codex/development-readiness-2026-10-21`; source HEAD `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`. Existing application edits remain uncommitted. These fourteen migrations are also local/untracked: they have not been committed, pushed, applied, linked or deployed. The protected remote recovery checkpoint is unchanged; it does not contain this release or the newer local development commits.
+Repository: `C:\Users\DELL\vetit-online`; branch `codex/development-readiness-2026-10-21`; freeze-time source HEAD `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`. The application cohort is now committed at `aee37def06a23eb0515fedf58417d949175eb2f3`, SQL safeguards at `8e492f40d3c3012fb026d5912226b1ba9a8c0712`, and this fourteen-migration release/draft at `fa0d747fb38ea7f1ef02885bdab5eb4581f60e19`. They remain local only: no push, application, linking or deployment occurred. The protected remote recovery checkpoint is unchanged; it does not contain this release or the newer local development commits.
 
 ## Exact payload
 
@@ -55,7 +55,7 @@ Continue only in this same laptop repository and Codex workspace. From iPhone, f
 1. Verify repository root, branch, HEAD and full working tree with read-only Git commands. Expected current HEAD is above; all earlier untracked archives/features must still be present.
 2. Read `docs/development-handover-2026-10-21.md`, this file and the release manifest. Verify `validation-receipt.json` and source/payload hashes before any further action.
 3. For future CLI use, explicitly set the isolated SUPABASE_HOME and telemetry opt-outs above; use the absolute installed binary path and an explicit workdir. No global PATH setup is required. Do not login, link, push or execute SQL as a resume step.
-4. Keep the local tools/archive/checksum receipt and separate validation evidence outside Git. Migration files, manifests/logs and documentation are currently saved only on this laptop. A later clean local Git checkpoint and any remote backup require explicit scope review; neither was inferred from the request to prepare a checkpoint.
+4. Keep local tools/archive/checksum receipts and separate validation evidence outside Git. Reviewed migrations, manifests, draft and documentation are committed locally; raw generation logs and excluded recovery material remain local/untracked. The scoped commits were separately approved and created; any remote push still requires explicit approval.
 
 **Next approval requested:** fresh read-only aggregate Test data prerequisites and execution/backup metadata review, without sensitive row contents, accounts, SQL writes or migration application. After that, present the exact package/executor/backup for a separate hosted execution decision.
 ## Executor draft follow-up

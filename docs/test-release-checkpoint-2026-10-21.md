@@ -8,7 +8,7 @@ Continue on the original laptop in `C:\Users\DELL\vetit-online`, branch `codex/d
 - `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`: opt-in Windows runtime and responsive fixes.
 - `aee37def06a23eb0515fedf58417d949175eb2f3`: reviewed ten-file seller/availability/shared-navigation cohort.
 - `8e492f40d3c3012fb026d5912226b1ba9a8c0712`: reviewed three-file SQL safeguard/test cohort.
-- The next commit containing this document adds the frozen fourteen-migration release, its required price-correction provenance, offline executor draft, focused tests and release/handover documentation. Identify it with `git log -1`; no self-referential commit hash is embedded here.
+- `fa0d747fb38ea7f1ef02885bdab5eb4581f60e19`: frozen fourteen-migration release, required price-correction provenance, offline executor draft, focused tests and release/handover documentation. A subsequent documentation checkpoint records this verified commit status; identify current HEAD with `git log -1`.
 
 Release directory: `supabase/test-project/releases/vetit-test-20261021-r1`. The manifest records fourteen CLI versions from `20261021133609` through `20261021133642`, exact source/payload hashes and preserved foundation entries. Release-local Git attributes disable text conversion for SQL and hash-bound metadata. The payloads remain unchanged. Source paths record the freeze-time source bytes; Git normalization in historical source files is not permission to change release hashes. Verify frozen payloads directly before future use.
 

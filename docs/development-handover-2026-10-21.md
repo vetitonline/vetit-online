@@ -1,3 +1,12 @@
+# Ready for explicit GitHub backup-branch approval — 21 October 2026
+
+Same laptop repository/branch. Local commits now secure application `aee37def06a23eb0515fedf58417d949175eb2f3`, SQL safeguards `8e492f40d3c3012fb026d5912226b1ba9a8c0712`, and release/offline draft `fa0d747fb38ea7f1ef02885bdab5eb4581f60e19`, in addition to earlier 098bade/5d96948. A final documentation checkpoint contains this status; use git rev-parse HEAD for its SHA. The new release commit contains exactly 29 reviewed paths, with no ZIP/cache/tool/credential or unrelated recovery evidence. Frozen payload/index bytes were verified; only an inherited step-12 blank-line style waiver remains, documented explicitly.
+
+Proposed destination `vetitonline/vetit-online`, new branch `codex/test-release-checkpoint-2026-10-21-r1`, was verified absent. No push yet. User must approve the final exact HEAD/commit list and acknowledge possible automatic Vercel Preview before a non-force new-branch push. Recheck absence and source SHA immediately before any approved push. Never touch main/recovery or use force. All work is already on the laptop; GitHub synchronization is an additional backup, not a move to another workspace.
+
+Backup verification attempted read-only through the exact Test dashboard; it required sign-in. No backup status/restoreability is claimed, no credentials entered, and no database operation performed. Counts prerequisites passed earlier; privileges, actual executor/transaction-ledger model, backup/restore and hosted/device acceptance remain gates before migration approval. Three new offline-draft tests passed; earlier valid evidence reused.
+
+---
 # Scoped local checkpoints and executor draft — 21 October 2026
 
 Continue in the same laptop repository/branch. Reviewed application commit: `aee37def06a23eb0515fedf58417d949175eb2f3` (10 files). SQL safeguard commit: `8e492f40d3c3012fb026d5912226b1ba9a8c0712` (3 files). Both remain local. The following release/documentation commit contains `docs/test-release-checkpoint-2026-10-21.md`, the canonical current resume/push-approval handover; older statements below about those feature files being uncommitted are superseded.
