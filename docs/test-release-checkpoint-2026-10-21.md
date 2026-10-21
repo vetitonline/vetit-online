@@ -1,5 +1,19 @@
 # Vetit Online — local Test release checkpoint
 
+## Latest bounded development batch — 21 October 2026
+
+This section supersedes the older push-pending notes below. Original laptop access was verified at the same repository on `codex/development-readiness-2026-10-21`, starting at `0e6655435666b28d1622660c03c762287684f1aa`. GitHub comparison confirmed all six commits above recovery `1cfcc1b` on `codex/test-release-checkpoint-2026-10-21-r1`. Main and both backup branches must remain unchanged. Untracked recovery files/ZIPs/caches are preserved and excluded.
+
+The four backend blockers already have local corrections: caller-only `ensure_my_profile()` (frozen step 14); JSONB key counting and typed variant checks (steps 1/13); audited submission with direct DML restricted; immutable child listing IDs (step 12). Existing rollback SQL evidence is `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\development-pass-20261021\backend-regression.log` and `reviewed-boundaries.log`. These are local results, not hosted fixes. Frozen migrations were not edited or applied.
+
+New implementation: shared API authentication distinguishes rejected/missing sessions (401) from Auth outages, throttling and unknown errors (503), for both website cookies and native bearer tokens. All errors deny access; diagnostics are not returned. No cookie fallback for an invalid bearer header. Six new tests exercise the actual verifier and session endpoint; all pass. Three existing seller-submission boundary tests also pass. No full build, installation, SQL execution or unchanged mobile suite was repeated; previous SQL/build/type evidence retains its original scope.
+
+Authentication review: website verifies identity with Auth; seller access requires current active business membership and catalogue role; admin UI uses trusted app_metadata, while moderation needs database scope checks. Native protected-storage adapter remains approval gated and is not evidence of real Keychain/Keystore execution. Missing-profile client invocation remains deferred until hosted Test contract acceptance. Buyer/seller/admin real sessions, device storage, hosted RLS/Storage, revocation, concurrency and idempotency acceptance remain outstanding. English/default locale and Indian language extensibility are unchanged.
+
+GitHub reports a successful Vercel status on the backed-up starting commit, deployment `7LEcKbHG8CgSkyq1ZSDBGDcKxuKf`. The dashboard required authenticated access, so Preview environment identity was not independently verified. Branch pushes may create automatic Previews; no promotion or production setting change is authorized.
+
+This batch authorizes a normal push of completed changes to `codex/development-readiness-2026-10-21`, which was absent remotely at preflight, rather than updating the checkpoint branch. Confirm the resulting commit/push in Git history and the final chat report. Local untracked evidence and tools are not synchronized by GitHub. Next bounded task: verify the development Preview environment using authenticated dashboard evidence, then resolve Test backup/executor review gates before requesting separately scoped hosted acceptance/application approval. Do not automatically begin another development phase.
+
 Continue on the original laptop in `C:\Users\DELL\vetit-online`, branch `codex/development-readiness-2026-10-21`. Reopen the same Codex workspace. On iPhone return, verify filesystem access, repository root, branch, HEAD and untracked files before editing; pause if the laptop is unavailable. Do not clone or switch environments automatically.
 
 ## Secured local work

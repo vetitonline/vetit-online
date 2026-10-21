@@ -10,6 +10,12 @@ export type AuthenticatedApiRequest =
   | { state: 'unauthenticated' }
   | { state: 'unavailable' };
 
+/** Deny access on every error, but do not turn provider outages into logout. */
+function verificationFailure(error: { status?: number; name?: string }): AuthenticatedApiRequest {
+  return { state: error.status === 401 || error.status === 403 || error.name === 'AuthSessionMissingError'
+    ? 'unauthenticated' : 'unavailable' };
+}
+
 export async function authenticateApiRequest(
   request: Request,
   cookies: AstroCookies,
@@ -26,12 +32,14 @@ export async function authenticateApiRequest(
         global: { headers: { Authorization: `Bearer ${token}` } },
       });
       const { data: { user }, error } = await supabase.auth.getUser(token);
-      return error || !user ? { state: 'unauthenticated' } : { state: 'authenticated', supabase, user };
+      if (error) return verificationFailure(error);
+      return !user ? { state: 'unauthenticated' } : { state: 'authenticated', supabase, user };
     }
 
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error } = await supabase.auth.getUser();
-    return error || !user ? { state: 'unauthenticated' } : { state: 'authenticated', supabase, user };
+    if (error) return verificationFailure(error);
+    return !user ? { state: 'unauthenticated' } : { state: 'authenticated', supabase, user };
   } catch {
     return { state: 'unavailable' };
   }
