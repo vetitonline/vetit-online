@@ -17,6 +17,16 @@ begin
  if result<>customer or public.ensure_my_profile()<>customer then raise exception 'Profile repair/replay failed';end if;
  reset role;
  if not exists(select 1 from public.profiles where id=customer and role='customer' and full_name is null) then raise exception 'Profile repair trusts metadata permissions/shape';end if;
+ update public.profiles set full_name='Existing profile name' where id=customer;
+ update auth.users set raw_user_meta_data='{"role":"admin","full_name":"Replacement metadata"}' where id=customer;
+ set local role authenticated;
+ perform public.ensure_my_profile();
+ perform set_config('request.jwt.claim.sub','',true);
+ begin perform public.ensure_my_profile();raise exception 'Missing identity accepted';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub','80000000-0000-4000-8000-000000002199',true);
+ begin perform public.ensure_my_profile();raise exception 'Missing Auth account accepted';exception when insufficient_privilege then null;end;
+ reset role;
+ if not exists(select 1 from public.profiles where id=customer and full_name='Existing profile name' and role='customer') then raise exception 'Replay overwrote an existing profile';end if;
  if has_function_privilege('anon','public.ensure_my_profile()','EXECUTE') or has_table_privilege('authenticated','public.profiles','INSERT') then raise exception 'Profile escalation surface';end if;
  raise notice 'PASS signup role isolation, authenticated missing-profile repair and idempotent replay';
  perform set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
