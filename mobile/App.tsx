@@ -7,6 +7,8 @@ import {NativeCheckoutReview} from './src/NativeCheckoutReview';
 import {NativeAppointments} from './src/NativeAppointments';
 import {NativeSellerCatalogue} from './src/NativeSellerCatalogue';
 import {ProductPhoto} from './src/ProductPhoto';
+import {MarketplaceShortcuts} from './src/MarketplaceShortcuts';
+import {marketplaceNavigation,type MarketplaceDestinationKey} from '../src/lib/marketplace/navigation.js';
 import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
 import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
 import { workspaceCopy, formatWorkspaceMoney } from '../src/lib/marketplace/workspace-copy.js';
@@ -220,6 +222,12 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       <Text style={styles.heroBody}>Browse real products from Vetit’s marketplace.</Text>
       <Pressable onPress={() => setTab('shop')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Explore marketplace</Text></Pressable>
     </View>
+    <MarketplaceShortcuts imageBaseUrl={API_BASE_URL} language={language} onNavigate={(key:MarketplaceDestinationKey)=>{
+      const target=marketplaceNavigation(key);
+      if(target.path){openWeb(target.path);return;}
+      if(target.clearFilters)resetFilters();
+      setDetailKey(null);if(target.tab)setTab(target.tab);
+    }}/>
     <Text style={styles.sectionTitle}>Shop by pets & livestock</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
       <Chip label="All" selected={!animalSlug} onPress={() => browseAnimal(null)} />

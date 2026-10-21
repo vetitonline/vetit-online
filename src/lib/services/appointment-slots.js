@@ -17,12 +17,19 @@ function parseTimestamp(value, label) {
     throw new AppointmentSlotQueryError(`${label} must be an ISO timestamp with a timezone.`);
   }
   const timestamp = Date.parse(value);
+  // Date.parse normalizes impossible dates such as February 30. Reject them
+  // before querying availability rather than silently moving the user's window.
+  const [year,month,day,hour,minute]=value.slice(0,16).split(/[-T:]/i).map(Number);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  if(month<1||month>12||day<1||day>days[month-1]||hour>23||minute>59)throw new AppointmentSlotQueryError(`${label} is invalid.`);
   if (!Number.isFinite(timestamp)) throw new AppointmentSlotQueryError(`${label} is invalid.`);
   return timestamp;
 }
 
 /** Validate the bounded, read-only appointment slot query shared by all HTTP clients. */
 export function parseAppointmentSlotQuery(params, now = Date.now()) {
+  for(const key of ['serviceListingId','from','to'])if(typeof params.getAll==='function'&&params.getAll(key).length>1)throw new AppointmentSlotQueryError('Duplicate appointment query fields are not allowed.');
   const serviceListingId = (params.get('serviceListingId') || '').trim();
   if (!UUID.test(serviceListingId)) throw new AppointmentSlotQueryError('Service listing ID is invalid.');
 

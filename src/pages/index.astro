@@ -6,6 +6,7 @@ import SiteHeader from '../components/SiteHeader.astro';
 import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 import ProductImage from '../components/marketplace/ProductImage.astro';
 import { featuredDiscoveryCards } from '../lib/marketplace/home-discovery.js';
+import HomeShortcuts from '../components/marketplace/HomeShortcuts.astro';
 
 const featuredProductsResult = await getFeaturedProducts(Astro.request, Astro.cookies);
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
@@ -159,6 +160,7 @@ const visualGroups = browseGroups.slice(0, 4).map((group) => ({
           </div>
         </aside>
       </section>
+      <HomeShortcuts />
       <section class="section categories-section discovery-section" id="browse-vetit">
         <div class="section-heading centered">
           <span class="section-label dark-label"><span></span>Browse Vetit</span>

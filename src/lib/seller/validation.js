@@ -35,6 +35,7 @@ export function sellerBusinessInput(formData, existingBusinessType = null) {
   if (publicEmail && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(publicEmail) || publicEmail.length > 254)) throw new Error('Enter a valid public email address.');
   if (publicPhone && (!/^\+?[0-9 ()-]{7,32}$/.test(publicPhone) || publicPhone.replace(/\D/g, '').length < 7 || publicPhone.replace(/\D/g, '').length > 15)) throw new Error('Enter a valid public phone number with 7 to 15 digits.');
   if (websiteUrl) {
+    if (websiteUrl.length > 2048 || /[\s\u0000-\u001f\u007f]/u.test(websiteUrl)) throw new Error('Website URL must be at most 2048 characters without whitespace or control characters.');
     let parsed;
     try { parsed = new URL(websiteUrl); } catch { throw new Error('Enter a valid website URL.'); }
     if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Website URL must use HTTPS or HTTP.');

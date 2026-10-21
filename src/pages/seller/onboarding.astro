@@ -33,7 +33,7 @@ if (!getSupabasePublicConfig()) {
       <label>Public email (optional)<input name="public_email" type="email" maxlength="254" autocomplete="email"></label>
       <label>Public phone (optional) / सार्वजनिक फ़ोन (वैकल्पिक)<input name="public_phone" type="tel" maxlength="32" autocomplete="tel" placeholder="+91 98765 43210"></label>
       <p class="seller-form-hint">Use 7–15 digits; spaces, brackets and dashes are allowed. / 7–15 अंक लिखें; स्पेस, कोष्ठक और डैश स्वीकार हैं।</p>
-      <label>Website (optional)<input name="website_url" type="url" placeholder="https://example.in" autocomplete="url"></label>
+      <label>Website (optional)<input name="website_url" type="url" maxlength="2048" placeholder="https://example.in" autocomplete="url"></label>
       <button class="button button-primary" type="submit">Create seller profile</button>
     </form>
     <p class="seller-security-note">Creating a profile does not verify your business or publish any listing. Vetit administrators manage verification and marketplace moderation.</p>
