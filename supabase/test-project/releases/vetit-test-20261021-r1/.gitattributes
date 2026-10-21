@@ -1,0 +1,5 @@
+# Preserve the reviewed release bytes across Windows/Linux Git checkouts.
+supabase/migrations/*.sql -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+release-manifest.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+validation-receipt.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+executor-draft.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

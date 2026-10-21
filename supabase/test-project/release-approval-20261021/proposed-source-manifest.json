@@ -1,0 +1,215 @@
+{
+  "format": 1,
+  "preparedAt": "2026-10-21",
+  "repository": "C:\\Users\\DELL\\vetit-online",
+  "branch": "codex/development-readiness-2026-10-21",
+  "localHead": "5d969487f47f6c84d7404d5c0ef35c75caf7dd3f",
+  "targetProjectRef": "apfyfmokcynqiaxqvvxx",
+  "targetName": "Vetit Online Test",
+  "hostedBaselineDate": "2026-10-20",
+  "hostedApproved": false,
+  "executableRelease": false,
+  "migrationsGenerated": false,
+  "foundationPreserve": [
+    {
+      "version": "20261008223605",
+      "name": "vetit_marketplace_baseline_20261009000000",
+      "path": "supabase/test-project/20261009000000_vetit_marketplace_baseline.sql",
+      "sha256": "473cfde9c6264efeb0ed5ad26f78a3c36d40fe5cd025e232379d2f9852a4dc54",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261008233606",
+      "name": "vetit_business_private_fields",
+      "path": "supabase/test-project/20261009010000_business_private_fields.sql",
+      "sha256": "1f10c8089cdf43d08f4b5ad1faf3321a04bd42d1a78d3e391ed49564e4bd320d",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009000613",
+      "name": "vetit_seller_backend_foundation",
+      "path": "supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql",
+      "sha256": "44079918eb9286611175a0a9239380d35b876a9eddb9d6ba60396366f49d48d9",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009082833",
+      "name": "vetit_seller_security_hardening",
+      "path": "supabase/migrations/20261008210707_vetit_seller_security_hardening.sql",
+      "sha256": "2897a1872fae48e575b7cb39d789a390518771e9059d4940b8072735171310a0",
+      "existingTest": "preserve-do-not-replay"
+    }
+  ],
+  "proposedCore": [
+    {
+      "order": 1,
+      "source": "supabase/test-project/release-corrections/seller-variant-key-count.proposal.sql",
+      "sha256": "0e1ed0f396eaa8f0057fb8b8d40b74d16f94dd71a8138eb310774298ee2a15a6",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 2,
+      "source": "supabase/test-project/release-corrections/booking-participant-rls.proposal.sql",
+      "sha256": "688b2a0934e6c5801f2af46ac9a5543e2037ff141f5314a575087ed517dca4be",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        1
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 3,
+      "source": "supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sha256": "ac10ba8aa0fcbfcab74c86be323a80e3ba21ef59f94d75aca0dca972420d0d72",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        2
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 4,
+      "source": "supabase/test-project/20261009110000_vetit_service_booking_transaction.sql",
+      "sha256": "35c81d282a1e397d1785c0b2fe8edf772f8d3f01228a8634437179233685144b",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        3
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 5,
+      "source": "supabase/test-project/appointment-lifecycle.proposal.sql",
+      "sha256": "d0c5e70582ba87d135fb6ddc25e5ccbb053d92ab9eb2f84eea5d83d8474e3f2f",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        4
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 6,
+      "source": "supabase/test-project/appointment-operations.proposal.sql",
+      "sha256": "4e44d5236674c1b92250fa232424639eaf962048e6c7432f16393ba0b32671bf",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        5
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 7,
+      "source": "supabase/test-project/migrations/20261019095631_vetit_seller_rejected_resubmission.sql",
+      "sha256": "5db67abd9cc9ecf84fff16c69afa1cb8a61113f60344e668cadb1fdd9155413d",
+      "historicalVersion": "20261019095631",
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        6
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 8,
+      "source": "supabase/test-project/migrations/20261019100841_vetit_admin_listing_queue.sql",
+      "sha256": "8d5cbe53db246bc0eba003c83915b57dcb43ec4603ad5ab08176d091f2453541",
+      "historicalVersion": "20261019100841",
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        7
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 9,
+      "source": "supabase/test-project/migrations/20261019102037_vetit_durable_moderation.sql",
+      "sha256": "635f7cf0cb6be30f868aa2b9acaa3eeacb350f4fcb7b4ef1447f3db1694ff335",
+      "historicalVersion": "20261019102037",
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        8
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 10,
+      "source": "supabase/test-project/migrations/20261019111343_vetit_low_risk_automatic_approval.sql",
+      "sha256": "00895d7525cc4714be9f7f7aa1428b7e52eda09730f645d3aad52576691889ea",
+      "historicalVersion": "20261019111343",
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        9
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 11,
+      "source": "supabase/test-project/migrations/20261019120413_vetit_service_storage_boundaries.sql",
+      "sha256": "ec0794441b825679806cb7ed88772e75ef2049d64489fd66770c71d7b2e09f7f",
+      "historicalVersion": "20261019120413",
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        10
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 12,
+      "source": "supabase/test-project/release-corrections/business-scoped-moderation.proposal.sql",
+      "sha256": "90de25b210687bf0963d7f41bdd7810f7585b998b501114732346556323750e7",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        11
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    },
+    {
+      "order": 13,
+      "source": "supabase/test-project/release-corrections/seller-price-validity.proposal.sql",
+      "sha256": "308a6b19446fa9aaa399888062dc40bb3adcd64943fa92553a2c2c4cbc70d067",
+      "historicalVersion": null,
+      "proposedReleaseVersion": null,
+      "dependsOn": [
+        12
+      ],
+      "selection": "proposed-core; not executable or hosted-approved"
+    }
+  ],
+  "supplementalDecisions": [
+    {
+      "source": "supabase/test-project/development/authenticated-profile.proposal.sql",
+      "sha256": "E66C26D15D4657CEFC591486ADAF792A5012136612A74BAFAEB7DED59F80C27E",
+      "proposedReleaseVersion": null,
+      "selection": "proposed-after-core; explicit inclusion approval required; client wiring deferred"
+    },
+    {
+      "source": "supabase/test-project/development/data-api-grants.proposal.sql",
+      "sha256": "3BF6482344ABB1AA914D82E70350C379CD3CBD1B93269220B8A10A6F51BD64D4",
+      "proposedReleaseVersion": null,
+      "selection": "optional assertion; excluded by default; canonical grant already exists"
+    }
+  ],
+  "excluded": [
+    "supabase/migrations/20261004000000_initial_marketplace.sql",
+    "supabase/migrations/20261005000000_service_marketplace_foundation.sql",
+    "marketplace-fixtures.sql",
+    "seller-integration-cleanup-proposal.sql",
+    "test_worker_fault"
+  ],
+  "requiredApprovals": [
+    "Fresh read-only Test identity/ledger/catalog and aggregate preconditions",
+    "Explicit source selection and local CLI version generation, no install",
+    "Exact generated payload/version/executor and backup review before hosted execution",
+    "Bounded synthetic hosted Auth/role/Storage/session tests",
+    "Separate commit/push/deployment decisions"
+  ],
+  "verifiedLocally": "4 foundation sources, 13 source/payload pairs match saved hashes; no SQL executed"
+}

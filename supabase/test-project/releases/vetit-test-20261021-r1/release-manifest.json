@@ -1,0 +1,210 @@
+{
+  "format": 1,
+  "repository": "C:\\Users\\DELL\\vetit-online",
+  "branch": "codex/development-readiness-2026-10-21",
+  "sourceHead": "5d969487f47f6c84d7404d5c0ef35c75caf7dd3f",
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "targetName": "Vetit Online Test",
+  "cliVersion": "2.121.0",
+  "cliBinary": "C:\\Users\\DELL\\.codex\\visualizations\\2026\\10\\20\\01a158a4-4a1d-7bb2-9119-365e6b275fa7\\tools\\supabase-2.121.0\\supabase.exe",
+  "cliInstallationReceipt": "C:\\Users\\DELL\\.codex\\visualizations\\2026\\10\\20\\01a158a4-4a1d-7bb2-9119-365e6b275fa7\\tools\\supabase-2.121.0\\installation-receipt.json",
+  "cliHome": "C:\\Users\\DELL\\.codex\\visualizations\\2026\\10\\20\\01a158a4-4a1d-7bb2-9119-365e6b275fa7\\tools\\supabase-2.121.0\\isolated-cli-home",
+  "linked": false,
+  "hostedApproved": false,
+  "executionReady": false,
+  "versionsGenerated": true,
+  "payloadsFrozen": true,
+  "foundationPreserve": [
+    {
+      "version": "20261008223605",
+      "name": "vetit_marketplace_baseline_20261009000000",
+      "path": "supabase/test-project/20261009000000_vetit_marketplace_baseline.sql",
+      "sha256": "473cfde9c6264efeb0ed5ad26f78a3c36d40fe5cd025e232379d2f9852a4dc54",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261008233606",
+      "name": "vetit_business_private_fields",
+      "path": "supabase/test-project/20261009010000_business_private_fields.sql",
+      "sha256": "1f10c8089cdf43d08f4b5ad1faf3321a04bd42d1a78d3e391ed49564e4bd320d",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009000613",
+      "name": "vetit_seller_backend_foundation",
+      "path": "supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql",
+      "sha256": "44079918eb9286611175a0a9239380d35b876a9eddb9d6ba60396366f49d48d9",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009082833",
+      "name": "vetit_seller_security_hardening",
+      "path": "supabase/migrations/20261008210707_vetit_seller_security_hardening.sql",
+      "sha256": "2897a1872fae48e575b7cb39d789a390518771e9059d4940b8072735171310a0",
+      "existingTest": "preserve-do-not-replay"
+    }
+  ],
+  "entries": [
+    {
+      "order": 1,
+      "version": "20261021133609",
+      "migrationPath": "supabase/migrations/20261021133609_vetit_test_01_seller_variant_key_count.sql",
+      "source": "supabase/test-project/release-corrections/seller-variant-key-count.proposal.sql",
+      "sourceSha256": "0E1ED0F396EAA8F0057FB8B8D40B74D16F94DD71A8138EB310774298EE2A15A6",
+      "payloadSha256": "0E1ED0F396EAA8F0057FB8B8D40B74D16F94DD71A8138EB310774298EE2A15A6",
+      "dependsOn": []
+    },
+    {
+      "order": 2,
+      "version": "20261021133612",
+      "migrationPath": "supabase/migrations/20261021133612_vetit_test_02_booking_participant_rls.sql",
+      "source": "supabase/test-project/release-corrections/booking-participant-rls.proposal.sql",
+      "sourceSha256": "688B2A0934E6C5801F2AF46AC9A5543E2037FF141F5314A575087ED517DCA4BE",
+      "payloadSha256": "688B2A0934E6C5801F2AF46AC9A5543E2037FF141F5314A575087ED517DCA4BE",
+      "dependsOn": [
+        1
+      ]
+    },
+    {
+      "order": 3,
+      "version": "20261021133614",
+      "migrationPath": "supabase/migrations/20261021133614_vetit_test_03_vetit_buyer_cart_inventory_fulfilment.sql",
+      "source": "supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sourceSha256": "AC10BA8AA0FCBFCAB74C86BE323A80E3BA21EF59F94D75ACA0DCA972420D0D72",
+      "payloadSha256": "AC10BA8AA0FCBFCAB74C86BE323A80E3BA21EF59F94D75ACA0DCA972420D0D72",
+      "dependsOn": [
+        2
+      ]
+    },
+    {
+      "order": 4,
+      "version": "20261021133617",
+      "migrationPath": "supabase/migrations/20261021133617_vetit_test_04_vetit_service_booking_transaction.sql",
+      "source": "supabase/test-project/20261009110000_vetit_service_booking_transaction.sql",
+      "sourceSha256": "35C81D282A1E397D1785C0B2FE8EDF772F8D3F01228A8634437179233685144B",
+      "payloadSha256": "35C81D282A1E397D1785C0B2FE8EDF772F8D3F01228A8634437179233685144B",
+      "dependsOn": [
+        3
+      ]
+    },
+    {
+      "order": 5,
+      "version": "20261021133619",
+      "migrationPath": "supabase/migrations/20261021133619_vetit_test_05_appointment_lifecycle.sql",
+      "source": "supabase/test-project/appointment-lifecycle.proposal.sql",
+      "sourceSha256": "D0C5E70582BA87D135FB6DDC25E5CCBB053D92AB9EB2F84EEA5D83D8474E3F2F",
+      "payloadSha256": "D0C5E70582BA87D135FB6DDC25E5CCBB053D92AB9EB2F84EEA5D83D8474E3F2F",
+      "dependsOn": [
+        4
+      ]
+    },
+    {
+      "order": 6,
+      "version": "20261021133622",
+      "migrationPath": "supabase/migrations/20261021133622_vetit_test_06_appointment_operations.sql",
+      "source": "supabase/test-project/appointment-operations.proposal.sql",
+      "sourceSha256": "4E44D5236674C1B92250FA232424639EAF962048E6C7432F16393BA0B32671BF",
+      "payloadSha256": "4E44D5236674C1B92250FA232424639EAF962048E6C7432F16393BA0B32671BF",
+      "dependsOn": [
+        5
+      ]
+    },
+    {
+      "order": 7,
+      "version": "20261021133625",
+      "migrationPath": "supabase/migrations/20261021133625_vetit_test_07_vetit_seller_rejected_resubmission.sql",
+      "source": "supabase/test-project/migrations/20261019095631_vetit_seller_rejected_resubmission.sql",
+      "sourceSha256": "5DB67ABD9CC9ECF84FFF16C69AFA1CB8A61113F60344E668CADB1FDD9155413D",
+      "payloadSha256": "5DB67ABD9CC9ECF84FFF16C69AFA1CB8A61113F60344E668CADB1FDD9155413D",
+      "dependsOn": [
+        6
+      ]
+    },
+    {
+      "order": 8,
+      "version": "20261021133627",
+      "migrationPath": "supabase/migrations/20261021133627_vetit_test_08_vetit_admin_listing_queue.sql",
+      "source": "supabase/test-project/migrations/20261019100841_vetit_admin_listing_queue.sql",
+      "sourceSha256": "8D5CBE53DB246BC0EBA003C83915B57DCB43EC4603AD5AB08176D091F2453541",
+      "payloadSha256": "8D5CBE53DB246BC0EBA003C83915B57DCB43EC4603AD5AB08176D091F2453541",
+      "dependsOn": [
+        7
+      ]
+    },
+    {
+      "order": 9,
+      "version": "20261021133630",
+      "migrationPath": "supabase/migrations/20261021133630_vetit_test_09_vetit_durable_moderation.sql",
+      "source": "supabase/test-project/migrations/20261019102037_vetit_durable_moderation.sql",
+      "sourceSha256": "635F7CF0CB6BE30F868AA2B9ACAA3EEACB350F4FCB7B4EF1447F3DB1694FF335",
+      "payloadSha256": "635F7CF0CB6BE30F868AA2B9ACAA3EEACB350F4FCB7B4EF1447F3DB1694FF335",
+      "dependsOn": [
+        8
+      ]
+    },
+    {
+      "order": 10,
+      "version": "20261021133632",
+      "migrationPath": "supabase/migrations/20261021133632_vetit_test_10_vetit_low_risk_automatic_approval.sql",
+      "source": "supabase/test-project/migrations/20261019111343_vetit_low_risk_automatic_approval.sql",
+      "sourceSha256": "00895D7525CC4714BE9F7F7AA1428B7E52EDA09730F645D3AAD52576691889EA",
+      "payloadSha256": "00895D7525CC4714BE9F7F7AA1428B7E52EDA09730F645D3AAD52576691889EA",
+      "dependsOn": [
+        9
+      ]
+    },
+    {
+      "order": 11,
+      "version": "20261021133635",
+      "migrationPath": "supabase/migrations/20261021133635_vetit_test_11_vetit_service_storage_boundaries.sql",
+      "source": "supabase/test-project/migrations/20261019120413_vetit_service_storage_boundaries.sql",
+      "sourceSha256": "EC0794441B825679806CB7ED88772E75EF2049D64489FD66770C71D7B2E09F7F",
+      "payloadSha256": "EC0794441B825679806CB7ED88772E75EF2049D64489FD66770C71D7B2E09F7F",
+      "dependsOn": [
+        10
+      ]
+    },
+    {
+      "order": 12,
+      "version": "20261021133637",
+      "migrationPath": "supabase/migrations/20261021133637_vetit_test_12_business_scoped_moderation.sql",
+      "source": "supabase/test-project/release-corrections/business-scoped-moderation.proposal.sql",
+      "sourceSha256": "90DE25B210687BF0963D7F41BDD7810F7585B998B501114732346556323750E7",
+      "payloadSha256": "90DE25B210687BF0963D7F41BDD7810F7585B998B501114732346556323750E7",
+      "dependsOn": [
+        11
+      ]
+    },
+    {
+      "order": 13,
+      "version": "20261021133640",
+      "migrationPath": "supabase/migrations/20261021133640_vetit_test_13_seller_price_validity.sql",
+      "source": "supabase/test-project/release-corrections/seller-price-validity.proposal.sql",
+      "sourceSha256": "308A6B19446FA9AAA399888062DC40BB3ADCD64943FA92553A2C2C4CBC70D067",
+      "payloadSha256": "308A6B19446FA9AAA399888062DC40BB3ADCD64943FA92553A2C2C4CBC70D067",
+      "dependsOn": [
+        12
+      ]
+    },
+    {
+      "order": 14,
+      "version": "20261021133642",
+      "migrationPath": "supabase/migrations/20261021133642_vetit_test_14_authenticated_profile.sql",
+      "source": "supabase/test-project/development/authenticated-profile.proposal.sql",
+      "sourceSha256": "E66C26D15D4657CEFC591486ADAF792A5012136612A74BAFAEB7DED59F80C27E",
+      "payloadSha256": "E66C26D15D4657CEFC591486ADAF792A5012136612A74BAFAEB7DED59F80C27E",
+      "dependsOn": [
+        13
+      ]
+    }
+  ],
+  "optionalGrantAssertion": "Excluded; core step 3 already contains explicit authenticated participant SELECT/RLS",
+  "remainingGates": [
+    "Aggregate duplicate/payment-parent/booking/held-slot/resource-overlap preconditions not queried",
+    "Residual service_role non-CRUD/default ACL review remains unresolved",
+    "Backup/recovery method and migration timeout/partial-failure plan not approved",
+    "Real hosted Auth/role/Storage/session and backend concurrency/idempotency unverified"
+  ],
+  "executorReview": "Pending: 14 explicit BEGIN/COMMIT wrappers; no application executor generated",
+  "createdUtc": "2026-10-21T13:36:43.2817581Z"
+}

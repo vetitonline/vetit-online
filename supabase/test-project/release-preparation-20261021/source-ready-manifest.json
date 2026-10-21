@@ -1,0 +1,278 @@
+{
+  "format": 1,
+  "repository": "C:\\Users\\DELL\\vetit-online",
+  "branch": "codex/development-readiness-2026-10-21",
+  "head": "5d969487f47f6c84d7404d5c0ef35c75caf7dd3f",
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "targetName": "Vetit Online Test",
+  "freshPreflight": "2026-10-21T13:23:31.258659Z; recorded in chat; read-only transactions",
+  "preserveLedger": [
+    {
+      "version": "20261008223605",
+      "name": "vetit_marketplace_baseline_20261009000000",
+      "path": "supabase/test-project/20261009000000_vetit_marketplace_baseline.sql",
+      "sha256": "473cfde9c6264efeb0ed5ad26f78a3c36d40fe5cd025e232379d2f9852a4dc54",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261008233606",
+      "name": "vetit_business_private_fields",
+      "path": "supabase/test-project/20261009010000_business_private_fields.sql",
+      "sha256": "1f10c8089cdf43d08f4b5ad1faf3321a04bd42d1a78d3e391ed49564e4bd320d",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009000613",
+      "name": "vetit_seller_backend_foundation",
+      "path": "supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql",
+      "sha256": "44079918eb9286611175a0a9239380d35b876a9eddb9d6ba60396366f49d48d9",
+      "existingTest": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009082833",
+      "name": "vetit_seller_security_hardening",
+      "path": "supabase/migrations/20261008210707_vetit_seller_security_hardening.sql",
+      "sha256": "2897a1872fae48e575b7cb39d789a390518771e9059d4940b8072735171310a0",
+      "existingTest": "preserve-do-not-replay"
+    }
+  ],
+  "selectedSourceCount": 14,
+  "sources": [
+    {
+      "order": 1,
+      "source": "supabase/test-project/release-corrections/seller-variant-key-count.proposal.sql",
+      "sourceSha256": "0E1ED0F396EAA8F0057FB8B8D40B74D16F94DD71A8138EB310774298EE2A15A6",
+      "dependsOn": [],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 2,
+      "source": "supabase/test-project/release-corrections/booking-participant-rls.proposal.sql",
+      "sourceSha256": "688B2A0934E6C5801F2AF46AC9A5543E2037FF141F5314A575087ED517DCA4BE",
+      "dependsOn": [
+        1
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 3,
+      "source": "supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sourceSha256": "AC10BA8AA0FCBFCAB74C86BE323A80E3BA21EF59F94D75ACA0DCA972420D0D72",
+      "dependsOn": [
+        2
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "public.fulfilment_events"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 4,
+      "source": "supabase/test-project/20261009110000_vetit_service_booking_transaction.sql",
+      "sourceSha256": "35C81D282A1E397D1785C0B2FE8EDF772F8D3F01228A8634437179233685144B",
+      "dependsOn": [
+        3
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 5,
+      "source": "supabase/test-project/appointment-lifecycle.proposal.sql",
+      "sourceSha256": "D0C5E70582BA87D135FB6DDC25E5CCBB053D92AB9EB2F84EEA5D83D8474E3F2F",
+      "dependsOn": [
+        4
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "vetit_appointments.policies",
+        "vetit_appointments.waitlist",
+        "vetit_appointments.offers",
+        "vetit_appointments.events",
+        "vetit_appointments.notifications",
+        "vetit_appointments.notification_outbox",
+        "vetit_appointments.refund_requests"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 6,
+      "source": "supabase/test-project/appointment-operations.proposal.sql",
+      "sourceSha256": "4E44D5236674C1B92250FA232424639EAF962048E6C7432F16393BA0B32671BF",
+      "dependsOn": [
+        5
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "vetit_appointments.historical_hold_policies",
+        "vetit_appointments.historical_hold_reviews",
+        "vetit_appointments.worker_settings",
+        "vetit_appointments.worker_runs",
+        "vetit_appointments.worker_audit"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 7,
+      "source": "supabase/test-project/migrations/20261019095631_vetit_seller_rejected_resubmission.sql",
+      "sourceSha256": "5DB67ABD9CC9ECF84FFF16C69AFA1CB8A61113F60344E668CADB1FDD9155413D",
+      "dependsOn": [
+        6
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 8,
+      "source": "supabase/test-project/migrations/20261019100841_vetit_admin_listing_queue.sql",
+      "sourceSha256": "8D5CBE53DB246BC0EBA003C83915B57DCB43EC4603AD5AB08176D091F2453541",
+      "dependsOn": [
+        7
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 9,
+      "source": "supabase/test-project/migrations/20261019102037_vetit_durable_moderation.sql",
+      "sourceSha256": "635F7CF0CB6BE30F868AA2B9ACAA3EEACB350F4FCB7B4EF1447F3DB1694FF335",
+      "dependsOn": [
+        8
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "vetit_moderation.reviewers",
+        "vetit_moderation.policies",
+        "vetit_moderation.cases",
+        "vetit_moderation.evidence",
+        "vetit_moderation.events"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 10,
+      "source": "supabase/test-project/migrations/20261019111343_vetit_low_risk_automatic_approval.sql",
+      "sourceSha256": "00895D7525CC4714BE9F7F7AA1428B7E52EDA09730F645D3AAD52576691889EA",
+      "dependsOn": [
+        9
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "vetit_moderation.automation_controls",
+        "vetit_moderation.automation_control_events",
+        "vetit_moderation.automatic_approvals"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 11,
+      "source": "supabase/test-project/migrations/20261019120413_vetit_service_storage_boundaries.sql",
+      "sourceSha256": "EC0794441B825679806CB7ED88772E75EF2049D64489FD66770C71D7B2E09F7F",
+      "dependsOn": [
+        10
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 12,
+      "source": "supabase/test-project/release-corrections/business-scoped-moderation.proposal.sql",
+      "sourceSha256": "90DE25B210687BF0963D7F41BDD7810F7585B998B501114732346556323750E7",
+      "dependsOn": [
+        11
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [
+        "vetit_moderation.reviewer_scopes",
+        "vetit_moderation.scope_events"
+      ],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 13,
+      "source": "supabase/test-project/release-corrections/seller-price-validity.proposal.sql",
+      "sourceSha256": "308A6B19446FA9AAA399888062DC40BB3ADCD64943FA92553A2C2C4CBC70D067",
+      "dependsOn": [
+        12
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    },
+    {
+      "order": 14,
+      "source": "supabase/test-project/development/authenticated-profile.proposal.sql",
+      "sourceSha256": "E66C26D15D4657CEFC591486ADAF792A5012136612A74BAFAEB7DED59F80C27E",
+      "dependsOn": [
+        13
+      ],
+      "generatedVersion": null,
+      "generatedMigration": null,
+      "payloadSha256": null,
+      "createdTables": [],
+      "transactionBeginMarkers": 1,
+      "transactionCommitMarkers": 1
+    }
+  ],
+  "optionalGrantAssertion": "Excluded: canonical core step 3 already provides authenticated fulfilment_events SELECT with participant RLS",
+  "versionsGenerated": false,
+  "executableRelease": false,
+  "hostedApproved": false,
+  "blockers": [
+    "No existing Supabase CLI found; installation requires separate approval",
+    "Coherent CLI-generated versions, final payload hashes and executor review pending",
+    "Aggregate duplicate/payment-parent/booking/held-slot/resource-overlap preconditions not queried",
+    "Residual service_role non-CRUD/default ACL review remains unresolved",
+    "Backup/recovery method and migration timeout/partial-failure plan not approved",
+    "Real hosted Auth/role/Storage/session and backend concurrency/idempotency unverified"
+  ],
+  "prohibitedActionsPerformed": []
+}

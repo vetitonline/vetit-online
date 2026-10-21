@@ -1,0 +1,21 @@
+{
+  "checkedUtc": "2026-10-21T13:37:41.7299366Z",
+  "migrationCount": 14,
+  "uniqueIncreasingVersions": true,
+  "sourcePayloadHashesMatch": true,
+  "foundationUnchanged": true,
+  "foundationReplayExcluded": true,
+  "linked": false,
+  "isolatedTokenFilePresent": false,
+  "sqlExecuted": false,
+  "testsRepeated": [],
+  "priorEvidenceReused": [
+    "continuation 16 tests and mobile TypeScript",
+    "template compilation and four rollback SQL groups",
+    "scoped runtime/browser acceptance"
+  ],
+  "manifestSha256": "1C23B6B330360E5374DC0AD958BA446BC84327181FB9290026481C741A0D8655",
+  "firstVersion": "20261021133609",
+  "lastVersion": "20261021133642",
+  "head": "5d969487f47f6c84d7404d5c0ef35c75caf7dd3f"
+}

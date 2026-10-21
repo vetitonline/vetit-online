@@ -1,0 +1,145 @@
+{
+  "format": 1,
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "executionEnabled": false,
+  "networkOrDatabaseAccess": false,
+  "wholeReleaseAtomic": false,
+  "gates": [
+    "Verified recent Test backup, retention, recovery target and restore procedure",
+    "Fresh exact project/ledger and aggregate prerequisite snapshot immediately before application",
+    "Explicit approval of immutable payloads, role, executor, timeouts and partial-failure/resume plan",
+    "Resolve transaction-wrapper and atomic migration-ledger recording compatibility",
+    "Review residual service-role privileges and effective GRANT/RLS boundaries"
+  ],
+  "proposedLockTimeout": "5s; review only, never applied by this script",
+  "proposedStatementTimeout": "120s per step; review only, revise from measured DDL cost",
+  "strategy": "Choose an approved wrapper-aware executor or separately hash/review normalized payloads. Do not wrap all files in a purported single transaction.",
+  "steps": [
+    {
+      "order": 1,
+      "version": "20261021133609",
+      "migrationPath": "supabase/migrations/20261021133609_vetit_test_01_seller_variant_key_count.sql",
+      "sha256": "0e1ed0f396eaa8f0057fb8b8d40b74d16f94dd71a8138eb310774298ee2a15a6",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 2,
+      "version": "20261021133612",
+      "migrationPath": "supabase/migrations/20261021133612_vetit_test_02_booking_participant_rls.sql",
+      "sha256": "688b2a0934e6c5801f2af46ac9a5543e2037ff141f5314a575087ed517dca4be",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 3,
+      "version": "20261021133614",
+      "migrationPath": "supabase/migrations/20261021133614_vetit_test_03_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sha256": "ac10ba8aa0fcbfcab74c86be323a80e3ba21ef59f94d75aca0dca972420d0d72",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 4,
+      "version": "20261021133617",
+      "migrationPath": "supabase/migrations/20261021133617_vetit_test_04_vetit_service_booking_transaction.sql",
+      "sha256": "35c81d282a1e397d1785c0b2fe8edf772f8d3f01228a8634437179233685144b",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 5,
+      "version": "20261021133619",
+      "migrationPath": "supabase/migrations/20261021133619_vetit_test_05_appointment_lifecycle.sql",
+      "sha256": "d0c5e70582ba87d135fb6ddc25e5ccbb053d92ab9eb2f84eea5d83d8474e3f2f",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 6,
+      "version": "20261021133622",
+      "migrationPath": "supabase/migrations/20261021133622_vetit_test_06_appointment_operations.sql",
+      "sha256": "4e44d5236674c1b92250fa232424639eaf962048e6c7432f16393ba0b32671bf",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 7,
+      "version": "20261021133625",
+      "migrationPath": "supabase/migrations/20261021133625_vetit_test_07_vetit_seller_rejected_resubmission.sql",
+      "sha256": "5db67abd9cc9ecf84fff16c69afa1cb8a61113f60344e668cadb1fdd9155413d",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 8,
+      "version": "20261021133627",
+      "migrationPath": "supabase/migrations/20261021133627_vetit_test_08_vetit_admin_listing_queue.sql",
+      "sha256": "8d5cbe53db246bc0eba003c83915b57dcb43ec4603ad5ab08176d091f2453541",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 9,
+      "version": "20261021133630",
+      "migrationPath": "supabase/migrations/20261021133630_vetit_test_09_vetit_durable_moderation.sql",
+      "sha256": "635f7cf0cb6be30f868aa2b9acaa3eeacb350f4fcb7b4ef1447f3db1694ff335",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 10,
+      "version": "20261021133632",
+      "migrationPath": "supabase/migrations/20261021133632_vetit_test_10_vetit_low_risk_automatic_approval.sql",
+      "sha256": "00895d7525cc4714be9f7f7aa1428b7e52eda09730f645d3aad52576691889ea",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 11,
+      "version": "20261021133635",
+      "migrationPath": "supabase/migrations/20261021133635_vetit_test_11_vetit_service_storage_boundaries.sql",
+      "sha256": "ec0794441b825679806cb7ed88772e75ef2049d64489fd66770c71d7b2e09f7f",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 12,
+      "version": "20261021133637",
+      "migrationPath": "supabase/migrations/20261021133637_vetit_test_12_business_scoped_moderation.sql",
+      "sha256": "90de25b210687bf0963d7f41bdd7810f7585b998b501114732346556323750e7",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 13,
+      "version": "20261021133640",
+      "migrationPath": "supabase/migrations/20261021133640_vetit_test_13_seller_price_validity.sql",
+      "sha256": "308a6b19446fa9aaa399888062dc40bb3adcd64943fa92553a2c2c4cbc70d067",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    },
+    {
+      "order": 14,
+      "version": "20261021133642",
+      "migrationPath": "supabase/migrations/20261021133642_vetit_test_14_authenticated_profile.sql",
+      "sha256": "e66c26d15d4657cefc591486adaf792a5012136612a74bafaeb7ded59f80c27e",
+      "transaction": "existing explicit BEGIN/COMMIT; not transformed",
+      "ledger": "UNRESOLVED: require reviewed atomic schema-plus-ledger recording",
+      "onFailure": "Stop. Preserve committed earlier steps; recheck ledger and hashes before any resume."
+    }
+  ]
+}

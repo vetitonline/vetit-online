@@ -1,3 +1,132 @@
+# Scoped local checkpoints and executor draft — 21 October 2026
+
+Continue in the same laptop repository/branch. Reviewed application commit: `aee37def06a23eb0515fedf58417d949175eb2f3` (10 files). SQL safeguard commit: `8e492f40d3c3012fb026d5912226b1ba9a8c0712` (3 files). Both remain local. The following release/documentation commit contains `docs/test-release-checkpoint-2026-10-21.md`, the canonical current resume/push-approval handover; older statements below about those feature files being uncommitted are superseded.
+
+The offline executor draft verifies payloads and emits an execution-disabled plan, with 3 focused tests passing. No SQL execution code is supplied. Release-local Git attributes preserve exact reviewed payload/hash metadata bytes through future checkout. Counts-only prerequisites from 13:43:53 UTC were zero conflicts with canonical uniqueness and unchanged foundation ledger. Backup dashboard visit redirected to sign-in; backup/PITR/restore status remains unverified. No login, restore, backup creation or hosted write occurred. Privilege and per-step transaction/ledger/timeout/partial-failure decisions remain blocked before hosted release.
+
+Proposed new remote branch `codex/test-release-checkpoint-2026-10-21-r1` was absent in the read-only check. Existing main/recovery unchanged. No push authorised or performed. The final reviewed local HEAD and complete commit list must be approved before a non-force new-branch push; Vercel Preview may be triggered. Reopen this laptop workspace on return, verify HEAD/status, and preserve excluded untracked recovery material/tools.
+
+---
+# Fourteen Test migrations generated locally — 21 October 2026
+
+Authoritative laptop repository `C:\Users\DELL\vetit-online`, branch `codex/development-readiness-2026-10-21`, HEAD `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`. Existing feature work, archives and Git checkpoints preserved. No new commit, push, linking, database action or deployment.
+
+**Generation complete; hosted execution NOT approved/ready.** Exact release directory: `supabase/test-project/releases/vetit-test-20261021-r1`. Fourteen CLI-generated versions `20261021133609` through `20261021133642` are unique/increasing. `release-manifest.json` records source/payload hashes, order and preservation-only foundation entries; `validation-receipt.json` confirms all 14 payloads equal their frozen sources, foundation unchanged/excluded and no link/token metadata. No SQL, suites or builds were executed; prior evidence was reused. Profile repair is included as step 14; optional duplicate grant assertion is excluded because core already grants authenticated participant fulfilment reads with RLS.
+
+Official Supabase CLI v2.121.0 Windows AMD64 installed outside repo at `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\tools\supabase-2.121.0\supabase.exe`. Archive SHA-256 `bc0f27a29c1f4ccaf33a801b7cb9d10da6484568c88e232c9dea0b9e8666b0db` matches official checksum; executable hashes in adjacent installation receipt. No global PATH/dependency/lockfile changes. First default state initialization was sandbox-blocked; generation used a separate isolated SUPABASE_HOME with telemetry disabled and empty process-scoped access token. No account credentials were needed.
+
+Separate local ZIP checkpoint and SHA receipt: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\release-generation-20261021-r1\local-checkpoint.json` and `vetit-test-release-20261021-r1.zip`. This checkpoint contains only the generated release, not all other uncommitted feature work or installed CLI. All new release files/docs, earlier feature changes, local commits 098bade/5d96948 and CLI installation remain local/unsynchronised; the earlier remote recovery backup is unchanged and does not contain them. Do not imply this package is backed up remotely.
+
+Next approval: read-only aggregate Test data prerequisites and execution/backup metadata review (counts only, no personal records or writes). Duplicate/payment-parent/order totals/slot booking/resource overlap/held-slot checks, residual service_role/default ACL review, fourteen transaction wrappers, executor/ledger/timeout/partial-failure review and confirmed backup/restore remain gates before separate hosted execution approval. Real hosted sessions/role/Storage/concurrency/idempotency and physical devices/protected storage remain unverified; clients must not call the new profile RPC before acceptance.
+
+Resume from iPhone only after verifying this Codex session still reaches this laptop/repository and the expected branch/HEAD/full working tree. Read the generated release README/manifest/receipt and this newest handover section. If laptop access is missing, pause edits; do not clone or switch environments. Installation/generation blockers in older sections below are historical and superseded.
+
+---
+# Local Test release preparation — version generation BLOCKED, 21 October 2026
+
+Same repository/branch/HEAD: `C:\Users\DELL\vetit-online`, `codex/development-readiness-2026-10-21`, `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`. New local preparation: `supabase/test-project/release-preparation-20261021/README.md` and `source-ready-manifest.json`. Fourteen sources are frozen (13 reviewed core + self-profile repair), all hashes/order checked; original SQL/candidates/foundation history preserved. Optional fulfilment grant assertion excluded because core step 3 already contains explicit participant SELECT/RLS. No generated migrations/versions exist and the manifest is explicitly non-executable.
+
+Supabase CLI was absent from PATH, project tools, checked user tooling locations and existing npm execution cache. No installer was run. Next approval: workspace-local official Supabase CLI v2.121.0 installation with architecture/checksum verification, then local-only CLI migration generation in a new isolated directory. No global PATH or dependency/lock changes, login/linking, hosted access, commits or deployment are included. Official release metadata was reviewed, not downloaded/executed.
+
+The package records the fresh 21 October read-only preflight from chat, all hosted defects, aggregate-only address/cart/payment/booking/resource/hold prerequisites still unverified, residual service_role non-CRUD/default-ACL decisions, all fourteen explicit transaction wrappers, backup/timeout/partial-failure gates and subsequent hosted acceptance requirements. No new hosted query, SQL, test suite, build, source edit, commit, push or deployment occurred. Previous successful tests were reused within scope. Do not call the package versioned or ready for hosted application until CLI versions, payload mapping and executor/backup review exist.
+
+---
+# Next milestone review and bounded Test package — 21 October 2026
+
+Same laptop repository `C:\Users\DELL\vetit-online`, branch `codex/development-readiness-2026-10-21`, HEAD `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f`. No new commit or remote operation. Earlier recovered/feature work, archives and five-file runtime checkpoint preserved. Remote recovery branch remains the previously verified backup; it was not re-queried in this batch.
+
+Consolidated review/approval package: `supabase/test-project/release-approval-20261021/README.md` and `proposed-source-manifest.json`. These are non-executable review artifacts, not CLI-generated migrations or an authorization to apply SQL. Four foundation source hashes and all thirteen frozen source/payload pairs match; original files and historical versions are untouched. All thirteen continuation implementation/test/source-document files match their saved receipt; only this evolving handover differs. Previous 16 tests, mobile TypeScript, three template compilations, four local rollback SQL groups and browser/runtime acceptance were reused without new test/build/SQL execution.
+
+Review found no blocker to a later combined ten-file application checkpoint: mobile/App.tsx, mobile/src/MarketplaceShortcuts.tsx, src/components/marketplace/HomeShortcuts.astro, src/lib/marketplace/navigation.js and .d.ts, src/pages/index.astro, src/lib/seller/validation.js, src/lib/services/appointment-slots.js, src/pages/seller/onboarding.astro and tests/development-continuation.test.mjs. These work together; do not omit the shared imports/types/components or commit the test independently. Seller validation aligns with the existing SQL limit and API boundary; availability parsing hardens read requests without changing booking writes; navigation preserves English-first regional fallback and existing native/web destinations. No feature source edit was necessary in this review. Keep the separate three-file SQL guard/test/README diff outside that application checkpoint until explicitly reviewed for inclusion.
+
+Remaining risks: the 20 October hosted baseline lacked required recovered RPCs/guards and contained variant/booking-scope defects; no current hosted verification was performed. Profile repair remains deliberately unwired. Optional fulfilment GRANT assertion is not a missing-grant fix and does not prove predicate semantics. Native protected storage/device/session, actual role/RLS/Storage and concurrent/idempotent operations remain unaccepted. Opt-in Windows SSR workaround is verified only in the isolated fixture; normal adapter startup remains unaccepted. Native external-link failure feedback is a UX follow-up; website/native sessions are separate. Official documentation confirms separate GRANT/RLS controls; the reported October 30 date was not independently reconfirmed by the reviewed changelog.
+
+Next single requested approval: fresh **read-only Vetit Online Test preflight**, exact project `apfyfmokcynqiaxqvvxx`, ledger/catalog/ACL/RLS/RPC/Storage configuration and aggregate-only data prerequisites, without keys, personal rows, accounts or writes. Then separately decide exact source selection and local coherent CLI version generation, review immutable payloads/executor/backup, and approve any hosted migration execution. Hosted synthetic acceptance, local checkpoint commits, pushes and deployment remain separate decisions. No installs, production/environment changes, hosted queries, migrations, merge, push or deployment occurred here.
+
+---
+# Local runtime checkpoint secured — 21 October 2026
+
+Review complete: commit `5d969487f47f6c84d7404d5c0ef35c75caf7dd3f` on `codex/development-readiness-2026-10-21` contains exactly five files: astro.local.config.mjs, scripts/dev-local.mjs, scripts/local-ssr-node-resolution.mjs, styles.css and tests/local-ssr-node-resolution.test.mjs. All five matched the previous validation SHA-256 receipt. Four syntax checks and staged whitespace/path-set checks passed; prior four runtime tests and browser acceptance were reused without rerunning unchanged inputs. No secrets, manifests/lockfiles, production configuration, database or deployment settings entered this commit. No push occurred. The five committed paths have no remaining diff and the index is empty. Earlier feature work, this documentation and recovery material remain uncommitted/preserved. Prior statements below calling these five files uncommitted are superseded.
+
+Remaining gates: opt-in default adapter startup, real hosted/authenticated sessions, physical devices/protected storage, production fonts and concurrency/idempotency. Next milestone: review and checkpoint the earlier uncommitted seller/appointment/shared-navigation batch against its saved evidence, then prepare the bounded Test release approval package. No hosted action is authorised by this commit.
+
+---
+
+# Latest checkpoint — local SSR repair and browser acceptance, 21 October 2026
+
+Repository: `C:\Users\DELL\vetit-online`; branch `codex/development-readiness-2026-10-21`; HEAD remains `098bade82a59362fb96d99a00ee6b1199b869812`. This section supersedes the earlier blocked-browser status only. Existing development changes, recovery archives, history and remote checkpoint remain preserved. New work is local/uncommitted/unpushed.
+
+## Runtime repair and files
+
+Native Node imports of installed Shiki and Vite succeeded. Stack capture proved forced SSR bundling evaluated `picomatch/index.js` as ESM (`require is not defined`). A require-based fallback also selected eventemitter3's CJS conditional export, omitting its named EventEmitter export and breaking p-queue. These were loader/interoperability failures, not evidence of absent dependencies.
+
+Added opt-in `astro.local.config.mjs`, `scripts/dev-local.mjs`, and `scripts/local-ssr-node-resolution.mjs`. The Windows serve-only hook uses Node's parent-aware ESM resolver and native package loading, preserving conditional exports and CommonJS classification. Root-relative `/node_modules/...` framework URLs resolve against the repository. Astro/application transforms, browser modules and explicitly bundled Supabase clients remain delegated. Missing packages still fail. It requires the launcher's process-only `--experimental-import-meta-resolve` flag; no global require shim, node_modules patch, package manifest/lock change or production configuration change was made.
+
+Normal opt-in startup: `node scripts/dev-local.mjs --host 127.0.0.1`. Actual acceptance used this launcher with the isolated config below. **The ordinary adapter-backed/default pnpm dev path has not been accepted; use the explicit launcher.** The fixture uses current application source, synthetic read clients, non-GET/HEAD rejection and same-origin CSP. It does not validate hosted services. `astro.config.mjs` remains unchanged.
+
+Browser-detected local CSS fixes in `styles.css`: contain header/logo/navigation within narrow grid columns, allow main sections/scrollers to shrink, clip overflowing decorative hero layers on phones, and remove intrinsic minimums in phone workflow/stats/footer layouts. No global overflow hiding was added. Existing homepage section ordering was preserved.
+
+New focused tests: `tests/local-ssr-node-resolution.test.mjs`. This pass changed only those four new runtime/test files, `styles.css`, this handover and the existing browser/release runbook. All earlier feature changes remain uncommitted as before. No mobile feature code changed in this pass; shared English-default destination definitions and regional-language extension architecture were reviewed and preserved.
+
+## Executed acceptance
+
+- Four focused runtime tests passed with `node --experimental-import-meta-resolve --test --test-isolation=none tests/local-ssr-node-resolution.test.mjs`: conditional ESM export, root-relative Vite/native CJS loading, transform/client/platform boundaries, missing-package refusal. Initial default test isolation hit sandbox spawn EPERM; scoped permission was granted, and final no-isolation execution passed. An initial harness identity assertion was corrected before the final pass.
+- 28 current-source browser route observations passed at 1440×1000 and 390×844: home, products, shop, services, appointments, cart, orders, checkout, seller, onboarding, new listing and three product details. Catalogue/detail/cart render; signed-out protected routes reach appropriate login/join screens with retained next destinations. No authentication forms or write controls were submitted.
+- All four shortcut links were activated at desktop and phone widths (eight activations). Destinations matched shared web/native definitions. This verifies web navigation, not native rendering or installed-app execution.
+- Home at 1440, 899, 390 and 320 CSS-pixel widths has no horizontal page overflow, with 4/2/2/1 shortcut columns respectively. Keyboard focus showed a visible outline. Four local shortcut images loaded. Actual desktop/mobile screenshots are saved separately.
+- Dogs→Food, Cats→Toys, Cattle→Feed and parent Pet Essentials filtering passed on desktop and narrow phone: expected synthetic subsets, parent includes dog+cat descendants, no cattle leakage. Good dog image, broken cat-image fallback and absent cattle-image placeholder rendered with truthful labels on home/list/detail; final route observations had no visible broken images.
+- Fixture v1 incorrectly applied limit before later filters. Preserved it and created `fixture-v2.mjs` with deferred pagination; cat detail passed after restarting. Earlier unavailable-cat observations in the raw receipt are superseded by the explicit fixture-v2 final observation and route matrix. No product application logic was changed for that harness defect.
+- Console API returned no error entries at final capture. Local request log contains GET only; expected deliberate missing fixture photo and one nonblocking favicon.ico 404 were observed. CSP excludes remote fonts, so these are fallback-font layout results, not production-font acceptance.
+- Previous mobile TypeScript, 16 continuation tests, Astro compilation/build and local rollback SQL evidence were reused within their earlier scopes; no unchanged suite/build/SQL was rerun. `git diff --check` passed. Dependency manifests, lockfiles and production Astro configuration have no diff.
+
+## Evidence and reproducibility
+
+Separate evidence directory: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\browser-acceptance-20261021`.
+- `browser-acceptance-expanded-results.json`: observations including failures before fixes and explicitly named final checks; 28 final route rows and eight shortcut-click rows.
+- `expanded-runtime-checkpoint.json`: final scope, hashes and verification receipt.
+- `ssr-stacks.log`, `expanded-ssr-stacks.log`, `browser-console-expanded.json`, `requests.jsonl`: diagnostics.
+- `desktop-shortcuts-final.png`, `mobile-shortcuts-final.png`, `mobile-320-final.png`: final screenshots. Earlier screenshots remain historical.
+- `astro.acceptance.config.mjs` and `fixture-v2.mjs`: isolated read-only instrumentation; originals and previous blocked receipts retained.
+
+Run isolated acceptance without real credentials:
+`node scripts/dev-local.mjs --config '../.codex/visualizations/2026/10/20/01a158a4-4a1d-7bb2-9119-365e6b275fa7/browser-acceptance-20261021/astro.acceptance.config.mjs' --host 127.0.0.1 --port 4335`
+
+The helper was stopped and its port checked closed; browser viewport reset and the working acceptance tab closed. Nothing installed, committed, pushed, migrated or deployed; no hosted SQL/database/production action occurred.
+
+## Remaining gates / next action
+
+Local fixture UI acceptance is now verified within the above scope. Physical Android/iOS execution, protected Keychain/Keystore storage, real hosted Auth/PostgREST/Storage/session acceptance, authenticated seller/provider flows, production fonts and backend concurrency/idempotency remain unverified. The experimental resolver hook is an opt-in local compatibility workaround, not an upstream dependency fix or a production runtime change. Historical provenance limitations remain as previously recorded; no recovery search was repeated.
+
+Next safe task is review of the additional uncommitted implementation/runtime/CSS diff and a proposed clean local checkpoint; **committing requires separate approval under the current instruction**. Preserve the existing versioned Test release/GRANT/RLS plan below. A fresh Test identity/ledger/catalog preflight and any eventual exact-package application require their separately scoped approvals; this UI pass authorizes neither. Do not run hosted migrations or automatically push (Vercel Preview risk).
+
+---
+# Local browser acceptance attempt — 21 October 2026
+
+Same repository/branch and HEAD `098bade82a59362fb96d99a00ee6b1199b869812`; all existing changes/archives preserved. Browser tools were available, but acceptance is **BLOCKED BEFORE APPLICATION RENDER**, not passed. An evidence-only loopback Astro fixture failed in development module resolution (`shiki`, then `picomatch` after one fixture-only adjustment). Node can resolve the installed shiki, so do not assume a missing package or install automatically. Browser navigation timed out/returned ERR_CONNECTION_RESET; no desktop/mobile layout, hero/link/image or buyer/seller UI acceptance is claimed. The helper server was stopped. Browser cleanup/reset was attempted but blocked by the generated error-document URL policy; verify/reset temporary viewport when a usable tab returns.
+
+No source/dependency/configuration repair, build, suite, hosted SQL, migration, commit, push or deployment occurred in this pass. Only this handover and `docs/browser-acceptance-and-test-release-plan-2026-10-21.md` are new documentation changes; fixture/config/result artifacts are separate in `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\browser-acceptance-20261021`. The runbook contains executable startup steps, viewport/route/image/category checks and release/versioning/October-30 grant gates. Previous 16-test/type/compiler/local-SQL evidence is reused with its original limits.
+
+Next single approval: bounded **local-only dev-runtime module-resolution repair and blocked browser acceptance**, with no installations or dependency changes unless separately reviewed/approved. Do not proceed to Test migration application while UI/runtime acceptance is blocked. Device/protected-storage/hosted-session/concurrency and original historical provenance remain unverified. The remote recovery checkpoint is unchanged; current additional work remains local/uncommitted.
+
+---
+
+# Secured checkpoint and implementation continuation — 21 October 2026
+
+Phase 1 completed: local commit **`098bade82a59362fb96d99a00ee6b1199b869812`**, `Improve marketplace discovery and image recovery with scoped profile repair`, on `codex/development-readiness-2026-10-21`. All 16 files matched the saved development hash receipt; the staged/committed path set was checked exactly. No archive, recovery package, unrelated pre-existing work or generated output entered the commit. No push occurred; the remote backup branch remains at `1cfcc1b54e5d23f594f8ea2aa519a9b9e28fc759`. Earlier text below describing the 16 files as uncommitted is historical and superseded by this section.
+
+Phase 2 additional work is saved **uncommitted** after 098bade:
+- Four responsive hero shortcuts are now independent of catalogue record counts, with existing real category artwork and real product/shop/service/appointment links. Web and native share route/copy definitions; English is the default and unsupported regional copy falls back through the existing locale registry. These are navigation destinations, not invented seller categories or products.
+- Native home uses the same four shortcuts with existing image-failure fallback. Product/shop links clear stale filters/details; service links open native discovery, and appointments open the existing authenticated web workspace. No native appointment or upload functionality was silently replaced.
+- Seller onboarding website URL validation now matches the existing SQL 2048-character/no-whitespace rule and rejects URL-parser newline normalization; the HTML input shares the limit. Listing validation, admin-controlled taxonomy and publication permissions remain unchanged.
+- Read-only appointment availability rejects duplicate query fields and impossible calendar dates instead of Date.parse silently shifting February 30. Leap days and timezone offsets still normalize correctly. No changes to booking writes, resource allocation or concurrency claims.
+- Grant proposal now checks table kind, authenticated-only participant policy with predicate, and unexpected read policies before granting SELECT. It still changes no RLS/default/anonymous permissions. Profile tests now verify preserved existing name/role and denials for missing caller/Auth account; profile initialization remains unwired until its hosted contract is separately approved and installed.
+
+Phase 3 focused verification: **16 Node tests passed** (four new plus affected seller-validation/slot-query tests), mobile TypeScript passed, and the installed Astro compiler compiled HomeShortcuts, index and onboarding successfully. A full web build was not repeated for these template-only changes; the previous 34.19-second build validates the committed first pass, not a new full build. Four local SQL groups passed after replaying both proposals twice inside an outer rollback transaction; the additional group deliberately changes only the synthetic policy's role and verifies refusal, then rolls back everything. No hosted/database migration release occurred. No browser viewport/device/OS-storage/hosted-session/general race acceptance is claimed.
+
+Separate latest evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\development-continuation-20261021` (SQL/log and hash receipt). Earlier evidence/archives/packages are unchanged. Next: review the additional diff and perform controlled local browser responsive/navigation acceptance, then finalize versioned release/executor and obtain approval before Test application and shared web/mobile profile initialization. No push, merge, deployment, production, Vercel or hosted Supabase changes were made.
+
+---
+
 # Local development continuation — 21 October 2026
 
 Authoritative repository: `C:\Users\DELL\vetit-online`. New local branch: `codex/development-readiness-2026-10-21`, created from `1cfcc1b54e5d23f594f8ea2aa519a9b9e28fc759`. The remote recovery checkpoint remains at that SHA and was not changed. Tracked tree/index were clean at entry; existing untracked correction packages, scripts, reports, CLI temp artifact and both ZIPs were left intact. No clone, branch-history rewrite, installation or recovery audit occurred.
@@ -25,3 +154,11 @@ Changes are saved but uncommitted/unpushed on the new local branch; HEAD remains
 Next safe task: finalize a reviewed, versioned local release composition that preserves the frozen corrections and appends these proposals only if approved; then wire profile initialization into the shared authenticated web/mobile path after Test has that contract and session acceptance passes. Review/render the updated pages with a controlled local catalogue fixture before visual acceptance. Missing real browser/device execution, protected storage binding, hosted Auth/PostgREST/Storage and general concurrency/idempotency remain blockers to claiming release readiness. Historical Changes-view provenance remains unresolved and does not require another recovery search here.
 
 No push, merge, deployment, Vercel settings, hosted migrations, production configuration or live database changes occurred. Any future push may create a Vercel Preview and requires explicit approval. On iPhone return, verify the same laptop/path, development branch and worktree before editing.
+
+# Bounded runtime repair follow-up — 21 October 2026
+
+Repository/branch/HEAD reconfirmed: `C:\Users\DELL\vetit-online`, `codex/development-readiness-2026-10-21`, `098bade82a59362fb96d99a00ee6b1199b869812`. Existing tracked/untracked development and recovery archives preserved. No project runtime/configuration, dependency or lockfile edits were made; only separate evidence configurations and this documentation were saved.
+
+**BLOCKED before application render.** Native-resolution hooks did not fix Vite runner bare-module resolution. A targeted fixture transform advanced beyond installed `shiki` but failed on installed `picomatch`; fixture-only bundled SSR mode then failed with `require is not defined`. IAB navigation timed out in all attempts. No responsive, hero/category navigation, image, buyer/seller route or web/mobile rendering acceptance passed. Prior successful tests remain valid only within their recorded scope; none were rerun. Own loopback helper was stopped. No installation, migration, hosted SQL, commit, push or deployment occurred.
+
+Separate receipt: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\browser-acceptance-20261021\runtime-repair-results-20261021.json`. Original blocked receipt/configuration retained alongside new `astro.runtime-repair.config.mjs` and `astro.bundled-runtime.config.mjs`; these are diagnostics, not an accepted production repair. Next approval: expanded local Astro/Vite runtime compatibility diagnosis, still without installs/lockfile changes unless separately approved. Do not infer that an installed package is absent. Browser acceptance runbook remains pending; device/protected-storage/hosted-session/concurrency acceptance remains unverified.
