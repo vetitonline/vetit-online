@@ -1,5 +1,15 @@
 # Vetit Online — local Test release checkpoint
 
+## Backup evidence access and independent readiness hardening — 22 October 2026
+
+Same repository/development branch and synchronized baseline `2d0db3e7a650324c7a79b44285606062b11ee6e6` verified. Read-only project metadata confirms exact Test identity, but contains no backup records/retention. The backup page now conclusively reaches Supabase sign-in; the existing GitHub login route also requires credentials. No login credentials were supplied, access grants accepted or hosted SQL attempted. Stop this evidence workflow until owner authentication or redacted authenticated metadata is available; do not repeat unauthenticated searches.
+
+New `docs/test-backup-evidence-and-restore-review-2026-10-22.md` and an intentionally null/verified-false template enumerate missing fields, manual access action, Storage/custom-role recovery limitations and approval boundaries. Official backup documentation was reviewed; actual plan, successful backup, timestamps, retention and recoverable window remain unknown. Existing saved receipts explicitly say unverified; synthetic test success is not substituted.
+
+Independent safe change: stricter offline backup metadata validation rejects non-finite clock/retention values, coercion, whitespace/non-string references and impossible UTC dates. Four focused Node tests pass; unchanged SQL/build/concurrency checks are reused because this changes only metadata validation, not generated SQL or payloads. No migration/package bytes, stronger protections, databases, backup branches or production configuration changed. Final checkpoint/remote SHA is in the final report and separate evidence receipt.
+
+Next exact owner action: sign in to the Test backups page in the task browser session or supply redacted authenticated backup status/reference/time, retention/recovery window and reviewed restore procedure. No passwords/tokens/dumps in chat or Git. Only after genuine evidence review should fresh read-only hosted prerequisite reconciliation be separately authorized; no restore or migration is approved. R2 readiness remains false and full hosted/device acceptance remains outstanding.
+
 ## Security-preserving atomic preparation — 22 October 2026
 
 Verified same laptop repository, branch `codex/development-readiness-2026-10-21`, origin `vetitonline/vetit-online`, synchronized base `bb09f9dc35afe970a97e126bc31c3e36ef24af88`. This section supersedes earlier weak-reversal guidance: **never execute the r1 legacy reversal**. Historical SQL bytes are preserved, its README is marked retired, and its generator/SQL test runner now fail before execution.

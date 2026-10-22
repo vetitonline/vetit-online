@@ -29,8 +29,15 @@ export function readAtomicPackage(root){
  return {manifest:m,payloads};
 }
 export function requireBackup(evidence,now=Date.now()){
- const successful=Date.parse(evidence?.successfulAt),inspected=Date.parse(evidence?.inspectedAt);
- if(evidence?.projectId!==target||evidence?.verified!==true||!Number.isFinite(successful)||!Number.isFinite(inspected)||successful>now||inspected>now||now-successful>86400000||now-inspected>3600000||inspected<successful||!(evidence.retentionHours>=24)||!evidence.evidenceRef||!evidence.restoreProcedureRef)throw Error('Recent authenticated backup/restore evidence required');
+ // Validate metadata only; browser/API provenance still needs independent review.
+ const utc=value=>{
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value))return NaN;
+  const parsed=Date.parse(value);
+  return Number.isFinite(parsed)&&new Date(parsed).toISOString().slice(0,19)===value.slice(0,19)?parsed:NaN;
+ };
+ const reference=value=>typeof value==='string'&&value.trim().length>0&&value.length<=2048&&!/[\u0000-\u001f\u007f]/u.test(value);
+ const successful=utc(evidence?.successfulAt),inspected=utc(evidence?.inspectedAt);
+ if(typeof now!=='number'||!Number.isFinite(now)||evidence?.projectId!==target||evidence?.verified!==true||!Number.isFinite(successful)||!Number.isFinite(inspected)||successful>now||inspected>now||now-successful>86400000||now-inspected>3600000||inspected<successful||typeof evidence.retentionHours!=='number'||!Number.isFinite(evidence.retentionHours)||evidence.retentionHours<24||!reference(evidence.evidenceRef)||!reference(evidence.restoreProcedureRef))throw Error('Recent backup/restore metadata required; provenance must be independently verified');
 }
 export function buildAtomicPlan(root,{action='apply',backup,executorRole,now=Date.now()}={}){
  requireBackup(backup,now);

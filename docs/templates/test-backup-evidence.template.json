@@ -1,0 +1,26 @@
+{
+  "projectId": "apfyfmokcynqiaxqvvxx",
+  "verified": false,
+  "successfulAt": null,
+  "inspectedAt": null,
+  "retentionHours": null,
+  "evidenceRef": null,
+  "restoreProcedureRef": null,
+  "observations": {
+    "projectName": "Vetit Online Test",
+    "authenticatedSource": null,
+    "backupKind": null,
+    "backupReference": null,
+    "backupStatus": null,
+    "planAndBackupAvailability": null,
+    "retentionSettingObserved": null,
+    "originalDisplayTimezone": null,
+    "earliestRecoveryPointUTC": null,
+    "latestRecoveryPointUTC": null,
+    "storageObjectsRecoveryPlanRef": null,
+    "customRoleCredentialsRecoveryPlanRef": null,
+    "restoreDestinationReviewed": false,
+    "downtimeAndDataLossReviewed": false,
+    "restorationExecuted": false
+  }
+}
