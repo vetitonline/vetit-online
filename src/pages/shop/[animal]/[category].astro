@@ -8,11 +8,12 @@ import SiteHeader from '../../../components/SiteHeader.astro';
 
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
-const category = animal && findCategory(categoriesForAnimal(taxonomy.categories, animal), Astro.params.category ?? '');
+const availableCategories = animal ? categoriesForAnimal(taxonomy.categories, animal) : [];
+const category = animal && findCategory(availableCategories, Astro.params.category ?? '');
 if (!animal || !category) return Astro.redirect('/shop', 302);
 const result = await getMarketplaceProducts(Astro.request, Astro.cookies, 1000, { speciesId: animal.id });
 const products = filterMarketplaceProducts(result.products, { animal, categoryIds: categoryAndDescendantIds(taxonomy.categories, category.id) });
-const childCategories = taxonomy.categories.filter((item) => item.parentId === category.id);
+const childCategories = availableCategories.filter((item) => item.parentId === category.id);
 ---
 <!DOCTYPE html>
 <html lang="en">

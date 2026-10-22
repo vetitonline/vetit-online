@@ -1,4 +1,5 @@
 import type { ProductAnimal, ProductCategory } from "./featured-products";
+import {categoriesForSpecies} from './category-navigation.js';
 
 export function findAnimal(animals: ProductAnimal[], slug: string): ProductAnimal | undefined {
   return animals.find((animal) => animal.slug === slug)
@@ -10,7 +11,7 @@ export function findCategory(categories: ProductCategory[], slug: string): Produ
 }
 
 export function categoriesForAnimal(categories: ProductCategory[], animal: ProductAnimal): ProductCategory[] {
-  return categories.filter((category) => category.species.includes(animal.id));
+  return categoriesForSpecies(categories, animal.id);
 }
 
 /** Return the selected category and all of its descendants for parent-category browsing. */

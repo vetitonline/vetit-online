@@ -50,5 +50,5 @@ export async function writeSellerCatalogue(client,userId,input){
  const activeSpecies=await rows(client.from('animal_species').select('id',{count:'exact'}).in('id',product.speciesIds).eq('is_active',true),8);if(activeSpecies.length!==product.speciesIds.length)fail(422);
  const {data,error}=await client.rpc('save_seller_product',{p_listing_id:listingId,p_business_id:businessId,p_title:product.title,p_slug:product.slug,p_description:product.description,p_category_id:product.categoryId,p_species_ids:product.speciesIds,p_base_amount_minor:product.baseAmountMinor,p_variants:product.variants});
  if(error)fail(error.code==='23505'?409:error.code==='42501'?403:['22023','23514'].includes(error.code)?422:503);
- if(!isSellerUuid(data))fail(503);return{listingId:data};
+ if(typeof data!=='string'||!isSellerUuid(data)||(listingId&&data.toLowerCase()!==listingId))fail(503);return{listingId:data};
 }

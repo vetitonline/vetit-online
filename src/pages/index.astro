@@ -45,10 +45,10 @@ const visualGroups = browseGroups.slice(0, 4).map((group) => ({
           <h1>Everything your pets &amp; livestock need.</h1>
           <p class="hero-text">Explore pet care, livestock essentials and local services, all in one welcoming marketplace.</p>
 
-          <form class="marketplace-search" role="search">
+          <form class="marketplace-search" role="search" action="/products" method="get">
             <label class="sr-only" for="marketplace-search">Search the marketplace</label>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="m16 16 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-            <input id="marketplace-search" type="search" placeholder="Search products, care or services" />
+            <input id="marketplace-search" name="q" type="search" placeholder="Search products, care or services" />
             <button class="search-button" type="submit">Search</button>
             <p class="search-status" data-search-status role="status" aria-live="polite" hidden></p>
           </form>

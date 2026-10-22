@@ -1,5 +1,5 @@
 /** Build navigation from the server-owned taxonomy; never manufacture categories. */
-export function categoryNavigation(categories, speciesId, selectedSlug) {
+export function categoriesForSpecies(categories, speciesId) {
   const byId = new Map(categories.map(category => [category.id,category]));
   const visible = new Set();
   for (const category of categories) {
@@ -8,7 +8,12 @@ export function categoryNavigation(categories, speciesId, selectedSlug) {
     const visited = new Set();
     while (current && !visited.has(current.id)) { visited.add(current.id); visible.add(current.id); current = byId.get(current.parentId); }
   }
-  const available = categories.filter(category => visible.has(category.id));
+  return categories.filter(category => visible.has(category.id));
+}
+
+export function categoryNavigation(categories, speciesId, selectedSlug) {
+  const available = categoriesForSpecies(categories, speciesId);
+  const byId = new Map(available.map(category => [category.id, category]));
   const selected = available.find(category => category.slug === selectedSlug) ?? null;
   const breadcrumbs = [];
   let parent = selected;

@@ -8,6 +8,7 @@ import {NativeAppointments} from './src/NativeAppointments';
 import {NativeSellerCatalogue} from './src/NativeSellerCatalogue';
 import {ProductPhoto} from './src/ProductPhoto';
 import {MarketplaceShortcuts} from './src/MarketplaceShortcuts';
+import {SpeciesDiscovery} from './src/SpeciesDiscovery';
 import {marketplaceNavigation,type MarketplaceDestinationKey} from '../src/lib/marketplace/navigation.js';
 import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
 import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
@@ -229,6 +230,8 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       setDetailKey(null);if(target.tab)setTab(target.tab);
     }}/>
     <Text style={styles.sectionTitle}>Shop by pets & livestock</Text>
+    <SpeciesDiscovery animals={taxonomy?.animals??[]} categories={taxonomy?.categories??[]}
+      imageBaseUrl={API_BASE_URL} selectedSlug={animalSlug} onSelect={browseAnimal}/>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
       <Chip label="All" selected={!animalSlug} onPress={() => browseAnimal(null)} />
       {(taxonomy?.animals ?? []).map((animal) => <Chip key={animal.id} label={animal.label} selected={animalSlug === animal.slug} onPress={() => browseAnimal(animal)} />)}

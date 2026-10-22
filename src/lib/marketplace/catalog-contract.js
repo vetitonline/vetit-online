@@ -1,5 +1,6 @@
 /** @typedef {{ id: string, slug: string, label: string, parentId: string | null, species: string[] }} CatalogCategory */
 /** @typedef {{ id: string, slug: string, label: string }} CatalogAnimal */
+import {categoriesForSpecies} from './category-navigation.js';
 
 export const CATALOG_API_VERSION = 1;
 export const CATALOG_DEFAULT_PAGE_SIZE = 24;
@@ -23,7 +24,8 @@ export function parseCatalogParams(params, taxonomy) {
   const animalSlug = (params.get('animal') || '').trim();
   const categorySlug = (params.get('category') || '').trim();
   const productKey = (params.get('product') || '').trim();
-  const animal = animalSlug ? taxonomy.animals.find(item => item.slug === animalSlug) : undefined;
+  const animal = animalSlug ? taxonomy.animals.find(item => item.slug === animalSlug)
+    ?? (animalSlug === 'livestock' ? taxonomy.animals.find(item => item.slug === 'cattle') : undefined) : undefined;
   const category = categorySlug ? taxonomy.categories.find(item => item.slug === categorySlug) : undefined;
   const minRaw = params.get('min');
   const maxRaw = params.get('max');
@@ -39,7 +41,7 @@ export function parseCatalogParams(params, taxonomy) {
   const requestedSize = Number(params.get('pageSize') || String(CATALOG_DEFAULT_PAGE_SIZE));
   const requestedSort = params.get('sort') || 'newest';
   const validSorts = new Set(['newest', 'price-asc', 'price-desc', 'name']);
-  const categoryMatchesAnimal = !animal || !category || category.species.includes(animal.id);
+  const categoryMatchesAnimal = !animal || !category || categoriesForSpecies(taxonomy.categories, animal.id).some(item => item.id === category.id);
   const invalid = Boolean((animalSlug && !animal) || (categorySlug && !category) || !categoryMatchesAnimal
     || (productKey && !/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[a-z0-9][a-z0-9-]{0,149})$/i.test(productKey))
     || Number.isNaN(minPrice) || Number.isNaN(maxPrice)
