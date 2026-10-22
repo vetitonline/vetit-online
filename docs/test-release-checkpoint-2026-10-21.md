@@ -1,5 +1,13 @@
 # Vetit Online — local Test release checkpoint
 
+## Backup inventory and catalogue conflict plan — 22 October 2026
+
+Starting checkpoint 24016c83da991fe937a2af7e3cd4a89fa6aa776c, original laptop development branch preserved. See local-backup-and-security-review-2026-10-22.md for exact source backup/archive dates and sizes, bounded inventory scope and eight current root dependency advisories (3 high, 4 moderate, 1 low), distinct from the earlier four-alert GitHub banner. No hosted-data backup is verified. Dashboard authentication remains manual pending; no retries. Both root/mobile lockfiles and runtime sources remain unchanged.
+
+A new synthetic diagnostic against actual writeSellerCatalogue reproduces two overlapping same-timestamp edits accepted by the legacy RPC path; sequential stale requests are rejected. This is not SQL concurrency or passing protection acceptance. seller-catalogue-atomic-edit-plan-2026-10-22.md specifies the required forward-only revision/RPC, grants/RLS, legacy-client cutover, coherent web/native loading and focused two-session/rollback tests. Enforcement cannot be completed through JavaScript alone or an unavailable hosted RPC; no client was switched.
+
+Separate private evidence: existing evidence root/catalogue-concurrency-20261022. Only these two new review documents and this handover are checkpointed; raw inventories, diagnostic and original recovery files stay local. No product tests/builds repeated, database connection, restore, migration, installation or production change. Next recommended approval: a bounded root dependency remediation/lockfile update after resolving the cache advisory patch-source discrepancy; coordinate the catalogue contract cutover before any hosted Test execution. Final SHA and normal development-branch remote verification are recorded separately.
+
 ## Seller draft boundary checkpoint — 22 October 2026
 
 Original laptop repository C:\Users\DELL\vetit-online, branch codex/development-readiness-2026-10-21, base aa1e5bc9e95499d38adc982fca90d9b63c70b528. Recovery archives, untracked evidence, frozen releases and stronger policies are preserved. Dashboard authentication is pending manual verification, not a local development blocker; no access retry occurred.
