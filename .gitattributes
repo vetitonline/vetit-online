@@ -1,0 +1,3 @@
+# pnpm records patch hashes; preserve identical patch bytes on Windows/Linux.
+# Unified-diff blank context lines contain a required space, not source padding.
+patches/*.patch text eol=lf whitespace=-blank-at-eol

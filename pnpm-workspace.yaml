@@ -1,2 +1,11 @@
 allowBuilds:
   esbuild: true
+
+# Bounded security resolutions; keep direct framework/Supabase/mobile versions.
+overrides:
+  'vite@8.3.2': 8.3.3
+  '@vercel/routing-utils>path-to-regexp': 6.3.0
+  'astro>http-cache-semantics': 4.2.0
+
+patchedDependencies:
+  'http-cache-semantics@4.2.0': patches/http-cache-semantics@4.2.0.patch

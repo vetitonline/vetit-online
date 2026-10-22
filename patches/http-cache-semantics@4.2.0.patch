@@ -1,0 +1,23 @@
+diff --git a/index.js b/index.js
+--- a/index.js
++++ b/index.js
+@@ -394,6 +394,19 @@
+     evaluateRequest(req) {
+         this._assertRequestHasHeaders(req);
+ 
++        // Security-zeroed responses must never become reusable via max-stale
++        // or stale-while-revalidate. Match the shared-cookie exclusion in maxAge().
++        if (
++            !this.storable() ||
++            this._rescc['no-cache'] ||
++            (this._isShared &&
++                this._resHeaders['set-cookie'] &&
++                !this._rescc.public &&
++                !this._rescc.immutable)
++        ) {
++            return this._evaluateRequestMissResult(req);
++        }
++
+         // In all circumstances, a cache MUST NOT ignore the must-revalidate directive
+         if (this._rescc['must-revalidate']) {
+             return this._evaluateRequestMissResult(req);

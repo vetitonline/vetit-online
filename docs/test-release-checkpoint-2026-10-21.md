@@ -1,5 +1,13 @@
 # Vetit Online — local Test release checkpoint
 
+## Bounded dependency remediation — 22 October 2026
+
+Original development branch, starting HEAD 43a41e807ba2aa7d969f9cac1559a6a7ab0a709e. See dependency-security-remediation-2026-10-22.md for scoped Vite 8.3.3, Vercel path-to-regexp 6.3.0 and the hash-pinned cache 4.2.0 downstream patch. The integrity-verified 4.3.0 candidate still reproduced disclosure and was not installed. Root audit decreased from eight to one high advisory; it still flags patched cache 4.2.0 by version. No suppression or claim of four default-branch GitHub alert closures.
+
+Ten focused tests, affected Astro build, five local HTTP SSR routes, four homepage shortcuts/English markup and patch/hash/diff checks passed. No configured Supabase client or database was used by runtime smoke. Root/mobile direct versions, mobile lockfile, runtime feature source, frozen SQL and all untracked backups are preserved. Only project-local dependency installation with scripts disabled occurred. Separate evidence: dependency-remediation-20261022 under existing evidence root. Final SHA/remote verification is recorded separately.
+
+Remaining manual: authenticated backup/restore/Storage evidence and redacted GitHub alert IDs/paths. No auth retry, hosted SQL, restore, production configuration, deploy or promotion. Next application task remains the documented atomic catalogue migration/client cutover; exact hosted execution needs separate approval.
+
 ## Backup inventory and catalogue conflict plan — 22 October 2026
 
 Starting checkpoint 24016c83da991fe937a2af7e3cd4a89fa6aa776c, original laptop development branch preserved. See local-backup-and-security-review-2026-10-22.md for exact source backup/archive dates and sizes, bounded inventory scope and eight current root dependency advisories (3 high, 4 moderate, 1 low), distinct from the earlier four-alert GitHub banner. No hosted-data backup is verified. Dashboard authentication remains manual pending; no retries. Both root/mobile lockfiles and runtime sources remain unchanged.
