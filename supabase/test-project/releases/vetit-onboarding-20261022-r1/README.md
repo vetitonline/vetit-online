@@ -1,0 +1,35 @@
+# Additive onboarding package — local review only
+
+Version **20261022015321**, generated using the existing checksum-verified official Supabase CLI v2.121.0, with isolated home/token opt-outs and no link/login. One forward migration is in `supabase/migrations`; `reversal-review.sql` is deliberately outside that directory. `manifest.json` pins both payload hashes and keeps `hostedApproved=false`, `executionReady=false`, `linked=false`. No runnable hosted executor is supplied.
+
+## Composition and preflight
+
+Target is **Vetit Online Test apfyfmokcynqiaxqvvxx only**. Planned order is the existing four foundation ledger entries, then the unchanged frozen fourteen-step `vetit-test-20261021-r1` release, then this additive version. The manifest lists eighteen expected predecessors. An executor/operator must verify exact project identity, ledger identities/names/payload provenance, and absence of additional drift immediately before separately approved execution. The payload checks necessary schema/function/ACL/guard conditions but intentionally does not manufacture ledger entries or certify prerequisite ledger completion. Current saved hosted evidence still has only four foundation entries; no hosted SQL was run in this batch.
+
+Forward preflight requires the verified legacy function body/configuration, authenticated-only EXECUTE, three RLS tables and both enabled business moderation guards. Unexpected existing onboarding objects abort instead of being overwritten. Existing business values are validated transactionally; invalid values produce only a count and abort, without exposing fields or cleaning data. Private helper schema creation is rolled back on failure. Local lock/statement timeout proposals are 5s/120s; approved executor measurements may require a newly reviewed payload, never silent edits to frozen bytes.
+
+Blocked-owner policy remains strict: any current owner membership with non-active status, inactive/archived/rejected/suspended business blocks replacement onboarding; multiple owner businesses require administrator review. A retry reuses business identity without changing contact details and explicitly returns `reused` via v2. This prevents a new registration from evading a known restriction. Owner approval is still needed for the intended recovery policy for removed/archived owners. Deleted memberships or demoted former owners cannot establish historical bans from current rows alone; no new ban/history model is claimed. Administrative writers outside the profile-lock protocol and general deadlocks/load/crash behavior remain separate acceptance work.
+
+## Grants, RLS and 30 October readiness
+
+This package creates **no public tables**. It does not rely on implicit Data API table grants, modify RLS policies, broaden table/column permissions, or set default privileges. The two public RPCs explicitly revoke PUBLIC/anon/authenticated/service_role permissions then grant EXECUTE only to authenticated. Private helper schema/functions revoke client access. All definer functions have empty search paths and run through trusted migration ownership; owner/role verification remains a hosted gate. Existing private legal-name SELECT restrictions and allowed-column updates are retained. Existing-business insert/update trigger adds validation alongside both existing moderation guards.
+
+No blanket anon/authenticated grants are appropriate. Future/recreated public tables still require explicit operation-specific grants plus reviewed RLS. service_role BYPASSRLS is not a SQL privilege grant. Residual non-CRUD service-role privileges on existing tables and the earlier eight callable definer functions remain unresolved review items; this package does not purport to fix them.
+
+## Reversal and execution safety
+
+The forward payload has one BEGIN/COMMIT pair. SQL DDL failure rolls the package back when the executor stops on error; the executor still must record its ledger entry atomically with schema success. Do not place an outer purported atomic transaction around unchanged fourteen-step files containing their own wrappers. Stop and preserve earlier committed steps on partial release failure; recheck hashes/ledger before resume.
+
+Reversal is review-only and requires exact `vetit.onboarding_reversal_approved=20261022015321` plus matching four installed function bodies. It restores the pinned legacy definition/ACL and removes only the added trigger/functions/empty schema with RESTRICT, in one transaction. No business/profile/membership row is deleted or rewritten. Unexpected dependencies abort. **It restores weaker validation/retry behavior**, so reversal needs distinct owner/security approval and coordination with any v2 clients. The token is an operational guard, not a substitute for access controls or human approval. A forward compensating ledger version/repair strategy must be reviewed before any reversal; this file does not edit migration history. Reversal is not automatically included in forward execution.
+
+Database backup remains **unverified**: the saved dashboard attempt reached sign-in, and current tools expose restore but no backup-list metadata. No restore was called. Need authenticated evidence of a successful recent Test backup/restore point, retention, recovery target and reviewed restore procedure. Source archives and SQL reversal are not database backups. Application remains blocked until backup, executor/ledger, policy and exact-package approvals are complete.
+
+## Actual local validation and limitations
+
+- Three focused Node tests: real package integrity/readiness; exact preservation of the four previously concurrency-tested function bodies; fail-closed payload/target/readiness/path/ledger/extra-file tampering.
+- New dedicated clone `vetit_disposable_onboarding_20261022_0215` at loopback port 55432: schema/ACL/data/reapplication preflight denials; reversal approval/drift denials; five SQL authorization groups against generated bytes; forward/reversal round trip. Final counts, public policies, column grants, moderation trigger definitions and legacy body matched the initial snapshot. All package DDL and authorization fixtures rolled back; clone retained.
+- Prior three actual two-session scenarios from `seller-onboarding-v2-20261022` evidence are reused because all four function bodies match; no unchanged concurrency suite/full build/install was repeated. Earlier proposal clones remain preserved.
+
+These are synthetic local results, not hosted Auth/PostgREST/Storage/device acceptance. UI still consumes legacy UUID results until separately approved hosted v2 deployment/acceptance and client integration. English default and Indian-language architecture are untouched.
+
+Offline review: `node scripts/verify-onboarding-package.mjs supabase/test-project/releases/vetit-onboarding-20261022-r1`. Package PostgreSQL runner requires a new dedicated clone and existing local tool/private-password paths; it cannot target a hosted URL. Do not run a generic `supabase db push`, apply historical migrations, deploy, or treat this README as execution approval.

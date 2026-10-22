@@ -1,5 +1,15 @@
 # Vetit Online — local Test release checkpoint
 
+## Additive package checkpoint — 22 October 2026
+
+Original repository/branch verified, synchronized base `080a58197fa9b116e7836e31eeaa511e8e0c60d3`. New separate release directory `supabase/test-project/releases/vetit-onboarding-20261022-r1` contains CLI-generated version `20261022015321`, a guarded forward migration, separately approval-gated reversal review, byte-pinned manifest and security/executor/backup runbook. The frozen fourteen-step release and its evidence remain unchanged. Planned composition requires the eighteen foundation/frozen predecessors; this is a future plan, not a claim they are hosted-installed. New package stays unlinked and execution-disabled.
+
+Three focused Node tests pass; generated SQL preflight/reversal/five authorization groups and complete rollback snapshot pass on retained clone `vetit_disposable_onboarding_20261022_0215`. All four function bodies match the prior three two-session tests, so unchanged concurrency/build/type suites were not repeated. One initial Node test used a URL where a path string was required; fixed before the passing run. The package adds no table grants, RLS policies or public tables; authenticated-only RPC EXECUTE and private helpers remain explicit. Reversal preserves data but restores weaker legacy security and requires separate approval/ledger planning.
+
+Read-only GitHub Vercel status for base `080a581` was successful (`5KYm3MHYpX8Sch1RdTTSc3F2FEFp`); environment identity remains unverified behind dashboard access. Backup remains unverified: tools offer restore but no backup metadata, and no restore or hosted SQL was attempted. Schema-plus-ledger atomicity, fourteen-wrapper partial application/resume, exact Test backup, owner recovery policy, residual service privileges and real hosted/device acceptance remain blockers. See package README before requesting any hosted operation.
+
+This batch authorizes a normal development-branch checkpoint/push only. Final SHA/remote verification belongs in the final chat report; original untracked evidence/archives/tools remain local. Separate package-validation receipt is saved under existing evidence root in `onboarding-package-20261022-r1`. Next safe task: owner reviews strict retry/reversal policy and supplies authenticated Test backup evidence; prepare/review a wrapper-aware atomic-ledger executor locally before requesting exact hosted execution approval. No deployment, production setting, hosted database, main or recovery branch modification is authorized.
+
 ## Local-only onboarding correction checkpoint — 22 October 2026
 
 Continue on `codex/development-readiness-2026-10-21`, original `C:\Users\DELL\vetit-online`; base `9e818c44353096f0efdb94b73ecfb43d43ef5310`. New separate `supabase/test-project/development/seller-onboarding-v2.proposal.sql` prepares blocked-owner retries, private shared direct-RPC/direct-update validation and an explicit created/reused v2 receipt while preserving the legacy UUID RPC. No frozen release, UI, dependencies, environment, hosted data or backup branches changed. See the development README for policy decisions, privileges and exact scope.

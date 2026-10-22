@@ -1,0 +1,60 @@
+{
+  "format": 1,
+  "package": "vetit-onboarding-20261022-r1",
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "version": "20261022015321",
+  "sourceCommit": "080a58197fa9b116e7836e31eeaa511e8e0c60d3",
+  "sourcePath": "supabase/test-project/development/seller-onboarding-v2.proposal.sql",
+  "sourceSha256": "86b73ef938f04cdae7ec7668bec6a12c34fd9921fb45a9aefef33481c6e3eaaa",
+  "sourceNormalizedSha256": "86b73ef938f04cdae7ec7668bec6a12c34fd9921fb45a9aefef33481c6e3eaaa",
+  "legacyBodyMd5": "f10346c4cea4c54f0eafe7dd0dc26c57",
+  "cliVersion": "2.121.0",
+  "linked": false,
+  "hostedApproved": false,
+  "executionReady": false,
+  "expectedLedgerBefore": [
+    "20261008223605",
+    "20261008233606",
+    "20261009000613",
+    "20261009082833",
+    "20261021133609",
+    "20261021133612",
+    "20261021133614",
+    "20261021133617",
+    "20261021133619",
+    "20261021133622",
+    "20261021133625",
+    "20261021133627",
+    "20261021133630",
+    "20261021133632",
+    "20261021133635",
+    "20261021133637",
+    "20261021133640",
+    "20261021133642"
+  ],
+  "executor": "Not supplied. Atomic schema-plus-ledger recording and reversal ledger strategy require review.",
+  "grantReview": {
+    "newPublicTables": 0,
+    "anonExecute": false,
+    "authenticatedExecute": [
+      "create_seller_business",
+      "onboard_seller_business_v2"
+    ],
+    "serviceRoleExecute": false,
+    "privateHelpers": true,
+    "tableGrantsChanged": false,
+    "rlsPoliciesChanged": false
+  },
+  "entries": [
+    {
+      "path": "supabase/migrations/20261022015321_vetit_seller_onboarding_v2.sql",
+      "sha256": "f8beeecd7e02690d6178dedffe2c9319394df1ee6ed86a9ca55bd56a8179a8db",
+      "automaticForward": true
+    },
+    {
+      "path": "reversal-review.sql",
+      "sha256": "f52d3c3927a7b3181f1c7eeeed9515376f20f5fda1e1145424fca0f130a4723e",
+      "automaticForward": false
+    }
+  ]
+}
