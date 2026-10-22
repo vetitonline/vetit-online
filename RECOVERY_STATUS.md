@@ -29,3 +29,5 @@
 - Physical devices, protected storage, hosted buyer/seller/admin sessions, Auth/Storage recovery and full concurrency/idempotency acceptance remain outstanding. No source-only or fixture check certifies them.
 
 Sprint source/test changes and actual validation outcomes are recorded in `docs/test-release-checkpoint-2026-10-21.md` and separate `marketplace-sprint-20261022` evidence. A development push synchronizes committed source only; laptop-local backups, credentials and untracked evidence are not uploaded.
+
+22 October atomic catalogue update: the next-backend-milestone entry above is now implemented and locally tested, with a forward-only migration candidate and coordinated web/native revision contract. Hosted activation and release acceptance remain blocked pending the documented Test package/backup/executor review and separate approval. See the implementation section in `docs/seller-catalogue-atomic-edit-plan-2026-10-22.md`; no previous recovery evidence is superseded by synthetic SQL results.

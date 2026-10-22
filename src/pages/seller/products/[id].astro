@@ -34,6 +34,8 @@ if (!getSupabasePublicConfig()) {
         dashboard.supabase.from('listing_images').select('id, storage_object_path, alt_text, sort_order').eq('listing_id', listing.id).order('sort_order'),
       ]);
       if (speciesError || priceError || variantsError || imagesError) throw speciesError ?? priceError ?? variantsError ?? imagesError;
+      const currentRevision=await dashboard.supabase.from('listings').select('catalogue_revision::text').eq('id',listing.id).maybeSingle();
+      if(currentRevision.error||!currentRevision.data||currentRevision.data.catalogue_revision!==listing.catalogue_revision)throw Error('Catalogue changed during read');
       speciesIds = (species ?? []).map(item => item.species_id);
       const activeVariants = productVariants ?? [];
       safelyRepresentable = activeVariants.every(variant=>{
@@ -77,7 +79,7 @@ const businesses = listing && dashboard ? dashboard.businesses.filter(business =
     {images.length > 0 && <div class="seller-image-grid">{images.map(image => image.url ? <figure><img src={image.url} alt={image.alt}><figcaption>Seller supplied photo</figcaption></figure> : null)}</div>}
     {canEdit && images.length>0 && <details aria-label="Photo reservation recovery"><summary>Inspect unconfirmed photo reservations</summary><p role="status">Use this only for failed or unconfirmed photos. A failed image or signed link does not prove the upload is missing. Refresh first; the server only permits removing reservations without an uploaded object.</p>{images.map(image=><div><button type="button" data-cancel-image-reservation={image.id}>Remove incomplete photo reservation</button><span role="status" aria-live="polite" data-reservation-status></span></div>)}</details>}
     {canEdit && taxonomy && taxonomy.state === 'available' ? <SellerProductForm product={listing} businesses={businesses} selectedBusinessId={listing.business_id} categories={taxonomy.categories} animals={taxonomy.animals} selectedSpeciesIds={speciesIds} baseAmountRupees={baseRupees} variants={variants} existingImageCount={images.length} /> : <div class="seller-review-status"><p>Current status: <strong>{listing.moderation_status}</strong></p><p>Products in review or published cannot be edited here. Contact Vetit support if a change is needed.</p></div>}
-    {canEdit && <form method="post" action="/api/seller/submit" class="seller-submit-form"><input type="hidden" name="business_id" value={listing.business_id}><input type="hidden" name="listing_id" value={listing.id}><button class="button button-secondary" type="submit">Submit for Vetit review</button><p class="seller-form-hint">Vetit will review the listing before any marketplace publication.</p></form>}
+    {canEdit && <form method="post" action="/api/seller/submit" class="seller-submit-form"><input type="hidden" name="business_id" value={listing.business_id}><input type="hidden" name="listing_id" value={listing.id}><input type="hidden" name="expected_revision" value={listing.catalogue_revision}><button class="button button-secondary" type="submit">Submit for Vetit review</button><p class="seller-form-hint">Vetit will review the listing before any marketplace publication.</p></form>}
     <a class="seller-back-link" href="/seller">← Back to seller dashboard</a>
   </section>}
 </main></div><script src="../../../../script.js"></script></body></html>

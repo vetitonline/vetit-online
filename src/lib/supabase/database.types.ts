@@ -957,6 +957,8 @@ export type Database = {
       }
       listings: {
         Row: {
+          // Local migration candidate; use ::text on reads to preserve bigint precision.
+          catalogue_revision: number
           archived_at: string | null
           business_id: string
           category_id: string
@@ -972,6 +974,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          catalogue_revision?: never
           archived_at?: string | null
           business_id: string
           category_id: string
@@ -987,6 +990,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          catalogue_revision?: never
           archived_at?: string | null
           business_id?: string
           category_id?: string
@@ -1704,6 +1708,25 @@ export type Database = {
       is_active_business_member: {
         Args: { target_business_id: string }
         Returns: boolean
+      }
+      save_seller_product_v2: {
+        Args: {
+          p_base_amount_minor: number | null
+          p_business_id: string
+          p_category_id: string
+          p_description: string
+          p_listing_id: string | null
+          p_slug: string
+          p_species_ids: string[]
+          p_title: string
+          p_variants: Json
+          p_expected_revision: string | null
+        }
+        Returns: { apiVersion: number; listingId: string; revision: string }
+      }
+      submit_seller_product_v2: {
+        Args: { p_business_id: string; p_listing_id: string; p_expected_revision: string }
+        Returns: { apiVersion: number; listingId: string; revision: string }
       }
       save_seller_product: {
         Args: {

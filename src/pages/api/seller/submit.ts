@@ -1,10 +1,9 @@
+import {isCatalogueRevision,validCatalogueReceipt} from '../../../lib/seller/catalogue-revision.js';
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerBusiness, canSellerTransitionListing } from '../../../lib/seller/permissions.js';
 import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
-import { executeModeration } from '../../../lib/moderation/workflow.js';
-import type { QueueClient } from '../../../lib/moderation/queue.js';
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
 
@@ -17,9 +16,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   let form:FormData;
   try { form = await request.formData(); }
   catch { return new Response('Invalid seller submission form.', { status: 400 }); }
-  if (form.getAll('listing_id').length !== 1 || form.getAll('business_id').length !== 1) return new Response('Ambiguous seller submission.', { status: 400 });
+  if (form.getAll('listing_id').length !== 1 || form.getAll('business_id').length !== 1 || form.getAll('expected_revision').length !== 1) return new Response('Ambiguous seller submission.', { status: 400 });
   const listingId = String(form.get('listing_id') ?? '').trim();
   const businessId = String(form.get('business_id') ?? '').trim();
+  const expectedRevision=form.get('expected_revision');
+  if(!isCatalogueRevision(expectedRevision))return new Response('Current revision required. Refresh and review.',{status:409,headers:{'cache-control':'no-store'}});
   const returnPath = `/seller/products/${listingId}?error=submit`;
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuid.test(listingId) || !uuid.test(businessId)) return new Response('Invalid seller product.', { status: 400 });
@@ -39,7 +40,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
     // The database operation submits through the existing validated product RPC
     // and opens its durable case atomically; no second HTTP write can be lost.
-    await executeModeration(supabase as unknown as QueueClient, { action: 'open', kind: 'product', subject: listingId });
+    const {data:receipt,error}=await supabase.rpc('submit_seller_product_v2',{p_business_id:businessId,p_listing_id:listingId,p_expected_revision:expectedRevision});
+    if(error&&['PT409','40001','40P01'].includes(error.code))return new Response('Catalogue changed. Refresh and review before submitting.',{status:409,headers:{'cache-control':'no-store'}});
+    if(error||!validCatalogueReceipt(receipt,listingId,expectedRevision))throw Error('Submission not confirmed');
     return redirect(request, `/seller/products/${listingId}?submitted=1`);
   } catch (error) {
     console.error('[seller] Product review submission failed.');

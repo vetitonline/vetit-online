@@ -33,8 +33,9 @@ test('a confirmed draft survives thrown upload failure without a second save or 
 test('uncertain save responses lock retry and preserve a draft-inspection route',async()=>{
  for(const response of [()=>{throw Error('network diagnostic');},()=>new Response('{}',{status:503}),()=>new Response(JSON.stringify({listingId:'invalid'}))]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>{calls++;return response();}});await ui.submit();await ui.submit();assert.equal(calls,1);assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/confirmation unavailable/);assert.equal(ui.status.children.find(c=>typeof c!=='string').href,'/seller');}
 });
-test('definite validation/conflict rejection keeps the form editable and permits an explicit corrected retry',async()=>{
- for(const code of [422,409]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>++calls===1?new Response('{}',{status:code}):new Response(JSON.stringify({listingId:id}))});await ui.submit();assert.equal(ui.button.disabled,false);await ui.submit();assert.equal(calls,2);assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);}
+test('validation rejection permits correction; revision conflict locks retry and retains selected photos for review',async()=>{
+ let calls=0;const ui=mount({files:[],fetchImpl:async()=>++calls===1?new Response('{}',{status:422}):new Response(JSON.stringify({listingId:id}))});await ui.submit();assert.equal(ui.button.disabled,false);await ui.submit();assert.equal(calls,2);assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);
+ let conflicts=0;const stale=mount({fetchImpl:async()=>{conflicts++;return new Response('{}',{status:409});}});await stale.submit();await stale.submit();assert.equal(conflicts,1);assert.equal(stale.button.disabled,true);assert.match(stale.status.textContent,/fields and selected photos are retained/);assert.deepEqual(stale.navigations,[]);
 });
 test('double submit and failed upload responses preserve existing objects and reservations',async()=>{
  let finish,started,saves=0;const ready=new Promise(resolve=>{started=resolve;});const ui=mount({fetchImpl:async url=>{if(url.includes('image-reservation'))return new Response(JSON.stringify({imageId:id,path:`${id}/${id}/${id}.png`}));saves++;started();return new Promise(resolve=>{finish=resolve;});},upload:async()=>({error:Error('unconfirmed')})});

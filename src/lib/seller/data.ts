@@ -25,7 +25,7 @@ export async function loadSellerDashboard(request: Request, cookies: AstroCookie
 
   const [{ data: businesses, error: businessError }, { data: listings, error: listingsError }] = await Promise.all([
     supabase.rpc('get_my_seller_businesses'),
-    supabase.from('listings').select('id, business_id, title, slug, description, category_id, moderation_status, created_at, updated_at')
+    supabase.from('listings').select('id, business_id, title, slug, description, category_id, moderation_status, created_at, updated_at, catalogue_revision::text')
       .in('business_id', businessIds).eq('kind', 'product').is('archived_at', null).order('updated_at', { ascending: false }),
   ]);
   if (businessError) throw businessError;
