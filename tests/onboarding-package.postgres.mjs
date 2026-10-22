@@ -1,4 +1,5 @@
-// Package DDL/reversal testing in a fresh local synthetic clone; no hosted URL.
+// Historical runner retained, but weaker legacy reversal may no longer execute.
+throw new Error('r1 reversal runner retired; use onboarding-atomic.postgres.mjs');
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {executePostgresSql} from './appointment-postgres-runner.mjs';

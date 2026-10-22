@@ -1,4 +1,5 @@
-// Local packaging only. Fills one freshly CLI-created empty placeholder once.
+// Retired: retained for provenance. Never regenerate the weaker r1 reversal.
+throw new Error('r1 generator retired: use security-preserving r2 package; legacy reversal prohibited');
 import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';

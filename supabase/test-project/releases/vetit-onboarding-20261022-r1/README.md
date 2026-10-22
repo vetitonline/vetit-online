@@ -1,5 +1,7 @@
 # Additive onboarding package — local review only
 
+**RETIRED for execution.** Use the security-preserving r2 package. The historical reversal below is prohibited because it restores weaker safeguards; its bytes remain only as evidence. The r1 generator and PostgreSQL reversal runner fail immediately. Do not manually execute `reversal-review.sql` or treat earlier approval tokens as current authorization.
+
 Version **20261022015321**, generated using the existing checksum-verified official Supabase CLI v2.121.0, with isolated home/token opt-outs and no link/login. One forward migration is in `supabase/migrations`; `reversal-review.sql` is deliberately outside that directory. `manifest.json` pins both payload hashes and keeps `hostedApproved=false`, `executionReady=false`, `linked=false`. No runnable hosted executor is supplied.
 
 ## Composition and preflight

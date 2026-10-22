@@ -1,0 +1,68 @@
+{
+  "format": 2,
+  "package": "vetit-onboarding-20261022-r2",
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "sourceCommit": "bb09f9dc35afe970a97e126bc31c3e36ef24af88",
+  "supersedesUnapplied": "vetit-onboarding-20261022-r1",
+  "executionReady": false,
+  "hostedApproved": false,
+  "linked": false,
+  "expectedLedgerBefore": [
+    "20261008223605",
+    "20261008233606",
+    "20261009000613",
+    "20261009082833",
+    "20261021133609",
+    "20261021133612",
+    "20261021133614",
+    "20261021133617",
+    "20261021133619",
+    "20261021133622",
+    "20261021133625",
+    "20261021133627",
+    "20261021133630",
+    "20261021133632",
+    "20261021133635",
+    "20261021133637",
+    "20261021133640",
+    "20261021133642"
+  ],
+  "functionChecks": [
+    {
+      "signature": "vetit_onboarding.validate_business(text,text,text,text,text,text)",
+      "md5": "54b0d3cac0e172b2599349422069880c",
+      "definer": false
+    },
+    {
+      "signature": "vetit_onboarding.guard_business_input()",
+      "md5": "e222634b6ec53a364791aaef56606794",
+      "definer": true
+    },
+    {
+      "signature": "public.onboard_seller_business_v2(text,text,text,text,text,text)",
+      "md5": "f242c81717128c5542d44d29767bbf48",
+      "definer": true
+    },
+    {
+      "signature": "public.create_seller_business(text,text,text,text,text,text)",
+      "md5": "5b5f76496f112159963f6d26a864c5b9",
+      "definer": true
+    }
+  ],
+  "entries": [
+    {
+      "action": "apply",
+      "version": "20261022091620",
+      "name": "vetit_onboarding_security",
+      "path": "supabase/migrations/20261022091620_vetit_onboarding_security.sql",
+      "sha256": "f8beeecd7e02690d6178dedffe2c9319394df1ee6ed86a9ca55bd56a8179a8db"
+    },
+    {
+      "action": "pause",
+      "version": "20261022091621",
+      "name": "vetit_onboarding_pause",
+      "path": "recovery-review/supabase/migrations/20261022091621_vetit_onboarding_pause.sql",
+      "sha256": "18cf7e7c00ef225c05def2a7eafdc0bbc4e31bebccc7ce356aa4b82916ae2ce2"
+    }
+  ]
+}
