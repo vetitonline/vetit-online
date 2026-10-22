@@ -1,5 +1,13 @@
 # Vetit Online — local Test release checkpoint
 
+## Documentation-only authenticated-backup recheck — 22 October 2026
+
+Repository/branch/origin verified at synchronized base `1f3a7b71e1ff377782dba759e1f96629f57417a5`. Despite the reported availability of authenticated metadata, the connected task browser still redirects to Supabase sign-in and GitHub credentials. A transient backup-page loading shell with undefined project links is not evidence. Browser inventory showed no alternate authenticated backup view; MCP Apps had no open tabs. Read-only connector metadata reconfirmed exact Test identity/region/health, but exposes no backup/retention records. No credentials, hosted SQL or new permissions were used.
+
+Updated `docs/test-backup-evidence-and-restore-review-2026-10-22.md` records actual observations and the access boundary. Backup status/reference/time, retention/PITR window and project-specific restore/Storage/custom-role recovery evidence remain unknown. Existing false/unverified evidence was preserved. No unchanged code tests or builds were rerun for these two Markdown changes; scoped diff checks apply. The original worktree, SQL payloads, archives, main and recovery checkpoints remain preserved.
+
+Exact next owner action: complete sign-in in the connected task Test backup browser, or attach the authenticated tab/redacted metadata source plus reviewed restore procedure. Do not send passwords, tokens or dumps. This is an access/evidence blocker, not a finding that backups do not exist. Hosted execution/readiness remains unapproved and unverified. Normal development-branch documentation checkpoint/push is authorized; final local/remote SHA is in the chat and separate evidence receipt.
+
 ## Backup evidence access and independent readiness hardening — 22 October 2026
 
 Same repository/development branch and synchronized baseline `2d0db3e7a650324c7a79b44285606062b11ee6e6` verified. Read-only project metadata confirms exact Test identity, but contains no backup records/retention. The backup page now conclusively reaches Supabase sign-in; the existing GitHub login route also requires credentials. No login credentials were supplied, access grants accepted or hosted SQL attempted. Stop this evidence workflow until owner authentication or redacted authenticated metadata is available; do not repeat unauthenticated searches.

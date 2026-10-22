@@ -1,5 +1,15 @@
 # Test backup evidence intake — blocked on authentication
 
+## Fresh read-only recheck after reported authenticated metadata availability
+
+The connected task browser inventory contained only the existing sign-in tab; the connected MCP Apps surface had no tabs. Direct navigation to the exact Test backup URL briefly rendered a loading shell with undefined project/sidebar links, then redirected to Supabase sign-in. That shell is not authenticated project/backup evidence. The existing GitHub continuation again requested username/password; no credentials were entered or permissions accepted. No other authenticated backup view is exposed to this task. Stop this access workflow until the owner completes authentication in the connected task browser or attaches the actual authenticated tab/metadata source.
+
+The connected read-only project metadata tool reconfirmed `apfyfmokcynqiaxqvvxx`, **Vetit Online Test**, eu-west-1, ACTIVE_HEALTHY, PostgreSQL 17.11.0.003. Its authenticated project lookup still contains no backup records, retention settings or recoverable timestamps. Dashboard authentication is separate from connector authorization. No hosted SQL was executed to work around this limitation.
+
+No genuine backup status/reference, successful timestamp, observed retention or PITR recovery range could be read in this recheck. Those fields remain unknown and `verified=false`; nothing was inferred from public backup documentation, a loading page, project health or synthetic receipts. The restore checklist below is available preparation, not a verified project-specific restore procedure or successful restore drill. Storage-object recovery and custom-role credential recovery remain unverified too.
+
+Only audit documentation changes in this recheck. Existing tests/payloads/code are unchanged, so no test suite was repeated. No restore, migration, configuration/deployment change, resource deletion or backup-branch update occurred. The exact remaining manual action is authentication in the connected Test backup browser session, or provision of the actual authenticated tab/redacted metadata source and reviewed restore procedure. Do not send credentials or database contents.
+
 Exact project identity was confirmed read-only by the connected project metadata tool: **Vetit Online Test**, `apfyfmokcynqiaxqvvxx`, eu-west-1, ACTIVE_HEALTHY, PostgreSQL 17.11.0.003. Healthy project metadata is not backup evidence and does not establish plan/retention/backup availability.
 
 ## Actual access result
