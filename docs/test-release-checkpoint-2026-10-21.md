@@ -1,5 +1,15 @@
 # Vetit Online — local Test release checkpoint
 
+## Local-only onboarding correction checkpoint — 22 October 2026
+
+Continue on `codex/development-readiness-2026-10-21`, original `C:\Users\DELL\vetit-online`; base `9e818c44353096f0efdb94b73ecfb43d43ef5310`. New separate `supabase/test-project/development/seller-onboarding-v2.proposal.sql` prepares blocked-owner retries, private shared direct-RPC/direct-update validation and an explicit created/reused v2 receipt while preserving the legacy UUID RPC. No frozen release, UI, dependencies, environment, hosted data or backup branches changed. See the development README for policy decisions, privileges and exact scope.
+
+Five rollback groups and three actual two-session scenarios passed on retained synthetic clone `vetit_disposable_onboarding_20261022_0111`, loopback port 55432. Source `vetit_disposable_corrections_20261020_1902` and first failed-test clone `vetit_disposable_onboarding_20261022_0110` remain preserved. Proposal replay passed twice and rollback counts matched; expected lock timeouts/revocation denial were asserted. Added cross-account/ambiguous-owner cases passed separately without repeating concurrency. Initial fixture/moderation-guard and output-parser failures were fixed, as documented in the README. This is local SQL execution, not hosted migration or physical-device acceptance.
+
+Checkpoint scope: SQL proposal, rollback SQL, bounded local Postgres runner, development README and this handover. Commit locally only; a normal push needs fresh approval. Identify final local hash with `git log -1` and the final report. Existing untracked archives/candidates/evidence remain local and excluded. New evidence receipt is under the existing Codex evidence root in `seller-onboarding-v2-20261022`; no credentials are included.
+
+Next: review the strict blocked-owner recovery policy and forward-only SQL; then approve checkpoint synchronization if desired. Hosted application still requires a separately versioned additive release, backup/executor review, exact Test approval and real Auth/PostgREST acceptance. UI v2 receipt integration remains deferred, as do device/protected-storage and broader concurrency/idempotency acceptance. Do not begin another phase automatically.
+
 ## Active development checkpoint — 22 October 2026
 
 Preflight verified original laptop repository `C:\Users\DELL\vetit-online`, branch `codex/development-readiness-2026-10-21`, local and GitHub HEAD `434e668010d5a909a6ed0ee92e72e3e1b2e82db9`, clean tracked tree and preserved untracked recovery material. The earlier six-commit backup remains unchanged. This batch continues on the same development branch; identify its resulting commit using `git log -1` and the final chat report.
