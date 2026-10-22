@@ -1,0 +1,4 @@
+# Immutable payload bytes and hashes must survive Windows/Linux checkouts.
+supabase/migrations/*.sql -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+recovery-review/supabase/migrations/*.sql -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+manifest.json -text

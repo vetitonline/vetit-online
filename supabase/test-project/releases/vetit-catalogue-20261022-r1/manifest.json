@@ -1,0 +1,205 @@
+{
+  "format": 1,
+  "package": "vetit-catalogue-20261022-r1",
+  "targetProject": "apfyfmokcynqiaxqvvxx",
+  "sourceCommit": "f07a23cd9f06c4ecca46b8fc447ce8a1cac93ad1",
+  "linked": false,
+  "hostedApproved": false,
+  "executionReady": false,
+  "ledgerConvention": "raw-payload-single-array-element",
+  "anchors": [
+    {
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/release-manifest.json",
+      "sha256": "1c23b6b330360e5374dc0ad958ba446bc84327181fb9290026481c741a0d8655"
+    },
+    {
+      "path": "supabase/test-project/releases/vetit-onboarding-20261022-r2/manifest.json",
+      "sha256": "d18199a7c651f7b74f0870f511c21de2601c87cd0b45b3d0f3301f95a9554638"
+    }
+  ],
+  "foundationPreserve": [
+    {
+      "version": "20261008223605",
+      "name": "vetit_marketplace_baseline_20261009000000",
+      "action": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261008233606",
+      "name": "vetit_business_private_fields",
+      "action": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009000613",
+      "name": "vetit_seller_backend_foundation",
+      "action": "preserve-do-not-replay"
+    },
+    {
+      "version": "20261009082833",
+      "name": "vetit_seller_security_hardening",
+      "action": "preserve-do-not-replay"
+    }
+  ],
+  "prerequisites": [
+    {
+      "version": "20261021133609",
+      "name": "vetit_test_01_seller_variant_key_count",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133609_vetit_test_01_seller_variant_key_count.sql",
+      "sha256": "0e1ed0f396eaa8f0057fb8b8d40b74d16f94dd71a8138eb310774298ee2a15a6"
+    },
+    {
+      "version": "20261021133612",
+      "name": "vetit_test_02_booking_participant_rls",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133612_vetit_test_02_booking_participant_rls.sql",
+      "sha256": "688b2a0934e6c5801f2af46ac9a5543e2037ff141f5314a575087ed517dca4be"
+    },
+    {
+      "version": "20261021133614",
+      "name": "vetit_test_03_vetit_buyer_cart_inventory_fulfilment",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133614_vetit_test_03_vetit_buyer_cart_inventory_fulfilment.sql",
+      "sha256": "ac10ba8aa0fcbfcab74c86be323a80e3ba21ef59f94d75aca0dca972420d0d72"
+    },
+    {
+      "version": "20261021133617",
+      "name": "vetit_test_04_vetit_service_booking_transaction",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133617_vetit_test_04_vetit_service_booking_transaction.sql",
+      "sha256": "35c81d282a1e397d1785c0b2fe8edf772f8d3f01228a8634437179233685144b"
+    },
+    {
+      "version": "20261021133619",
+      "name": "vetit_test_05_appointment_lifecycle",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133619_vetit_test_05_appointment_lifecycle.sql",
+      "sha256": "d0c5e70582ba87d135fb6ddc25e5ccbb053d92ab9eb2f84eea5d83d8474e3f2f"
+    },
+    {
+      "version": "20261021133622",
+      "name": "vetit_test_06_appointment_operations",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133622_vetit_test_06_appointment_operations.sql",
+      "sha256": "4e44d5236674c1b92250fa232424639eaf962048e6c7432f16393ba0b32671bf"
+    },
+    {
+      "version": "20261021133625",
+      "name": "vetit_test_07_vetit_seller_rejected_resubmission",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133625_vetit_test_07_vetit_seller_rejected_resubmission.sql",
+      "sha256": "5db67abd9cc9ecf84fff16c69afa1cb8a61113f60344e668cadb1fdd9155413d"
+    },
+    {
+      "version": "20261021133627",
+      "name": "vetit_test_08_vetit_admin_listing_queue",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133627_vetit_test_08_vetit_admin_listing_queue.sql",
+      "sha256": "8d5cbe53db246bc0eba003c83915b57dcb43ec4603ad5ab08176d091f2453541"
+    },
+    {
+      "version": "20261021133630",
+      "name": "vetit_test_09_vetit_durable_moderation",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133630_vetit_test_09_vetit_durable_moderation.sql",
+      "sha256": "635f7cf0cb6be30f868aa2b9acaa3eeacb350f4fcb7b4ef1447f3db1694ff335"
+    },
+    {
+      "version": "20261021133632",
+      "name": "vetit_test_10_vetit_low_risk_automatic_approval",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133632_vetit_test_10_vetit_low_risk_automatic_approval.sql",
+      "sha256": "00895d7525cc4714be9f7f7aa1428b7e52eda09730f645d3aad52576691889ea"
+    },
+    {
+      "version": "20261021133635",
+      "name": "vetit_test_11_vetit_service_storage_boundaries",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133635_vetit_test_11_vetit_service_storage_boundaries.sql",
+      "sha256": "ec0794441b825679806cb7ed88772e75ef2049d64489fd66770c71d7b2e09f7f"
+    },
+    {
+      "version": "20261021133637",
+      "name": "vetit_test_12_business_scoped_moderation",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133637_vetit_test_12_business_scoped_moderation.sql",
+      "sha256": "90de25b210687bf0963d7f41bdd7810f7585b998b501114732346556323750e7"
+    },
+    {
+      "version": "20261021133640",
+      "name": "vetit_test_13_seller_price_validity",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133640_vetit_test_13_seller_price_validity.sql",
+      "sha256": "308a6b19446fa9aaa399888062dc40bb3adcd64943fa92553a2c2c4cbc70d067"
+    },
+    {
+      "version": "20261021133642",
+      "name": "vetit_test_14_authenticated_profile",
+      "path": "supabase/test-project/releases/vetit-test-20261021-r1/supabase/migrations/20261021133642_vetit_test_14_authenticated_profile.sql",
+      "sha256": "e66c26d15d4657cefc591486adaf792a5012136612a74bafaeb7ded59f80c27e"
+    },
+    {
+      "version": "20261022091620",
+      "name": "vetit_onboarding_security",
+      "path": "supabase/test-project/releases/vetit-onboarding-20261022-r2/supabase/migrations/20261022091620_vetit_onboarding_security.sql",
+      "sha256": "f8beeecd7e02690d6178dedffe2c9319394df1ee6ed86a9ca55bd56a8179a8db"
+    }
+  ],
+  "preFunctionChecks": [
+    {
+      "signature": "public.save_seller_product(uuid,uuid,text,text,text,uuid,uuid[],bigint,jsonb)",
+      "md5": "68e9f8b34a3e1f814b553975a92c7956",
+      "definer": true
+    },
+    {
+      "signature": "public.submit_seller_product(uuid,uuid)",
+      "md5": "f356fbd9405089ec452007357d8f7f5f",
+      "definer": true
+    },
+    {
+      "signature": "public.guard_seller_catalog_mutations()",
+      "md5": "4719cf9304d5ce5c863a973530040b4e",
+      "definer": true
+    },
+    {
+      "signature": "public.moderation_open(text,uuid)",
+      "md5": "3609235f763ebe6bc8b35fc36722f214",
+      "definer": true
+    },
+    {
+      "signature": "public.ensure_my_profile()",
+      "md5": "a49e49b7ccdb58523877a25a5dee1297",
+      "definer": true
+    },
+    {
+      "signature": "vetit_onboarding.validate_business(text,text,text,text,text,text)",
+      "md5": "54b0d3cac0e172b2599349422069880c",
+      "definer": false
+    },
+    {
+      "signature": "vetit_onboarding.guard_business_input()",
+      "md5": "e222634b6ec53a364791aaef56606794",
+      "definer": true
+    },
+    {
+      "signature": "public.onboard_seller_business_v2(text,text,text,text,text,text)",
+      "md5": "f242c81717128c5542d44d29767bbf48",
+      "definer": true
+    },
+    {
+      "signature": "public.create_seller_business(text,text,text,text,text,text)",
+      "md5": "5b5f76496f112159963f6d26a864c5b9",
+      "definer": true
+    }
+  ],
+  "entries": [
+    {
+      "action": "apply",
+      "version": "20261022134631",
+      "name": "catalogue_revision_guard",
+      "path": "supabase/migrations/20261022134631_catalogue_revision_guard.sql",
+      "sha256": "2a0aa8a92bbdb722ec3f5d17a82126faf33e5ad0543f6431355d6f6990b253ab"
+    },
+    {
+      "action": "pause",
+      "version": "20261022151738",
+      "name": "vetit_catalogue_pause",
+      "path": "recovery-review/supabase/migrations/20261022151738_vetit_catalogue_pause.sql",
+      "sha256": "a96b74ed72993e6bb97946d38581776d05315218967d784adfc363ddd91b221b"
+    }
+  ],
+  "gates": [
+    "Fresh authenticated Test identity/ledger/schema/ACL and function provenance",
+    "Genuine recent Test backup/retention/restore and separate Storage recovery evidence",
+    "Fourteen-step wrapper-aware predecessor executor approval; no historical replay",
+    "Exact schema-plus-ledger executor, role and timeouts approval",
+    "Coordinated database/API/web/native v2 acceptance; fail closed on missing RPC",
+    "Separate explicit hosted application and deployment approval"
+  ]
+}

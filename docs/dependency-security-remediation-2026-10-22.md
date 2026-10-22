@@ -40,3 +40,18 @@ Provide a redacted export of the four GitHub alerts (GHSA, package, manifest pat
 Authenticated Test backup project/reference, successful timestamp, retention/PITR range, reviewed restore procedure and separate Storage-object coverage remain missing. No local source ZIP or synthetic test database establishes hosted/production backup readiness. This remains manual pending, not a local development blocker.
 
 Atomic catalogue revision protection remains the next application milestone under its existing documented migration/client-cutover plan. Hosted SQL/migration/restore, production configuration and any deployment/promotion require separate explicit approval. No such action occurred here. A normal development push may create the previously accepted automatic Vercel Preview; no deployment command or main/recovery-branch update is part of this batch.
+
+## Authenticated alert reconciliation — 22 October 2026
+
+This supersedes the earlier missing-GitHub-alert-access limitation. A single read-only REST request using the existing noninteractive Git credential helper returned HTTP 200, all four open alerts and no next page at **2026-10-22 15:15:13 UTC**. No login, new token, permission expansion, alert dismissal, dependency install or remote write. Credentials stayed in memory and were neither printed nor saved. Redacted evidence: `catalogue-package-20261022/github-alerts.json` in the existing external evidence root.
+
+| Alert | GHSA / CVE | Package / manifest / scope | Verified state and development disposition |
+| --- | --- | --- | --- |
+| 5 high | GHSA-587h-7wmj-h5pm / CVE-2026-112942 | vite / pnpm-lock.yaml / development | Open on default branch; affected 8.3.0–8.3.2, fixed 8.3.3; existing development pin resolves 8.3.3 |
+| 4 medium | GHSA-r825-w8mm-5pxw / CVE-2026-112944 | vite / pnpm-lock.yaml / development | Same affected/fixed range; development correction already present |
+| 3 medium | GHSA-698v-4r3x-3vcv / CVE-2026-112943 | vite / pnpm-lock.yaml / development | Same affected/fixed range; development correction already present |
+| 2 high | GHSA-ch52-4w7c-c8xp / CVE-2026-93748 | http-cache-semantics / pnpm-lock.yaml / development | Open, affected <=4.2.0; API supplied no fixed version. Preserve tested downstream patch and pin; do not install known-behaviorally-vulnerable 4.3.0 |
+
+The lockfile's `vite@8.3.2: 8.3.3` is an override selector, not an installed vulnerable 8.3.2 package; package/snapshot keys resolve 8.3.3. Security-validation inputs (workspace, root lock, patches and focused security/runtime tests) match `c894ca6b438e1f4488f4366ebb95cb2269d0d06f`. Previous ten passing checks and post-change audit evidence are valid; no redundant rerun. The retained cache version can still trigger scanners despite its hash-pinned source patch. This bounds the demonstrated cache reuse issue and does not establish every hosted consumer/session as secure.
+
+No new dependency changes were justified. Three Vite corrections already exist on development; default-branch alert closure requires separately reviewed promotion/merge, which is not authorized here. Cache removal requires a verified upstream behavioral fix, focused tests and lockfile review. No alert was suppressed or marked fixed. Current access is sufficient for alert reads; Supabase backup/dashboard access and hosted operational acceptance remain independent gaps.
