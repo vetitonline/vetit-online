@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { sellerBusinessInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canManageSellerBusiness } from '../../../lib/seller/permissions.js';
@@ -15,9 +15,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   }
   let failurePath = '/seller/onboarding?error=save';
   try {
-    const supabase = createSupabaseServerClient({ request, cookies });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return redirect(request, '/login?mode=join&next=%2Fseller');
+    const auth = await authenticateApiRequest(request, cookies);
+    if (auth.state === 'unavailable') return new Response('Seller authentication is temporarily unavailable.', { status: 503, headers: { 'cache-control': 'no-store' } });
+    if (auth.state !== 'authenticated') return redirect(request, '/login?mode=join&next=%2Fseller');
+    const { supabase, user } = auth;
     let form:FormData;
     try { form = await request.formData(); assertSingleSellerFields(form, ['business_id']); }
     catch { return new Response('Invalid seller business form.', { status: 400 }); }
@@ -33,19 +34,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       if (businessError || !business) return new Response('Business profile not found.', { status: 404 });
       if (!business.is_active || business.archived_at) return new Response('Inactive seller profiles cannot be changed.', { status: 403 });
       const input = sellerBusinessInput(form, business.business_type);
-      const { error } = await supabase.from('businesses').update({
+      const { data: updated, error } = await supabase.from('businesses').update({
         display_name: input.displayName,
         legal_name: input.legalName,
         public_email: input.publicEmail,
         public_phone: input.publicPhone,
         website_url: input.websiteUrl,
-      }).eq('id', existingBusinessId);
-      if (error) throw error;
+      }).eq('id', existingBusinessId).select('id').single();
+      // RLS can legitimately reduce a stale authorized update to zero rows.
+      // Require confirmation instead of reporting a successful no-op.
+      if (error || updated?.id !== existingBusinessId) throw new Error('Seller update was not confirmed.');
       return redirect(request, '/seller?saved=business');
     }
 
     const input = sellerBusinessInput(form);
-    const { error } = await supabase.rpc('create_seller_business', {
+    const { data: createdBusinessId, error } = await supabase.rpc('create_seller_business', {
       p_display_name: input.displayName,
       p_legal_name: input.legalName,
       p_business_type: input.businessType,
@@ -53,7 +56,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       p_public_phone: input.publicPhone,
       p_website_url: input.websiteUrl,
     });
-    if (error) throw error;
+    if (error || !isSellerUuid(createdBusinessId)) throw new Error('Seller creation was not confirmed.');
     return redirect(request, '/seller?saved=business');
   } catch (error) {
     console.error('[seller] Business profile operation failed.');

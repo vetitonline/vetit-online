@@ -1,5 +1,6 @@
 import type { AstroCookies } from 'astro';
 import { createSupabaseServerClient } from '../supabase/server';
+import { authenticateApiRequest } from '../supabase/api-auth';
 import { getProductTaxonomy } from '../marketplace/featured-products';
 import { getSupabasePublicConfig } from '../supabase/config';
 import { hasSellerCatalogRole } from './permissions.js';
@@ -7,9 +8,12 @@ import { hasSellerCatalogRole } from './permissions.js';
 export const LISTING_IMAGES_BUCKET = 'listing-images';
 
 export async function loadSellerDashboard(request: Request, cookies: AstroCookies) {
-  const supabase = createSupabaseServerClient({ request, cookies });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { supabase, user: null, memberships: [], businesses: [], products: [], error: null };
+  const auth = await authenticateApiRequest(request, cookies);
+  // Page callers already render a 503 workspace state when loading throws.
+  if (auth.state === 'unavailable') throw new Error('Seller authentication is temporarily unavailable.');
+  const supabase = auth.state === 'authenticated' ? auth.supabase : createSupabaseServerClient({ request, cookies });
+  if (auth.state !== 'authenticated') return { supabase, user: null, memberships: [], businesses: [], products: [], error: null };
+  const { user } = auth;
 
   const { data: memberships, error: membershipError } = await supabase
     .from('business_memberships').select('business_id, member_role')
