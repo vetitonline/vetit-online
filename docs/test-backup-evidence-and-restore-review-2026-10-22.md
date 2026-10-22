@@ -1,4 +1,6 @@
-# Test backup evidence intake — blocked on authentication
+# Test backup evidence intake — pending manual verification
+
+Owner direction, 22 October 2026: dashboard authentication is pending manual verification, not a local development blocker. Do not retry authentication until new access/evidence is supplied. Genuine backup evidence remains a prerequisite for hosted corrections. No dashboard retry occurred in this seller development batch.
 
 ## Fresh read-only recheck after reported authenticated metadata availability
 

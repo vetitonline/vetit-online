@@ -77,10 +77,19 @@ export function isCanonicalSellerImagePath(path, businessId, listingId) {
 
 export function sellerProductInput(formData, allowedCategorySpecies = new Map()) {
   assertSingleSellerFields(formData, ['title', 'description', 'category_id', 'base_amount_minor']);
+  // Match the native JSON contract before coercion/deduplication. File-valued
+  // option labels must never silently become "[object File]" in JSONB.
+  const textRows = field => {
+    const values = formData.getAll(field);
+    if (!Array.isArray(values) || values.length > 20 || values.some(value => typeof value !== 'string' || value.length > 5000)) {
+      throw new Error('Seller repeated fields must contain at most 20 bounded text values.');
+    }
+    return values;
+  };
   const title = String(formData.get('title') ?? '').trim();
   const description = String(formData.get('description') ?? '').trim();
   const categoryId = String(formData.get('category_id') ?? '').trim();
-  const speciesIds = [...new Set(formData.getAll('species_ids').map(String).map(value => value.trim()).filter(Boolean))];
+  const speciesIds = [...new Set(textRows('species_ids').map(value => value.trim()).filter(Boolean))];
   if (title.length < 3 || title.length > 160) throw new Error('Enter a product name between 3 and 160 characters.');
   if (description.length > 5000) throw new Error('Product details must be 5,000 characters or fewer.');
   if (!isSellerUuid(categoryId)) throw new Error('Choose a product category.');
@@ -91,10 +100,10 @@ export function sellerProductInput(formData, allowedCategorySpecies = new Map())
 
   const baseRaw = String(formData.get('base_amount_minor') ?? '').trim();
   const baseAmountMinor = baseRaw === '' ? null : parseMinorAmount(baseRaw);
-  const skus = formData.getAll('variant_sku').map(String);
-  const names = formData.getAll('variant_name').map(String);
-  const values = formData.getAll('variant_value').map(String);
-  const amounts = formData.getAll('variant_amount_minor').map(String);
+  const skus = textRows('variant_sku');
+  const names = textRows('variant_name');
+  const values = textRows('variant_value');
+  const amounts = textRows('variant_amount_minor');
   const variants = [];
   for (let i = 0; i < Math.max(skus.length, names.length, values.length, amounts.length); i += 1) {
     const sku = normalizeSellerSku(skus[i]);

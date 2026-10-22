@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createSupabaseServerClient } from '../../../lib/supabase/server';
+import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { getSellerTaxonomy } from '../../../lib/seller/data';
 import { sellerProductInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
@@ -17,9 +17,14 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   let listingPath = '/seller/products/new?error=save';
   let saveStarted = false;
   try {
-    const supabase = createSupabaseServerClient({ request, cookies });
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return redirect(request, '/login?mode=join&next=%2Fseller%2Fproducts%2Fnew');
+    const auth = await authenticateApiRequest(request, cookies);
+    if (auth.state === 'unavailable') {
+      return request.headers.get('accept')?.includes('application/json')
+        ? Response.json({ error: 'draft_auth_unavailable' }, { status: 503, headers: { 'cache-control': 'no-store' } })
+        : new Response('Seller authentication is temporarily unavailable.', { status: 503, headers: { 'cache-control': 'no-store' } });
+    }
+    if (auth.state !== 'authenticated') return redirect(request, '/login?mode=join&next=%2Fseller%2Fproducts%2Fnew');
+    const { supabase, user } = auth;
     let form:FormData;
     try { form = await request.formData(); assertSingleSellerFields(form, ['business_id', 'listing_id']); }
     catch { return new Response('Invalid seller product form.', { status: 400 }); }
@@ -57,7 +62,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       p_variants: product.variants,
     });
     if (saveError?.code === '23505' && request.headers.get('accept')?.includes('application/json')) return new Response(JSON.stringify({ error: 'draft_conflict' }), { status: 409, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
-    if (saveError || !savedListingId) throw saveError ?? new Error('Product draft could not be saved.');
+    if (saveError || typeof savedListingId !== 'string' || !isSellerUuid(savedListingId) || (listingId && savedListingId.toLowerCase() !== listingId.toLowerCase())) throw new Error('Product draft save was not confirmed.');
     listingPath = `/seller/products/${savedListingId}?saved=1`;
     if (request.headers.get('accept')?.includes('application/json')) {
       return new Response(JSON.stringify({ listingId: savedListingId }), { status: 201, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });

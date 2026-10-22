@@ -1,5 +1,16 @@
 # Vetit Online — local Test release checkpoint
 
+## Seller draft boundary checkpoint — 22 October 2026
+
+Original laptop repository C:\Users\DELL\vetit-online, branch codex/development-readiness-2026-10-21, base aa1e5bc9e95499d38adc982fca90d9b63c70b528. Recovery archives, untracked evidence, frozen releases and stronger policies are preserved. Dashboard authentication is pending manual verification, not a local development blocker; no access retry occurred.
+
+Shared seller form validation rejects File-valued repeated fields and bounds raw arrays/text before coercion, deduplication or blank-row skipping, matching native JSON limits. Twenty valid variants, regional text, admin taxonomy restrictions and price behavior remain supported. The draft endpoint uses existing authentication classification: outages produce generic no-store 503 rather than a login redirect. Save receipts require a valid UUID matching an edited listing case-insensitively. Uncertain saves are unconfirmed and never automatically retried; conflict and draft-recovery behavior is retained. No schema, RLS, dependencies, environment or deployment settings changed.
+
+Eight new boundary tests and twenty-three existing seller validation/catalogue/draft-recovery tests passed across targeted runs: initial thirty-test run, expanded eight-test file, then the affected UUID receipt test. Focused strict TypeScript checking of the actual product route and git diff --check passed. Fixtures are synthetic; no hosted acceptance is claimed. Unchanged builds, mobile TypeScript and SQL tests were not repeated. External source-hashed evidence: seller-listing-boundaries-20261022/validation.json under the existing evidence root.
+
+Next bounded task: atomic compare-and-save for catalogue edits. The expectedUpdatedAt read precedes the save RPC, so it does not establish atomic optimistic concurrency. Prepare a forward-only RPC/contract correction and competing-write tests locally. Real hosted sessions, Storage, database concurrency/idempotency, device execution and protected storage remain unverified. Authenticated backup evidence and hosted ledger/package reconciliation remain prerequisites for hosted corrections, independently of safe local development. Final commit/remote SHA belongs in the separate synchronization receipt and chat report.
+
+
 ## Documentation-only authenticated-backup recheck — 22 October 2026
 
 Repository/branch/origin verified at synchronized base `1f3a7b71e1ff377782dba759e1f96629f57417a5`. Despite the reported availability of authenticated metadata, the connected task browser still redirects to Supabase sign-in and GitHub credentials. A transient backup-page loading shell with undefined project links is not evidence. Browser inventory showed no alternate authenticated backup view; MCP Apps had no open tabs. Read-only connector metadata reconfirmed exact Test identity/region/health, but exposes no backup/retention records. No credentials, hosted SQL or new permissions were used.
