@@ -1,6 +1,16 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 23 October 2026
 
-## Latest completed milestone: fourteen-step offline executor
+## Latest completed milestone: offline Test prerequisite reviewer
+
+Starting checkpoint: local/development GitHub `3c62680e44ac51623477c51fa1ee4f1b47f62f5e`. Added `scripts/test-prerequisite-review.mjs` to compare a private, previously captured metadata packet against pinned foundation/fourteen-step sources. It detects critical function body/owner/security/search-path and effective EXECUTE mismatches, unrecorded later functions, ledger gaps/payload changes, incomplete public-table inventories, disabled RLS, unsafe client non-CRUD privileges, incorrect explicit fulfilment grants, missing/nonzero aggregate prerequisites and stale backup metadata. Service-role grants are separately flagged for review. Supplied JSON is not authenticated proof: the report always keeps hosted execution unapproved and policy/session/Storage/backup provenance pending.
+
+**Validation:** 10 new focused offline tests passed, including all prefixes and cross-checks against independently saved catalogue function fingerprints. No old test suite, build, migration rehearsal, backup scan, credential read or database connection was repeated. Web/native source, dependencies, frozen payloads, backups and 31 existing untracked files remain unchanged. The reviewer prepares acceptance evidence review; it does not establish live Test readiness or silently wire clients to an unaccepted RPC contract.
+
+**Evidence and usage:** `C:\Users\DELL\vetit-online\docs\test-prerequisite-evidence-review.md`; tests `C:\Users\DELL\vetit-online\tests\test-prerequisite-review.test.mjs`; local-only logs/validation/synchronization receipts under `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\test-prerequisite-review-20261023`. Resulting commit and verified remote SHA are recorded in the final chat and synchronization receipt.
+
+**Next approval required:** bounded authenticated **read-only** Test metadata and backup/restore-evidence capture, excluding customer rows/object bytes and without credential changes. Current user instructions prohibit that access, so it was not attempted. Execution of hosted SQL/migrations, acceptance writes, production and deployments remain separate approval gates. Full recovery certification remains blocked; safe source development remains available.
+
+## Completed milestone: fourteen-step offline executor
 
 Completed on `codex/development-readiness-2026-10-21`, starting from local/remote `32c57ee81ac92459d41c533a2b3115e9a017cfd1`. New offline builder `scripts/fourteen-step-executor.mjs` preserves the frozen fourteen payloads and manifest, performs one atomic schema/original-payload-ledger/private-receipt transaction per step, rejects noncontiguous or altered history and schema drift, and verifies replay without reapplying older protections. It has no hosted connection/apply adapter. Full recovery and hosted application remain blocked by the operational evidence below, not by this completed local milestone.
 
