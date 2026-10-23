@@ -6,6 +6,9 @@ const states = {
 };
 export function sellerListingState(status) { return states[status] ?? {label:'Status unavailable / स्थिति उपलब्ध नहीं है',hint:'Reload the workspace before taking action.',editable:false}; }
 export function filterSellerProducts(products, {status='',business='',query=''} = {}) {
-  const search = query.trim().toLocaleLowerCase().slice(0,160);
-  return products.filter(product => (!status || product.moderation_status === status) && (!business || product.business_id === business) && (!search || `${product.title} ${product.categoryName}`.toLocaleLowerCase().includes(search)));
+  // Keep regional vowel/combining marks; normalize equivalent Unicode spellings
+  // without relying on the device's locale or requiring words in title order.
+  const fold = value => String(value ?? '').normalize('NFKC').toLowerCase();
+  const terms = fold(String(query).slice(0,160)).trim().split(/\s+/u).filter(Boolean);
+  return products.filter(product => (!status || product.moderation_status === status) && (!business || product.business_id === business) && terms.every(term => fold(`${product.title ?? ''} ${product.categoryName ?? ''}`).includes(term)));
 }

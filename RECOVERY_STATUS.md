@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 23 October 2026
 
+## Active development continuation — seller catalogue finder
+
+Source development resumed from `1d997c32b379a9e0128bd328fb910c139314675e` on the existing development branch. Web/native catalogue matching is shared; native sellers now have title/category search, status/business filters, counts/empty-state feedback and edit-preserving filter locks. Seventeen focused tests and mobile TypeScript passed. Website/mobile/buyer/seller/admin/catalogue/appointment implementation status and next task are recorded at the top of `docs/development-handover-2026-10-21.md`; private evidence is under `seller-catalogue-finder-20261023` in the existing evidence root. No completed audit was reopened, no hosted/credential access occurred, and frozen migrations/backups/unrelated files remain preserved. Authenticated Test verification remains a separate approval-gated blocker, not a reason to stop independent platform development.
+
 ## Latest completed milestone: offline Test prerequisite reviewer
 
 Starting checkpoint: local/development GitHub `3c62680e44ac51623477c51fa1ee4f1b47f62f5e`. Added `scripts/test-prerequisite-review.mjs` to compare a private, previously captured metadata packet against pinned foundation/fourteen-step sources. It detects critical function body/owner/security/search-path and effective EXECUTE mismatches, unrecorded later functions, ledger gaps/payload changes, incomplete public-table inventories, disabled RLS, unsafe client non-CRUD privileges, incorrect explicit fulfilment grants, missing/nonzero aggregate prerequisites and stale backup metadata. Service-role grants are separately flagged for review. Supplied JSON is not authenticated proof: the report always keeps hosted execution unapproved and policy/session/Storage/backup provenance pending.

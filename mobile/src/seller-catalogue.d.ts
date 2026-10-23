@@ -1,5 +1,7 @@
 import type {NativeModerationSession} from './moderation-session.js';
 import type {CatalogueFields,CatalogueCategory,CatalogueCommand} from '../../src/lib/seller/catalogue-contract.js';
+import type {SellerCatalogueFilters} from '../../src/lib/seller/workspace.js';
+export function filterNativeSellerCatalogue(products:SellerCatalogueState['products'],categories:CatalogueCategory[],filters?:SellerCatalogueFilters):SellerCatalogueState['products'];
 export type SellerCatalogueState={phase:'idle'|'loading'|'signin'|'error'|'ready';businesses:Array<{id:string;name:string}>;animals:Array<{id:string;label:string}>;categories:CatalogueCategory[];products:Array<{id:string;businessId:string;status:string;updatedAt:string;revision:string;editable:boolean;imageCount:number;fields:CatalogueFields}>};
 export type SellerCatalogueAction={phase:'idle'|'invalid'|'confirm'|'saving'|'uncertain'|'rejected'|'success';command:CatalogueCommand|null};
 export function createNativeSellerCatalogue(options:{session:NativeModerationSession;apiBaseUrl:string;testApiOrigin:string;render:(state:SellerCatalogueState)=>void;renderAction:(state:SellerCatalogueAction)=>void;request?:Function;timeoutMs?:number}):{load():Promise<void>;prepare(input:CatalogueCommand):boolean;confirm():Promise<void>;cancel():void;reconcile():Promise<void>;clear():void;dispose():void};

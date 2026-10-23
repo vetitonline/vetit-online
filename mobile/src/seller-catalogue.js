@@ -1,4 +1,5 @@
 import {isCatalogueRevision,validCatalogueReceipt} from '../../src/lib/seller/catalogue-revision.js';
+import {filterSellerProducts} from '../../src/lib/seller/workspace.js';
 import {resolveMobileApiBase} from '../../src/lib/supabase/test-endpoints.js';
 import {normalizeCatalogueSave,canonicalCatalogueProduct} from '../../src/lib/seller/catalogue-contract.js';
 import {isSellerUuid} from '../../src/lib/seller/validation.js';
@@ -53,4 +54,10 @@ export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,re
   return candidates.length===1&&canonicalCatalogueProduct({businessId:command.businessId,listingId:candidates[0].id,fields:candidates[0].fields},view.categories)===target;
  }});
  return{load,prepare:input=>{if(['idle','invalid','success'].includes(actions.snapshot().phase)){expected=null;acknowledgedRevision=null;before=new Set(view.products.map(p=>p.id));}return actions.prepare(input);},confirm:actions.confirm,cancel:actions.cancel,reconcile:actions.reconcile,clear:()=>{actions.clear();clear();},dispose:()=>{disposed=true;actions.dispose();clear();unsubscribe();}};
+}
+// Same title/category, status and business rules as the website. This only
+// projects already-authorized records; it cannot change write permissions.
+export function filterNativeSellerCatalogue(products,categories,filters={}){
+ const labels=new Map(categories.map(c=>[c.id,c.label]));
+ return filterSellerProducts(products.map(product=>({product,title:product.fields.title,categoryName:labels.get(product.fields.category_id)??'',business_id:product.businessId,moderation_status:product.status})),filters).map(row=>row.product);
 }

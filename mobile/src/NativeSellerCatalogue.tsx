@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {AppState,Linking,Pressable,Text,TextInput,View} from 'react-native';
-import {createNativeSellerCatalogue,type SellerCatalogueState,type SellerCatalogueAction} from './seller-catalogue.js';
+import {createNativeSellerCatalogue,filterNativeSellerCatalogue,type SellerCatalogueState,type SellerCatalogueAction} from './seller-catalogue.js';
 import {sellerCatalogueCopy} from '../../src/lib/seller/catalogue-copy.js';
 import {resolveMobileApiBase} from '../../src/lib/supabase/test-endpoints.js';
 import type {CatalogueFields} from '../../src/lib/seller/catalogue-contract.js';
@@ -10,7 +10,7 @@ const blankView:SellerCatalogueState={phase:'idle',businesses:[],animals:[],cate
 const idle:SellerCatalogueAction={phase:'idle',command:null};
 export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language='en'}:{session:NativeModerationSession;apiBaseUrl:string;testApiOrigin:string;language?:string}){
  const copy=sellerCatalogueCopy(language),sourceKey=apiBaseUrl+'|'+testApiOrigin;
- const initial=()=>({source:session,sourceKey,view:blankView,action:idle,businessId:'',listingId:null as string|null,revision:undefined as string|undefined,fields:blankFields(),dirty:false,editing:false});
+ const initial=()=>({source:session,sourceKey,view:blankView,action:idle,businessId:'',listingId:null as string|null,revision:undefined as string|undefined,fields:blankFields(),dirty:false,editing:false,filters:{query:'',status:'',business:''}});
  const [saved,setSaved]=useState(initial);
  const state=saved.source===session&&saved.sourceKey===sourceKey?saved:initial();
  const host=useRef<ReturnType<typeof createNativeSellerCatalogue>|null>(null);
@@ -26,11 +26,22 @@ export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language
  const openOnline=(path:string)=>{const origin=resolveMobileApiBase(apiBaseUrl,testApiOrigin);void Linking.openURL(new URL(path,origin).toString()).catch(()=>undefined);};
  const variantKeys=['variant_sku','variant_name','variant_value','variant_amount_minor'] as const;
  const selectedCategory=view.categories.find(c=>c.id===fields.category_id);
+ const visibleProducts=filterNativeSellerCatalogue(view.products,view.categories,state.filters);
+ const filtersLocked=busy||state.editing||view.phase!=='ready';
+ const filterButton=(label:string,selected:boolean,run:()=>void)=><Pressable accessibilityRole="button" accessibilityState={{selected,disabled:filtersLocked}} disabled={filtersLocked} onPress={run}><Text>{selected?'✓ ':''}{label}</Text></Pressable>;
+ const setFilter=(key:'query'|'status'|'business',value:string)=>{if(!filtersLocked)setSaved(s=>({...s,filters:{...s.filters,[key]:value}}));};
  return <View style={{gap:12}}><Text accessibilityRole="header">{copy.title}</Text><Text>{copy.intro}</Text>
  {view.phase==='loading'&&<Text accessibilityLiveRegion="polite">{copy.loading}</Text>}{view.phase==='signin'&&<Text>{copy.signin}</Text>}{view.phase==='error'&&<Text accessibilityRole="alert">{copy.error}</Text>}
  {view.phase==='ready'&&!view.businesses.length&&<Text>{copy.empty}</Text>}
  <Pressable accessibilityRole="button" disabled={busy||state.dirty} onPress={()=>openOnline('/seller/onboarding')}><Text>{copy.online}</Text></Pressable>
- {view.businesses.map(b=><View key={b.id}><Text accessibilityRole="header">{b.name}</Text>{button(copy.new+': '+b.name,()=>choose(b.id))}{view.products.filter(p=>p.businessId===b.id).map(p=><View key={p.id}><Text>{p.fields.title} · {p.status} · {p.imageCount}/5 photos</Text>{p.editable?button(copy.edit+': '+p.fields.title,()=>choose(b.id,p)):<Text>{copy.readonly}</Text>}{button(copy.photos+': '+p.fields.title,()=>{if(!state.dirty)openOnline('/seller/products/'+p.id);})}</View>)}</View>)}
+ {view.phase==='ready'&&view.businesses.length>0&&<View style={{gap:8}}>
+ <Text accessibilityRole="header">{copy.search}</Text><TextInput accessibilityLabel={copy.search} value={state.filters.query} maxLength={160} editable={!filtersLocked} onChangeText={value=>setFilter('query',value)}/>
+ <Text>{copy.filterHelp}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{filterButton(copy.allStatuses,!state.filters.status,()=>setFilter('status',''))}{(['draft','submitted','published','rejected'] as const).map(status=><View key={status}>{filterButton(copy.statusLabels[status],state.filters.status===status,()=>setFilter('status',status))}</View>)}</View>
+ <View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{filterButton(copy.allBusinesses,!state.filters.business,()=>setFilter('business',''))}{view.businesses.map(b=><View key={b.id}>{filterButton(b.name,state.filters.business===b.id,()=>setFilter('business',b.id))}</View>)}</View>
+ {filterButton(copy.clearFilters,false,()=>{if(!filtersLocked)setSaved(s=>({...s,filters:{query:'',status:'',business:''}}));})}
+ <Text accessibilityLiveRegion="polite">{copy.results(visibleProducts.length,view.products.length)}</Text>{!visibleProducts.length&&<Text>{copy.noMatches}</Text>}
+ </View>}
+ {view.businesses.filter(b=>!state.filters.business||state.filters.business===b.id).map(b=><View key={b.id}><Text accessibilityRole="header">{b.name}</Text>{button(copy.new+': '+b.name,()=>choose(b.id))}{visibleProducts.filter(p=>p.businessId===b.id).map(p=><View key={p.id}><Text>{p.fields.title} · {p.status} · {p.imageCount}/5 photos</Text>{p.editable?button(copy.edit+': '+p.fields.title,()=>choose(b.id,p)):<Text>{copy.readonly}</Text>}{button(copy.photos+': '+p.fields.title,()=>{if(!state.dirty)openOnline('/seller/products/'+p.id);})}</View>)}</View>)}
  {(state.dirty||(state.editing&&view.phase==='ready'&&!selectionCurrent))&&<View>{state.dirty&&<Text>{copy.dirty}</Text>}{button(copy.discard,()=>setSaved(s=>({...s,editing:false,dirty:false,fields:blankFields(),listingId:null,revision:undefined})))}</View>}
  {state.editing&&view.phase==='ready'&&<View style={{gap:10}}>
  {!selectionCurrent&&<Text accessibilityRole="alert">{copy.staleEditor}</Text>}

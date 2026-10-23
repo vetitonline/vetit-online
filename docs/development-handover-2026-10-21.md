@@ -1,4 +1,29 @@
-# Ready for explicit GitHub backup-branch approval — 21 October 2026
+# Active platform development — seller catalogue finder, 23 October 2026
+
+Current repository is `C:\Users\DELL\vetit-online`, GitHub `vetitonline/vetit-online`, branch `codex/development-readiness-2026-10-21`. Website `src/`, Expo/React Native app `mobile/`, shared contracts `src/lib/`, backend migrations `supabase/` are in this **same monorepo**. No independent active mobile/backend repository is established by current evidence; do not clone or replace this workspace. Starting checkpoint `1d997c32b379a9e0128bd328fb910c139314675e`; resulting commit/remote verification are in the final chat and private synchronization receipt. Older unsynchronized/push-approval statements below are historical, superseded by this section and `RECOVERY_STATUS.md`.
+
+| Area | Existing implementation and current limit |
+| --- | --- |
+| Website | Astro marketplace, four hero tiles, category/species navigation and published product browsing; existing local acceptance reused, responsive/hosted acceptance remains partial |
+| Mobile | Expo marketplace, imagery, discovery, cart preview and native session/controller screens; actual device/protected-storage acceptance is outstanding |
+| Buyer accounts | Web Auth/session and order/appointment views; native sign-in/session host and order views exist, real hosted account acceptance unverified; preview cart is not completed payment checkout |
+| Seller onboarding | Web profile form and atomic RPC integration exist; stronger retry/security corrections are prepared locally; native still uses the explicit website handoff |
+| Admin | Web review/moderation routes and native reviewer workspace exist; real reviewer scopes/hosted role acceptance unverified |
+| Product catalogue | Web/native draft creation/editing/submission and revision conflicts implemented locally; native photo management remains website-only; actual Test contract installation/acceptance pending |
+| Appointments | Web/native buyer/provider flows, schedule/policy editing and confirmed-write controllers exist; real hosted sessions/concurrency/device acceptance pending |
+
+**Completed functionality in this batch:** native seller search by listing title/category, combined status/business filters, accessible selected controls/result counts, no-match feedback and clear filters. Website and native use the same Unicode-normalized word matching, preserving Indian-script combining marks. Native filtering operates only on already-authorized loaded records, never writes or alters edit permissions. Controls lock while an editor is open, preserve unsaved edits, and reset with session/background invalidation. English is default, Hindi copy is available and regional-language fallback stays extensible.
+
+**Validation:** 4 new finder tests plus 12 affected existing native seller tests passed; one selected website filter regression passed; mobile `tsc --noEmit -p mobile/tsconfig.json` passed. Actual native TSX events ran through the existing offline hook harness, not a device/accessibility/layout engine. Prior unrelated suites/builds/recovery tests were not repeated. No database, credential, dependency, frozen migration or deployment changes. The 31 pre-existing untracked archives/evidence files remain excluded.
+
+Private evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\seller-catalogue-finder-20261023\validation-receipt.json` and `synchronization-receipt.json`. The commit synchronizes source only, not private evidence, backups, local fixtures or the laptop filesystem on another device.
+
+**Next implementation task:** improve native seller website handoff failure feedback and save/discard guidance, without substituting unsupported native photo picking. **Separate approval-gated blocker:** authenticated read-only Supabase Test prerequisite/backup verification, then independently approved hosted application/acceptance. None was accessed or executed here. Production, deployment, protected-storage and hosted mutation restrictions remain in force.
+
+---
+# Historical handover — 21 October 2026
+
+## Ready for explicit GitHub backup-branch approval
 
 Same laptop repository/branch. Local commits now secure application `aee37def06a23eb0515fedf58417d949175eb2f3`, SQL safeguards `8e492f40d3c3012fb026d5912226b1ba9a8c0712`, and release/offline draft `fa0d747fb38ea7f1ef02885bdab5eb4581f60e19`, in addition to earlier 098bade/5d96948. A final documentation checkpoint contains this status; use git rev-parse HEAD for its SHA. The new release commit contains exactly 29 reviewed paths, with no ZIP/cache/tool/credential or unrelated recovery evidence. Frozen payload/index bytes were verified; only an inherited step-12 blank-line style waiver remains, documented explicitly.
 
