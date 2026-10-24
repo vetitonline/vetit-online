@@ -6,7 +6,7 @@ import * as workflow from '../src/lib/moderation/workflow.js';
 import * as workspace from '../src/lib/moderation/session-workspace.js';
 import * as buyerCopy from '../src/lib/marketplace/workspace-copy.js';
 import * as providerAppointmentActions from '../mobile/src/provider-appointment-actions.js';
-export function mountNativeComponent(filename,exportName,props,extraModules={}){
+export function mountNativeComponent(filename,exportName,props,extraModules={},nativeOverrides={}){
  const slots=[];let cursor=0,tree,effects=[];
  const same=(a,b)=>a&&b&&a.length===b.length&&a.every((value,i)=>Object.is(value,b[i]));
  const react={
@@ -19,6 +19,7 @@ export function mountNativeComponent(filename,exportName,props,extraModules={}){
  const native=Object.fromEntries(['View','Text','TextInput','Pressable','ActivityIndicator'].map(name=>[name,name]));
  const openedLinks=[];native.Linking={openURL:async url=>{openedLinks.push(url);}};
  const lifecycle=new Set();native.AppState={addEventListener:(_event,callback)=>{lifecycle.add(callback);return{remove:()=>lifecycle.delete(callback)};}};
+ Object.assign(native,nativeOverrides);
  const modules={react:{__esModule:true,default:react,...react},'react-native':native,'../../src/lib/moderation/workflow.js':workflow,'../../src/lib/moderation/session-workspace.js':workspace,'../../src/lib/marketplace/workspace-copy.js':buyerCopy,'./provider-appointment-actions.js':providerAppointmentActions,'./NativeProviderSchedule':{NativeProviderSchedule:'NativeProviderSchedule'},...extraModules};
  const source=fs.readFileSync(new URL('../mobile/src/'+filename,import.meta.url),'utf8');
  const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;

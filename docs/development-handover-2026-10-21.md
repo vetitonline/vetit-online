@@ -1,4 +1,17 @@
-# Active platform development — seller catalogue finder, 23 October 2026
+# Active platform development — native seller website handoff, 24 October 2026
+
+Continued in `C:\Users\DELL\vetit-online`, `codex/development-readiness-2026-10-21`, from local/remote `b612a288d79a63cd651c3f59717fe24a70d3b8a0`; tracked tree was clean. New handoff UI replaces silent browser-launch failures with actionable, redacted errors and retry. Dirty forms require staying to save through the existing confirmation flow or explicitly choosing **Discard edits and open website**. A failed launch retains edits; an explicit discard clears them only after the platform accepts the launch. Saving never automatically opens a browser. Existing background/sign-out privacy clearing is preserved, as explained in the guidance. Browser/app sign-in remains separate; no token is sent in links.
+
+Duplicate launch taps coalesce, edit controls lock during opening, selecting another editor dismisses an old failed target, and late callbacks after background/sign-out/unmount are ignored. English-default/Hindi copy and extensible regional fallback remain in the shared seller copy module. The web seller save/confirmation/moderation rules are unchanged; browser-launch feedback is specific to native handoff. Native photo picking is still unsupported rather than silently replaced.
+
+Files: `mobile/src/NativeSellerCatalogue.tsx`, `src/lib/seller/catalogue-copy.js`, `tests/native-component-harness.mjs` (optional launcher injection), `tests/native-seller-handoff.test.mjs`, this handover and `RECOVERY_STATUS.md`. **23 focused tests passed**: seven new handoff cases and sixteen affected native seller/finder cases; mobile TypeScript result is in the validation receipt. Test harness events are not physical-device/browser/accessibility or hosted-session acceptance. No installs, full builds, hosted access, migrations, secrets, production or deployment changes.
+
+Private evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\seller-handoff-20261024\focused-tests.log`, `validation-receipt.json`, and post-push `synchronization-receipt.json`. Resulting commit/remote SHA are in the final chat and synchronization receipt. Existing backups and 31 unrelated untracked files remain excluded and preserved.
+
+**Next useful implementation milestone:** field-level seller draft validation feedback using the existing shared validation contract. Authenticated Supabase Test prerequisites and real device/browser handoff acceptance remain separate approval-gated checks. Do not reopen completed recovery audits to proceed with safe UI work.
+
+---
+# Completed platform milestone — seller catalogue finder, 23 October 2026
 
 Current repository is `C:\Users\DELL\vetit-online`, GitHub `vetitonline/vetit-online`, branch `codex/development-readiness-2026-10-21`. Website `src/`, Expo/React Native app `mobile/`, shared contracts `src/lib/`, backend migrations `supabase/` are in this **same monorepo**. No independent active mobile/backend repository is established by current evidence; do not clone or replace this workspace. Starting checkpoint `1d997c32b379a9e0128bd328fb910c139314675e`; resulting commit/remote verification are in the final chat and private synchronization receipt. Older unsynchronized/push-approval statements below are historical, superseded by this section and `RECOVERY_STATUS.md`.
 

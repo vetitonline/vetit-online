@@ -1,4 +1,8 @@
-# RECOVERY BLOCKED — consolidated readiness handover, 23 October 2026
+# RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
+
+## Native seller website-handoff milestone — 24 October 2026
+
+From synchronized `b612a288d79a63cd651c3f59717fe24a70d3b8a0`, added visible browser-launch failure/retry and explicit save/discard guidance without losing edits on a failed foreground launch. Background/sign-out privacy clearing, confirmed saves and token-free trusted website links remain intact. Seven new handoff tests and sixteen affected seller/finder regressions passed; focused TypeScript/evidence/checkpoint details are in the newest `docs/development-handover-2026-10-21.md` section and private `seller-handoff-20261024` evidence directory. No hosted access or recovery re-audit occurred. Genuine hosted/backup/device acceptance remains pending and separately approval-gated.
 
 ## Active development continuation — seller catalogue finder
 

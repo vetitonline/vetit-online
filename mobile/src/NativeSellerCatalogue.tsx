@@ -8,22 +8,44 @@ import type {NativeModerationSession} from './moderation-session.js';
 const blankFields=():CatalogueFields=>({title:'',description:'',category_id:'',base_amount_minor:'',species_ids:[],variant_sku:[],variant_name:[],variant_value:[],variant_amount_minor:[]});
 const blankView:SellerCatalogueState={phase:'idle',businesses:[],animals:[],categories:[],products:[]};
 const idle:SellerCatalogueAction={phase:'idle',command:null};
+type WebsiteHandoff={phase:'idle'|'blocked'|'opening'|'error';path:string|null};
 export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language='en'}:{session:NativeModerationSession;apiBaseUrl:string;testApiOrigin:string;language?:string}){
  const copy=sellerCatalogueCopy(language),sourceKey=apiBaseUrl+'|'+testApiOrigin;
- const initial=()=>({source:session,sourceKey,view:blankView,action:idle,businessId:'',listingId:null as string|null,revision:undefined as string|undefined,fields:blankFields(),dirty:false,editing:false,filters:{query:'',status:'',business:''}});
+ const initial=()=>({source:session,sourceKey,view:blankView,action:idle,businessId:'',listingId:null as string|null,revision:undefined as string|undefined,fields:blankFields(),dirty:false,editing:false,filters:{query:'',status:'',business:''},handoff:{phase:'idle',path:null} as WebsiteHandoff});
  const [saved,setSaved]=useState(initial);
  const state=saved.source===session&&saved.sourceKey===sourceKey?saved:initial();
  const host=useRef<ReturnType<typeof createNativeSellerCatalogue>|null>(null);
- useEffect(()=>{let active=true;setSaved(initial());const controller=createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,render:view=>{if(active)setSaved(s=>view.phase==='signin'?{...initial(),view}:{...s,source:session,sourceKey,view});},renderAction:action=>{if(active)setSaved(s=>({...s,source:session,sourceKey,action,...(action.phase==='success'?{dirty:false,editing:false,fields:blankFields(),listingId:null,revision:undefined}:{})}));}});host.current=controller;void controller.load();const listener=AppState.addEventListener('change',value=>{if(value==='active')void controller.load();else controller.clear();});return()=>{active=false;listener.remove();controller.dispose();if(host.current===controller)host.current=null;};},[session,apiBaseUrl,testApiOrigin]);
- const {view,action,fields}=state,busy=!['idle','success','invalid'].includes(action.phase),disabled=busy||view.phase!=='ready';
+ const linkAttempt=useRef({epoch:0,pending:false});
+ useEffect(()=>{
+  let active=true;linkAttempt.current.epoch++;linkAttempt.current.pending=false;setSaved(initial());
+  const invalidateLink=()=>{linkAttempt.current.epoch++;linkAttempt.current.pending=false;};
+  const controller=createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,render:view=>{if(active){if(view.phase==='signin')invalidateLink();setSaved(s=>view.phase==='signin'?{...initial(),view}:{...s,source:session,sourceKey,view});}},renderAction:action=>{if(active)setSaved(s=>({...s,source:session,sourceKey,action,...(action.phase==='success'?{dirty:false,editing:false,fields:blankFields(),listingId:null,revision:undefined}:{})}));}});
+  host.current=controller;void controller.load();
+  const listener=AppState.addEventListener('change',value=>{if(value==='active')void controller.load();else{invalidateLink();controller.clear();}});
+  return()=>{active=false;invalidateLink();listener.remove();controller.dispose();if(host.current===controller)host.current=null;};
+ },[session,apiBaseUrl,testApiOrigin]);
+ const {view,action,fields}=state,busy=!['idle','success','invalid'].includes(action.phase)||state.handoff.phase==='opening',disabled=busy||view.phase!=='ready';
  const button=(label:string,run:()=>void,force=false)=><Pressable accessibilityRole="button" disabled={force?action.phase==='saving':disabled} onPress={run}><Text>{label}</Text></Pressable>;
  const currentProduct=view.products.find(p=>p.id===state.listingId&&p.businessId===state.businessId);
  const selectionCurrent=view.businesses.some(b=>b.id===state.businessId)&&(!state.listingId||!!currentProduct?.editable&&currentProduct.revision===state.revision);
  const editorButton=(label:string,run:()=>void)=>selectionCurrent?button(label,run):<Pressable accessibilityRole="button" disabled><Text>{label}</Text></Pressable>;
  const change=(key:keyof CatalogueFields,value:string|string[])=>setSaved(s=>({...s,fields:{...s.fields,[key]:value},dirty:true}));
  const input=(label:string,key:keyof CatalogueFields,value:string,onChange=(text:string)=>change(key,text))=><View><Text>{label}</Text><TextInput accessibilityLabel={label} value={value} editable={!disabled&&selectionCurrent} onChangeText={onChange} autoCapitalize="none" multiline={key==='description'} maxLength={key==='description'?5000:key==='title'?160:120}/></View>;
- const choose=(businessId:string,product?:SellerCatalogueState['products'][number])=>{if(state.dirty)return;setSaved(s=>({...s,businessId,listingId:product?.id??null,revision:product?.revision,fields:product?JSON.parse(JSON.stringify(product.fields)):blankFields(),editing:true,dirty:false}));};
- const openOnline=(path:string)=>{const origin=resolveMobileApiBase(apiBaseUrl,testApiOrigin);void Linking.openURL(new URL(path,origin).toString()).catch(()=>undefined);};
+ const choose=(businessId:string,product?:SellerCatalogueState['products'][number])=>{if(state.dirty||busy)return;setSaved(s=>({...s,businessId,listingId:product?.id??null,revision:product?.revision,fields:product?JSON.parse(JSON.stringify(product.fields)):blankFields(),editing:true,dirty:false,handoff:{phase:'idle',path:null}}));};
+ const openOnline=async(path:string,discard=false)=>{
+  if(busy||linkAttempt.current.pending)return;
+  if(state.dirty&&!discard){setSaved(s=>({...s,handoff:{phase:'blocked',path}}));return;}
+  const attempt=++linkAttempt.current.epoch;linkAttempt.current.pending=true;
+  setSaved(s=>({...s,handoff:{phase:'opening',path}}));
+  try{
+   const origin=resolveMobileApiBase(apiBaseUrl,testApiOrigin);
+   await Linking.openURL(new URL(path,origin).toString());
+   if(linkAttempt.current.epoch===attempt)setSaved(s=>({...s,handoff:{phase:'idle',path:null},...(discard?{dirty:false,editing:false,fields:blankFields(),listingId:null,revision:undefined}:{})}));
+  }catch{
+   // Never display platform errors/URLs or clear a draft after a failed launch.
+   if(linkAttempt.current.epoch===attempt)setSaved(s=>({...s,handoff:{phase:'error',path}}));
+  }finally{if(linkAttempt.current.epoch===attempt)linkAttempt.current.pending=false;}
+ };
  const variantKeys=['variant_sku','variant_name','variant_value','variant_amount_minor'] as const;
  const selectedCategory=view.categories.find(c=>c.id===fields.category_id);
  const visibleProducts=filterNativeSellerCatalogue(view.products,view.categories,state.filters);
@@ -33,7 +55,17 @@ export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language
  return <View style={{gap:12}}><Text accessibilityRole="header">{copy.title}</Text><Text>{copy.intro}</Text>
  {view.phase==='loading'&&<Text accessibilityLiveRegion="polite">{copy.loading}</Text>}{view.phase==='signin'&&<Text>{copy.signin}</Text>}{view.phase==='error'&&<Text accessibilityRole="alert">{copy.error}</Text>}
  {view.phase==='ready'&&!view.businesses.length&&<Text>{copy.empty}</Text>}
- <Pressable accessibilityRole="button" disabled={busy||state.dirty} onPress={()=>openOnline('/seller/onboarding')}><Text>{copy.online}</Text></Pressable>
+ <Pressable accessibilityRole="button" disabled={busy} onPress={()=>void openOnline('/seller/onboarding')}><Text>{copy.online}</Text></Pressable>
+ {state.handoff.phase!=='idle'&&<View style={{gap:8}}>
+ <Text accessibilityRole={state.handoff.phase==='error'?'alert':undefined} accessibilityLiveRegion="polite">{state.handoff.phase==='opening'?copy.handoffOpening:state.handoff.phase==='error'?copy.handoffFailed:state.dirty?copy.handoffSave:copy.handoffReady}</Text>
+ {state.handoff.phase!=='opening'&&<>
+ {state.dirty&&state.handoff.phase==='error'&&<Text>{copy.handoffSave}</Text>}
+ <Text>{copy.handoffSignin}</Text>
+ {!state.dirty&&<Pressable accessibilityRole="button" disabled={busy} onPress={()=>{if(state.handoff.path)void openOnline(state.handoff.path);}}><Text>{state.handoff.phase==='error'?copy.handoffRetry:copy.handoffOpen}</Text></Pressable>}
+ {state.dirty&&<Pressable accessibilityRole="button" disabled={busy} onPress={()=>{if(state.handoff.path)void openOnline(state.handoff.path,true);}}><Text>{copy.handoffDiscard}</Text></Pressable>}
+ <Pressable accessibilityRole="button" disabled={busy} onPress={()=>{if(!busy)setSaved(s=>({...s,handoff:{phase:'idle',path:null}}));}}><Text>{copy.handoffKeep}</Text></Pressable>
+ </>}
+ </View>}
  {view.phase==='ready'&&view.businesses.length>0&&<View style={{gap:8}}>
  <Text accessibilityRole="header">{copy.search}</Text><TextInput accessibilityLabel={copy.search} value={state.filters.query} maxLength={160} editable={!filtersLocked} onChangeText={value=>setFilter('query',value)}/>
  <Text>{copy.filterHelp}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:12}}>{filterButton(copy.allStatuses,!state.filters.status,()=>setFilter('status',''))}{(['draft','submitted','published','rejected'] as const).map(status=><View key={status}>{filterButton(copy.statusLabels[status],state.filters.status===status,()=>setFilter('status',status))}</View>)}</View>
@@ -41,7 +73,7 @@ export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language
  {filterButton(copy.clearFilters,false,()=>{if(!filtersLocked)setSaved(s=>({...s,filters:{query:'',status:'',business:''}}));})}
  <Text accessibilityLiveRegion="polite">{copy.results(visibleProducts.length,view.products.length)}</Text>{!visibleProducts.length&&<Text>{copy.noMatches}</Text>}
  </View>}
- {view.businesses.filter(b=>!state.filters.business||state.filters.business===b.id).map(b=><View key={b.id}><Text accessibilityRole="header">{b.name}</Text>{button(copy.new+': '+b.name,()=>choose(b.id))}{visibleProducts.filter(p=>p.businessId===b.id).map(p=><View key={p.id}><Text>{p.fields.title} · {p.status} · {p.imageCount}/5 photos</Text>{p.editable?button(copy.edit+': '+p.fields.title,()=>choose(b.id,p)):<Text>{copy.readonly}</Text>}{button(copy.photos+': '+p.fields.title,()=>{if(!state.dirty)openOnline('/seller/products/'+p.id);})}</View>)}</View>)}
+ {view.businesses.filter(b=>!state.filters.business||state.filters.business===b.id).map(b=><View key={b.id}><Text accessibilityRole="header">{b.name}</Text>{button(copy.new+': '+b.name,()=>choose(b.id))}{visibleProducts.filter(p=>p.businessId===b.id).map(p=><View key={p.id}><Text>{p.fields.title} · {p.status} · {p.imageCount}/5 photos</Text>{p.editable?button(copy.edit+': '+p.fields.title,()=>choose(b.id,p)):<Text>{copy.readonly}</Text>}{button(copy.photos+': '+p.fields.title,()=>void openOnline('/seller/products/'+p.id))}</View>)}</View>)}
  {(state.dirty||(state.editing&&view.phase==='ready'&&!selectionCurrent))&&<View>{state.dirty&&<Text>{copy.dirty}</Text>}{button(copy.discard,()=>setSaved(s=>({...s,editing:false,dirty:false,fields:blankFields(),listingId:null,revision:undefined})))}</View>}
  {state.editing&&view.phase==='ready'&&<View style={{gap:10}}>
  {!selectionCurrent&&<Text accessibilityRole="alert">{copy.staleEditor}</Text>}
@@ -52,7 +84,7 @@ export function NativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,language
  <Text>{copy.pricing}</Text>{input(copy.price,'base_amount_minor',fields.base_amount_minor)}
  {fields.variant_sku.map((_sku,index)=><View key={index}>{variantKeys.map((key,k)=><View key={key}>{input(`${[copy.sku,copy.option,copy.value,copy.variantPrice][k]} ${index+1}`,key,fields[key][index]??'',text=>change(key,fields[key].map((v,i)=>i===index?text:v)))}</View>)}{editorButton(`${copy.remove} ${index+1}`,()=>setSaved(s=>({...s,dirty:true,fields:{...s.fields,...Object.fromEntries(variantKeys.map(key=>[key,s.fields[key].filter((_,i)=>i!==index)]))}})))}</View>)}
  {fields.variant_sku.length<20&&editorButton(copy.add,()=>setSaved(s=>({...s,dirty:true,fields:{...s.fields,...Object.fromEntries(variantKeys.map(key=>[key,[...s.fields[key],'']]))}})))}
- <Text>{copy.photoHelp}</Text>{state.listingId&&editorButton(copy.photos,()=>{if(!state.dirty)openOnline('/seller/products/'+state.listingId);})}
+ <Text>{copy.photoHelp}</Text>{state.listingId&&editorButton(copy.photos,()=>void openOnline('/seller/products/'+state.listingId))}
  {editorButton(copy.save,()=>host.current?.prepare({action:'save',businessId:state.businessId,listingId:state.listingId,expectedRevision:state.revision,fields}))}
  {state.listingId&&!state.dirty&&editorButton(copy.submit,()=>host.current?.prepare({action:'submit',businessId:state.businessId,listingId:state.listingId,expectedRevision:state.revision}))}<Text>{copy.submitHelp}</Text>
  </View>}
