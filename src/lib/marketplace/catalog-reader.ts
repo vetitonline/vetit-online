@@ -16,6 +16,7 @@ export async function readPublicCatalog(request:Request,cookies:AstroCookies,sea
   return{status,body};
  };
  if(taxonomy.state==='error')return reply('error',503,[],false,'Catalogue is temporarily unavailable.');
+ if(taxonomy.state==='unconfigured')return reply('unconfigured',200);
  if(params.invalid)return reply('invalid_request',400,[],false,'One or more catalogue filters are invalid.');
  const uuid=params.productKey!==null&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.productKey);
  const result=await getMarketplaceProducts(request,cookies,params.productKey?1:1000,{marketCode:'IN',taxonomy,...(params.productKey?uuid?{productId:params.productKey}:{productSlug:params.productKey}:{})});

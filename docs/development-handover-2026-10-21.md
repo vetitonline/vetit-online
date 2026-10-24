@@ -1,4 +1,17 @@
-# Active platform development — shared buyer catalogue flow, 24 October 2026
+# Active platform development — paginated shop landing pages, 24 October 2026
+
+Continued on `codex/development-readiness-2026-10-21` in the same laptop monorepo from verified local/remote `d7a9310197f74d434d2756b374bfb6725392a2a0`; tracked tree was clean. `/shop/[animal]` and `/shop/[animal]/[category]` now use the existing shared public catalogue reader, including clamped pagination, descendant filtering and the disclosed 1,000-listing cap. Existing product/image cards, category links, site header, branding and responsive styles remain in use; `/shop` image-based taxonomy discovery is unchanged.
+
+Added reusable shop filter/pagination controls for search, INR price range, sorting, page size and counts. Route-owned species/category override conflicting query parameters, and product-detail shortcuts cannot change landing-page scope. Category/parent/page links preserve applicable filters, while selecting another category resets the page. Unknown/incompatible routes retain their `/shop` redirect. Outages render unavailable; an unconfigured taxonomy now remains the existing explicit API `unconfigured` state, rather than becoming a false unknown-species error. No synthetic products or privileged read path were introduced.
+
+**Validation:** seven new shop cases plus eight affected shared reader/web/native integration cases passed (15 total), using isolated synthetic fixtures and actual route frontmatter. Both changed pages and the shared controls compiled with installed Astro compiler-rs; focused catalogue TypeScript result is in the receipt. Native source/contracts were unchanged, so prior mobile TypeScript evidence is reused; current integration cases verify API/mobile parity. No broad audit, full build, dependency install, hosted/customer-data access, SQL or deployment operation occurred. Real browser/device/hosted acceptance remains outstanding.
+
+Private evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\shop-catalogue-20261024\focused-tests.log`, `validation-receipt.json`, and post-push `synchronization-receipt.json`. Final commit/remote SHA are in the chat and receipt. Backups, frozen SQL and 31 unrelated untracked files remain preserved/excluded.
+
+**Remaining work:** replace the shared 1,000-record scan with bounded database-side public filtering/pagination, with local regression tests; variant selection/live checkout remain separate work. Authenticated Supabase Test prerequisites and actual hosted/browser/device acceptance still require separate approval. Source synchronization does not copy private laptop backups/evidence to the phone.
+
+---
+# Completed platform milestone — shared buyer catalogue flow, 24 October 2026
 
 Continued in `C:\Users\DELL\vetit-online`, shared website/mobile monorepo `vetitonline/vetit-online`, branch `codex/development-readiness-2026-10-21`, from verified local/remote `d9aadbc741f318214fbdcf1611071b1320231ddf`; tracked tree was clean. Website `/products` and `/products/[id]` now use the same `readPublicCatalog` read model as `/api/catalog` consumed by native. It delegates to the unchanged publication/market/RLS-filtered data adapter and shared filter/pagination contracts, without an internal HTTP loop, privileged client or invented products.
 

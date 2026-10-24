@@ -1,41 +1,50 @@
 ---
 import '../../../../styles.css';
 import ProductCard from '../../../components/marketplace/ProductCard.astro';
-import { filterMarketplaceProducts } from '../../../lib/marketplace/catalog';
-import { getMarketplaceProducts, getProductTaxonomy } from '../../../lib/marketplace/featured-products';
+import {readPublicCatalog} from '../../../lib/marketplace/catalog-reader';
+import {shopCatalogParams,buildShopCatalogUrl} from '../../../lib/marketplace/shop-navigation.js';
+import ShopCatalogControls from '../../../components/marketplace/ShopCatalogControls.astro';
 import { categoriesForAnimal, findAnimal } from '../../../lib/marketplace/product-taxonomy';
 import SiteHeader from '../../../components/SiteHeader.astro';
 
-const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
+const params=Astro.url.searchParams;
+const response=await readPublicCatalog(Astro.request,Astro.cookies,shopCatalogParams(params,Astro.params.animal??''));
+const result=response.body;
+const taxonomy=result.taxonomy;
 const animal = findAnimal(taxonomy.animals, Astro.params.animal ?? '');
-if (!animal) return Astro.redirect('/shop', 302);
-const categories = categoriesForAnimal(taxonomy.categories, animal);
-const result = await getMarketplaceProducts(Astro.request, Astro.cookies, 1000, { speciesId: animal.id });
-const products = filterMarketplaceProducts(result.products, { animal });
+if (!animal&&result.state!=='error'&&result.state!=='unconfigured') return Astro.redirect('/shop', 302);
+if(response.status!==200)Astro.response.status=response.status;
+const categories = animal?categoriesForAnimal(taxonomy.categories, animal):[];
+const products = result.products;
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{animal.label} products | Vetit Online</title>
+  <title>{animal?.label??'Marketplace'} products | Vetit Online</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 </head>
 <body><div class="page-shell">
   <SiteHeader />
   <main><section class="product-showcase">
+    {animal?<>
     <div class="product-heading"><div><span class="section-label dark-label"><span></span><a href="/shop">All pets &amp; livestock</a> / {animal.label}</span><h1>{animal.label} products</h1><p>Browse categories and published listings.</p></div><a class="product-view-all" href={`/products?animal=${animal.slug}`}>View all {animal.label.toLocaleLowerCase()} products →</a></div>
     <nav class="subcategory-links" aria-label={`${animal.label} product categories`}>
-      {categories.filter((category) => !category.parentId).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
-      {categories.filter((category) => category.parentId).map((category) => <a class="catalog-chip" href={`/shop/${animal.slug}/${category.slug}`}>{category.label}</a>)}
+      {categories.filter((category) => !category.parentId).map((category) => <a class="catalog-chip" href={buildShopCatalogUrl(animal.slug,category.slug,params)}>{category.label}</a>)}
+      {categories.filter((category) => category.parentId).map((category) => <a class="catalog-chip" href={buildShopCatalogUrl(animal.slug,category.slug,params)}>{category.label}</a>)}
     </nav>
+    <ShopCatalogControls animal={animal.slug} params={params} pagination={result.pagination} position="filters" available={result.state==='available'} />
     <h2 class="catalog-section-title">Available listings</h2>
     <div class="product-grid">
       {result.state === 'available' && products.map((product) => <ProductCard product={product} />)}
       {result.state === 'error' && <p class="product-empty-state">The marketplace is temporarily unavailable. Please try again later.</p>}
       {result.state === 'unconfigured' && <p class="product-empty-state">Marketplace listings are not connected yet. No products are being shown.</p>}
+      {result.state === 'invalid_request' && <p class="product-empty-state">These filters are not available. Clear filters and try again.</p>}
       {result.state === 'available' && products.length === 0 && <p class="product-empty-state">No products in this category yet. <a href="/services">Explore Pet &amp; Vet Services</a>.</p>}
     </div>
+    <ShopCatalogControls animal={animal.slug} params={params} pagination={result.pagination} position="pagination" available={result.state==='available'} />
+    </>:<p class="product-empty-state">{result.state==='unconfigured'?'Marketplace listings are not connected yet. No products are being shown.':'The marketplace is temporarily unavailable.'} <a href="/shop">Back to pets and livestock</a>.</p>}
   </section></main>
 </div><script src="../../../../script.js"></script></body>
 </html>

@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
 
+## Paginated shop species/category pages
+
+From synchronized `d7a9310197f74d434d2756b374bfb6725392a2a0`, `/shop` species/category listing routes now share the public reader and pagination contract used by `/products` and mobile. Added filter-preserving links, route-bound scope, search/price/sort controls and counts; existing image/card/navigation components remain. Fifteen focused cases passed, with template/type-check details in the newest development handover and private `shop-catalogue-20261024` evidence. No recovery audit, hosted/customer-data access, migrations, production or deployment operation occurred; real acceptance and authenticated Test evidence remain separately approval-gated.
+
 ## Shared buyer catalogue implementation milestone
 
 From synchronized `d9aadbc741f318214fbdcf1611071b1320231ddf`, connected web listing/detail pages and the native HTTP catalogue to one shared public read model, preserving the existing published-listing/market/RLS adapter. Added matching category navigation/detail return links and clamped pagination; configuration failures and the existing 1,000-listing cap are explicit. Sixteen focused cases, mobile/server TypeScript and two Astro template compilations passed. Newest development handover and private `buyer-catalogue-flow-20261024` evidence contain the details. No audit was restarted, no application fixtures/live customer data were introduced/accessed, and no hosted database/deployment action occurred. Actual device/browser and authenticated Test acceptance remain unverified and approval-gated.
