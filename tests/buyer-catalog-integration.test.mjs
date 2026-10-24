@@ -16,8 +16,11 @@ const product=n=>({id:`10000000-0000-4000-8000-${String(n).padStart(12,'0')}`,sl
 function compile(file,modules){const output=ts.transpileModule(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},reportDiagnostics:true});assert.ok(!output.diagnostics?.some(d=>d.category===ts.DiagnosticCategory.Error));const exports={};new Function('require','exports',output.outputText)(name=>{assert.ok(name in modules,`Unexpected module ${name}`);return modules[name];},exports);return exports;}
 function fixture(){
  let available=Array.from({length:60},(_,i)=>product(i+1)),state='available',taxState='available';const reads=[];
- const adapters={getProductTaxonomy:async()=>({...taxonomy,state:taxState}),getMarketplaceProducts:async(_req,_cookies,limit,options)=>{reads.push({limit,options});return{state,products:state==='available'?available.filter(p=>options.productSlug?p.slug===options.productSlug:options.productId?p.id===options.productId:true).slice(0,limit):[]};}};
- const reader=compile('src/lib/marketplace/catalog-reader.ts',{'./catalog-contract.js':contract,'./featured-products':adapters});
+ const adapters={getProductTaxonomy:async()=>({...taxonomy,state:taxState})};
+ const pageAdapter={getPublicCataloguePage:async(_req,_cookies,filters)=>{reads.push({filters});
+ const rows=state==='available'?contract.filterCatalogProducts(available.filter(p=>filters.productKey?p.slug===filters.productKey||p.id===filters.productKey:true),filters):[];
+ const page=contract.paginateCatalogItems(rows,filters.page,filters.pageSize);return{state,products:page.items,pagination:{...page.pagination,truncated:false}};}};
+ const reader=compile('src/lib/marketplace/catalog-reader.ts',{'./catalog-contract.js':contract,'./featured-products':adapters,'./catalogue-page':pageAdapter});
  const api=compile('src/pages/api/catalog/index.ts',{'../../../lib/marketplace/catalog-reader':reader});
  const requests=[];
  const fetchImpl=async url=>{const request=new Request(new URL(url,'http://localhost:4321'));requests.push(request.url);if(new URL(request.url).searchParams.get('page')==='3')available=available.slice(0,30);return api.GET({request,cookies:{}});};
@@ -26,13 +29,13 @@ function fixture(){
 test('shared SSR/API/native read contract navigates real taxonomy descendants with one paginated result',async()=>{
  const f=fixture(),url='http://localhost:4321/api/catalog?animal=dogs&category=food&page=999&pageSize=24';
  const ssr=await f.reader.readPublicCatalog(new Request(url),{}),native=await client.fetchCatalog({animal:'dogs',category:'food',page:999,pageSize:24},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});
- assert.deepEqual(ssr.body,native);assert.equal(native.products.length,12);assert.equal(native.pagination.page,3);assert.equal(native.pagination.total,60);assert.equal(f.reads[0].options.taxonomy.categories,taxonomy.categories);assert.equal(f.reads[0].options.marketCode,'IN');
+ assert.deepEqual(ssr.body,native);assert.equal(native.products.length,12);assert.equal(native.pagination.page,3);assert.equal(native.pagination.total,60);assert.deepEqual(f.reads[0].filters.categoryIds,['root','child','leaf']);
  const href=client.buildProductsUrl({animal:'dogs',category:'dog-food',query:'fixture',pageSize:24});assert.equal(new URL(href,'http://localhost').pathname,'/products');
  assert.equal(contract.parseCatalogParams(new URL(href,'http://localhost').searchParams,taxonomy).category.id,'child');
  assert.deepEqual(navigation.categoryNavigation(taxonomy.categories,'dog','dry-food').breadcrumbs.map(c=>c.slug),['food','dog-food','dry-food']);
 });
 test('detail reads use exact slug or UUID, unavailable products stay empty, invalid requests skip data reads',async()=>{
- const f=fixture();for(const key of [product(1).id,product(1).slug]){const result=await client.fetchCatalog({product:key,pageSize:1},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.equal(result.products[0].id,product(1).id);assert.equal(f.reads.at(-1).limit,1);}
+ const f=fixture();for(const key of [product(1).id,product(1).slug]){const result=await client.fetchCatalog({product:key,pageSize:1},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.equal(result.products[0].id,product(1).id);assert.equal(f.reads.at(-1).filters.pageSize,1);assert.equal(f.reads.at(-1).filters.productKey,key);}
  f.setProducts([]);const missing=await client.fetchCatalog({product:'not-published',pageSize:1},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.deepEqual(missing.products,[]);
  const before=f.reads.length;for(const search of ['animal=cats&category=dog-food','product=bad%20key','min=20&max=10']){const response=await f.api.GET({request:new Request('http://localhost:4321/api/catalog?'+search),cookies:{}});assert.equal(response.status,400);}assert.equal(f.reads.length,before);
 });
@@ -40,8 +43,8 @@ test('unconfigured and error states remain explicit, with no synthetic/live fall
  const f=fixture();f.setState('unconfigured');const result=await client.fetchCatalog({},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.equal(result.state,'unconfigured');assert.deepEqual(result.products,[]);
  f.setTaxState('error');const response=await f.api.GET({request:new Request('http://localhost:4321/api/catalog'),cookies:{}});assert.equal(response.status,503);assert.equal(response.headers.get('cache-control'),'no-store');
 });
-test('shared response exposes the existing published-listing scan limit instead of claiming complete coverage',async()=>{
- const f=fixture();f.setProducts(Array.from({length:1001},(_,i)=>product(i+1)));const result=await client.fetchCatalog({},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.equal(result.pagination.truncated,true);assert.equal(result.pagination.total,1000);assert.equal(f.reads[0].limit,1000);
+test('shared response returns catalogues beyond the old scan limit with bounded pages',async()=>{
+ const f=fixture();f.setProducts(Array.from({length:1001},(_,i)=>product(i+1)));const result=await client.fetchCatalog({},{baseUrl:'http://localhost:4321',fetchImpl:f.fetchImpl});assert.equal(result.pagination.truncated,false);assert.equal(result.pagination.total,1001);assert.equal(result.products.length,24);assert.equal(f.reads[0].filters.pageSize,24);
 });
 const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
 async function ssrFrontmatter(file,f,url,params={}){

@@ -1675,6 +1675,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      read_public_catalogue_page: {
+        Args: {
+          p_query?: string
+          p_category_ids?: string[] | null
+          p_species_id?: string | null
+          p_min_minor?: number | null
+          p_max_minor?: number | null
+          p_sort?: string
+          p_page?: number
+          p_page_size?: number
+          p_product?: string | null
+        }
+        Returns: Json
+      }
       get_my_seller_businesses: {
         Args: Record<PropertyKey, never>
         Returns: {
