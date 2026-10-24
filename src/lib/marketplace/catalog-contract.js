@@ -6,6 +6,22 @@ export const CATALOG_API_VERSION = 1;
 export const CATALOG_DEFAULT_PAGE_SIZE = 24;
 export const CATALOG_MAX_PAGE_SIZE = 48;
 
+/** Shared price feedback; empty bounds are allowed. */
+export function catalogPriceRange(minRaw, maxRaw) {
+  const toMinor = value => {
+    if (value == null || String(value).trim() === '') return null;
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 0 && amount <= Number.MAX_SAFE_INTEGER / 100
+      ? Math.round(amount * 100) : Number.NaN;
+  };
+  const minPrice = toMinor(minRaw), maxPrice = toMinor(maxRaw);
+  const issue = Number.isNaN(minPrice) ? {field:'min', message:'Enter a valid minimum price of ₹0 or more.'}
+    : Number.isNaN(maxPrice) ? {field:'max', message:'Enter a valid maximum price of ₹0 or more.'}
+    : minPrice !== null && maxPrice !== null && minPrice > maxPrice
+      ? {field:'max', message:'Maximum price must be at least the minimum price.'} : null;
+  return {minPrice,maxPrice,issue};
+}
+
 function descendants(categories, categoryId) {
   const ids = new Set([categoryId]);
   let frontier = [categoryId];
@@ -29,14 +45,7 @@ export function parseCatalogParams(params, taxonomy) {
   const category = categorySlug ? taxonomy.categories.find(item => item.slug === categorySlug) : undefined;
   const minRaw = params.get('min');
   const maxRaw = params.get('max');
-  const toMinor = value => {
-    if (value === null || value.trim() === '') return null;
-    const amount = Number(value);
-    return Number.isFinite(amount) && amount >= 0 && amount <= Number.MAX_SAFE_INTEGER / 100
-      ? Math.round(amount * 100) : Number.NaN;
-  };
-  const minPrice = toMinor(minRaw);
-  const maxPrice = toMinor(maxRaw);
+  const {minPrice,maxPrice} = catalogPriceRange(minRaw,maxRaw);
   const requestedPage = Number(params.get('page') || '1');
   const requestedSize = Number(params.get('pageSize') || String(CATALOG_DEFAULT_PAGE_SIZE));
   const requestedSort = params.get('sort') || 'newest';

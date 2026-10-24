@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveMobileApiBase } from '../src/lib/supabase/test-endpoints.js';
 import {ModerationWorkspace,type ModerationWorkspaceProps} from './src/ModerationWorkspace';
 import {NativeModeration,type NativeModerationProps} from './src/NativeModeration';
@@ -14,6 +14,8 @@ import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '..
 import type { PreviewCartLine } from '../src/lib/marketplace/preview-cart.js';
 import { workspaceCopy, formatWorkspaceMoney } from '../src/lib/marketplace/workspace-copy.js';
 import { categoryNavigation } from '../src/lib/marketplace/category-navigation.js';
+import {catalogPriceRange} from '../src/lib/marketplace/catalog-contract.js';
+import {categoryDiscoveryArt,discoveryImagePath} from '../src/lib/marketplace/discovery-images.js';
 import {
   ActivityIndicator, Image, Linking, Pressable, ScrollView, StatusBar, StyleSheet,
   Text, TextInput, View,
@@ -42,10 +44,6 @@ function money(product: FeaturedProduct) {
   return product.priceMinor === null ? 'Price on request' : `${product.priceIsFrom ? 'From ' : ''}${currency.format(product.priceMinor / 100)}`;
 }
 
-function openWeb(path: string) {
-  void Linking.openURL(`${API_BASE_URL.replace(/\/$/, '')}${path}`).catch(() => undefined);
-}
-
 function Chip({ label, selected, onPress }: { label: string; selected?: boolean; onPress: () => void }) {
   return <Pressable onPress={onPress} style={[styles.chip, selected && styles.chipSelected]} accessibilityRole="button">
     <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{label}</Text>
@@ -62,13 +60,13 @@ function ProductTile({ product, onPress, onAdd }: { product: FeaturedProduct; on
         <Text style={styles.productPrice}>{money(product)}</Text>
       </View>
     </Pressable>
-    <Pressable disabled={!canAddPreviewProduct(product)} onPress={onAdd} style={[styles.addButton, !canAddPreviewProduct(product) && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={`Add ${product.title} to preview cart`}>
-      <Text style={styles.addButtonText}>{product.priceIsFrom ? 'Choose option online' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
+    <Pressable disabled={!product.priceIsFrom&&!canAddPreviewProduct(product)} onPress={product.priceIsFrom?onPress:onAdd} style={[styles.addButton, !product.priceIsFrom&&!canAddPreviewProduct(product) && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={product.priceIsFrom?`View ${product.title} details`:`Add ${product.title} to preview cart`}>
+      <Text style={styles.addButtonText}>{product.priceIsFrom ? 'View product details' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
     </Pressable>
   </View>;
 }
 
-function ProductDetail({ product, onBack, onAdd, onCategory }: { product: FeaturedProduct; onBack: () => void; onAdd: () => void; onCategory:()=>void }) {
+function ProductDetail({ product, onBack, onAdd, onCategory, onOpenWeb }: { product: FeaturedProduct; onBack: () => void; onAdd: () => void; onCategory:()=>void;onOpenWeb:(path:string)=>void }) {
   return <View>
     <Pressable onPress={onBack}><Text style={styles.backLink}>‹ Back to browsing</Text></Pressable>
     <ProductPhoto uri={product.imageUrl} style={styles.detailImage} fallbackStyle={[styles.imageFallback, styles.detailFallback]} label={product.imageAlt || product.title} fallback={`${product.category} · Seller photo unavailable`} />
@@ -77,8 +75,8 @@ function ProductDetail({ product, onBack, onAdd, onCategory }: { product: Featur
     <Text style={styles.sellerName}>{product.sellerName}</Text>
     <Text style={styles.productPrice}>{money(product)}</Text>
     <Text style={styles.description}>{product.description || 'Product details have not been provided.'}</Text>
-    <Pressable disabled={!product.priceIsFrom && !canAddPreviewProduct(product)} onPress={product.priceIsFrom ? () => openWeb(`/products/${encodeURIComponent(product.slug || product.id)}`) : onAdd} style={[styles.primaryButton, !product.priceIsFrom && !canAddPreviewProduct(product) && styles.buttonDisabled]}>
-      <Text style={styles.primaryButtonText}>{product.priceIsFrom ? 'View options on Vetit Online' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
+    <Pressable disabled={!product.priceIsFrom && !canAddPreviewProduct(product)} onPress={product.priceIsFrom ? () => onOpenWeb(`/products/${encodeURIComponent(product.slug || product.id)}`) : onAdd} style={[styles.primaryButton, !product.priceIsFrom && !canAddPreviewProduct(product) && styles.buttonDisabled]}>
+      <Text style={styles.primaryButtonText}>{product.priceIsFrom ? 'View product on website' : !canAddPreviewProduct(product) ? 'Price unavailable' : 'Add to cart'}</Text>
     </Pressable>
     {product.priceIsFrom && <Text style={styles.note}>Variant selection is not available in the mobile preview yet.</Text>}
   </View>;
@@ -97,6 +95,8 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
   const [categorySlug, setCategorySlug] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [appliedPrice, setAppliedPrice] = useState({min:'',max:''});
+  const [priceError, setPriceError] = useState<string|null>(null);
   const [sort, setSort] = useState<CatalogRequestFilters['sort']>('newest');
   const [page, setPage] = useState(1);
   const [browseReload, setBrowseReload] = useState(0);
@@ -110,17 +110,30 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
   const [cart, setCart] = useState<CartLine[]>([]);
   const [catalog, setCatalog] = useState<LoadState>({ loading: true, data: null, error: null });
   const [detail, setDetail] = useState<LoadState>({ loading: false, data: null, error: null });
+  const [webHandoff,setWebHandoff]=useState<{path:string;failed:boolean}|null>(null);
+  const handoff=useRef({active:true,pending:false});
+  useEffect(()=>{handoff.current.active=true;return()=>{handoff.current.active=false;};},[]);
+  const openWeb=async(path:string)=>{
+    if(handoff.current.pending)return;
+    handoff.current.pending=true;setWebHandoff({path,failed:false});
+    try{
+      await Linking.openURL(`${API_BASE_URL.replace(/\/$/, '')}${path}`);
+      if(handoff.current.active)setWebHandoff(null);
+    }catch{
+      if(handoff.current.active)setWebHandoff({path,failed:true});
+    }finally{handoff.current.pending=false;}
+  };
 
   const filters = useMemo<CatalogRequestFilters>(() => ({
     query: query.trim() || undefined,
     animal: animalSlug || undefined,
     category: categorySlug || undefined,
-    minPriceRupees: minPrice || undefined,
-    maxPriceRupees: maxPrice || undefined,
+    minPriceRupees: appliedPrice.min || undefined,
+    maxPriceRupees: appliedPrice.max || undefined,
     sort,
     page,
     pageSize: 24,
-  }), [query, animalSlug, categorySlug, minPrice, maxPrice, sort, page]);
+  }), [query, animalSlug, categorySlug, appliedPrice, sort, page]);
 
   const loadBrowse = useCallback(async (signal?: AbortSignal) => {
     const data = await fetchCatalog(filters, { baseUrl: API_BASE_URL, signal });
@@ -210,6 +223,13 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
 
   const resetFilters = () => {
     setQuery(''); setAnimalSlug(''); setCategorySlug(''); setMinPrice(''); setMaxPrice(''); setSort('newest'); setPage(1);
+    setAppliedPrice({min:'',max:''}); setPriceError(null);
+  };
+  const applyPrices = () => {
+    const range=catalogPriceRange(minPrice,maxPrice);
+    setPriceError(range.issue?.message??null);
+    if(range.issue)return;
+    setAppliedPrice({min:minPrice.trim(),max:maxPrice.trim()}); setPage(1);
   };
 
   const productList = (list: FeaturedProduct[]) => catalog.data?.state==='unconfigured'
@@ -242,7 +262,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     <View style={styles.categoryGrid}>
       {(taxonomy?.categories ?? []).filter((category) => !category.parentId).map((category, index) => (
         <Pressable key={category.id} onPress={() => browseCategory(category)} style={[styles.categoryCard, index % 2 === 0 ? styles.categoryViolet : styles.categoryOrange]}>
-          <Text style={styles.categoryMark}>{category.label.slice(0, 1)}</Text><Text style={styles.categoryTitle}>{category.label}</Text><Text style={styles.categoryLink}>Explore ›</Text>
+          <ProductPhoto uri={API_BASE_URL.replace(/\/$/,'')+discoveryImagePath(categoryDiscoveryArt(category,taxonomy?.categories??[],taxonomy?.animals??[]))} label={category.label} fallback={category.label} style={{width:'100%',height:94,borderRadius:8}}/><Text style={styles.categoryTitle}>{category.label}</Text><Text style={styles.categoryLink}>Explore ›</Text>
         </Pressable>
       ))}
     </View>
@@ -270,12 +290,15 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       {categoryTree.children.map(category => <Chip key={category.id} label={category.label} selected={categorySlug === category.slug} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
     </ScrollView>}
     <View style={styles.filterRow}>
-      <TextInput value={minPrice} onChangeText={(value) => { setMinPrice(value); setPage(1); }} placeholder="Min ₹" keyboardType="numeric" style={[styles.input, styles.priceInput]} accessibilityLabel="Minimum price in rupees" />
-      <TextInput value={maxPrice} onChangeText={(value) => { setMaxPrice(value); setPage(1); }} placeholder="Max ₹" keyboardType="numeric" style={[styles.input, styles.priceInput]} accessibilityLabel="Maximum price in rupees" />
+      <TextInput value={minPrice} onChangeText={setMinPrice} placeholder="Min ₹" keyboardType="decimal-pad" style={[styles.input, styles.priceInput]} accessibilityLabel="Minimum price in rupees" />
+      <TextInput value={maxPrice} onChangeText={setMaxPrice} placeholder="Max ₹" keyboardType="decimal-pad" style={[styles.input, styles.priceInput]} accessibilityLabel="Maximum price in rupees" />
       <View style={styles.sortGroup}>
-        {(['newest', 'price-asc', 'price-desc'] as const).map((option) => <Chip key={option} label={option === 'newest' ? 'Recent' : option === 'price-asc' ? '₹ Low' : '₹ High'} selected={sort === option} onPress={() => { setSort(option); setPage(1); }} />)}
+        {(['newest', 'price-asc', 'price-desc','name'] as const).map((option) => <Chip key={option} label={option === 'newest' ? 'Recent' : option === 'price-asc' ? '₹ Low' : option==='name'?'Name':'₹ High'} selected={sort === option} onPress={() => { setSort(option); setPage(1); }} />)}
       </View>
     </View>
+    {!!priceError&&<Text accessibilityRole="alert" style={styles.note}>{priceError} Your filters have been kept; correct the range and apply again.</Text>}
+    {(minPrice.trim()!==appliedPrice.min||maxPrice.trim()!==appliedPrice.max)&&<Text style={styles.note}>Price changes have not been applied. Results still use the previous range.</Text>}
+    <View style={styles.filterRow}><Pressable accessibilityRole="button" onPress={applyPrices} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Apply price range</Text></Pressable><Pressable accessibilityRole="button" onPress={resetFilters}><Text style={styles.inlineLink}>Clear filters</Text></Pressable></View>
     {catalog.loading && catalog.data && <Text style={styles.note} accessibilityLiveRegion="polite">Updating results… / परिणाम अपडेट हो रहे हैं…</Text>}
     {catalog.data?.pagination.truncated&&<Text style={styles.note}>Results are limited to the first 1,000 published listings.</Text>}
     {catalog.loading && !catalog.data ? <LoadingState /> : catalog.error ? <ErrorState message={catalog.error} onRetry={() => setBrowseReload((current) => current + 1)} /> : productList(products)}
@@ -354,8 +377,9 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
     <View style={styles.topBar}><Image source={require('../Vetit-online-transparent.png')} style={styles.topLogo} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Switch English or Hindi" onPress={() => setLanguage(current => current === 'en' ? 'hi' : 'en')}><Text style={styles.inlineLink}>{language === 'en' ? 'हिन्दी' : 'English'}</Text></Pressable><Pressable onPress={() => setTab('cart')}><Text style={styles.cartBadge}>{copy.cart} · {cartCount}</Text></Pressable></View>
     <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
+      {webHandoff&&<View style={styles.emptyBox} accessibilityLiveRegion="polite"><Text style={styles.emptyTitle}>{webHandoff.failed?'Website could not be opened':'Opening Vetit Online…'}</Text><Text style={styles.muted}>{webHandoff.failed?'Check that a browser is available, then retry. Your catalogue filters and local preview cart are unchanged. Browser sign-in is separate from the app.':'Your browser may ask you to sign in separately.'}</Text>{webHandoff.failed&&<><Pressable accessibilityRole="button" onPress={()=>void openWeb(webHandoff.path)}><Text style={styles.inlineLink}>Retry opening website</Text></Pressable><Pressable accessibilityRole="button" onPress={()=>setWebHandoff(null)}><Text style={styles.inlineLink}>Stay in app</Text></Pressable></>}</View>}
       {!!cartMessage && <Text style={styles.note} accessibilityLiveRegion="polite">{cartMessage}</Text>}
-      {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} onCategory={()=>{setCategorySlug(selectedProduct.categorySlug);setAnimalSlug('');setPage(1);setTab('shop');setDetailKey(null);}} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
+      {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onOpenWeb={path=>void openWeb(path)} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} onCategory={()=>{setCategorySlug(selectedProduct.categorySlug);setAnimalSlug('');setPage(1);setTab('shop');setDetailKey(null);}} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
         : tab === 'home' ? renderHome() : tab === 'shop' ? renderShop() : tab === 'cart' ? renderCart() : tab === 'services' ? renderServices() : renderOther()}
     </ScrollView>
     <View style={styles.tabBar}>{tabs.map((item) => <Pressable key={item.id} onPress={() => { setDetailKey(null); setTab(item.id); }} style={styles.tabItem} accessibilityRole="button" accessibilityState={{ selected: tab === item.id }}>

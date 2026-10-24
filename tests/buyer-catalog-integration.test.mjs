@@ -8,6 +8,7 @@ import * as client from '../src/lib/marketplace/catalog-client.js';
 import * as navigation from '../src/lib/marketplace/category-navigation.js';
 import * as shortcuts from '../src/lib/marketplace/navigation.js';
 import * as cart from '../src/lib/marketplace/preview-cart.js';
+import * as images from '../src/lib/marketplace/discovery-images.js';
 import * as copy from '../src/lib/marketplace/workspace-copy.js';
 import {mountNativeComponent,drainNativeTasks} from './native-component-harness.mjs';
 const taxonomy={state:'available',animals:[{id:'dog',slug:'dogs',label:'Dogs'},{id:'cat',slug:'cats',label:'Cats'}],categories:[{id:'root',slug:'food',label:'Food',parentId:null,species:['dog','cat']},{id:'child',slug:'dog-food',label:'Dog Food',parentId:'root',species:['dog']},{id:'leaf',slug:'dry-food',label:'Dry Food',parentId:'child',species:['dog']}]};
@@ -46,8 +47,8 @@ const AsyncFunction=Object.getPrototypeOf(async function(){}).constructor;
 async function ssrFrontmatter(file,f,url,params={}){
  const source=fs.readFileSync(new URL('../'+file,import.meta.url),'utf8').split('---')[1];const output=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const Astro={request:new Request(url),cookies:{},url:new URL(url),params,response:{status:200}};
- const modules={'../lib/marketplace/catalog-reader':f.reader,'../lib/marketplace/catalog-client.js':client,'../lib/marketplace/category-navigation.js':navigation,'../../lib/marketplace/catalog-reader':f.reader,'../../lib/marketplace/catalog-client.js':client,'../../lib/marketplace/featured-products':{formatProductPrice:()=>''}};
- const values=await new AsyncFunction('require','exports','Astro',output+`;return typeof pageProducts==='undefined'?{product,result}:{page,pageCount,pageProducts,tree,browseHref};`)(name=>{if(name.endsWith('.css')||name.endsWith('.astro'))return{};assert.ok(name in modules,name);return modules[name];},{},Astro);
+ const modules={'../lib/marketplace/catalog-contract.js':contract,'../lib/marketplace/catalog-reader':f.reader,'../lib/marketplace/catalog-client.js':client,'../lib/marketplace/category-navigation.js':navigation,'../../lib/marketplace/catalog-reader':f.reader,'../../lib/marketplace/catalog-client.js':client,'../../lib/marketplace/featured-products':{formatProductPrice:()=>''}};
+ const values=await new AsyncFunction('require','exports','Astro',output+`;return typeof pageProducts==='undefined'?{product,result}:{page,pageCount,pageProducts,tree,browseHref,priceIssue};`)(name=>{if(name.endsWith('.css')||name.endsWith('.astro'))return{};assert.ok(name in modules,name);return modules[name];},{},Astro);
  return{Astro,...values};
 }
 test('actual website listing frontmatter uses clamped shared pages and filter-preserving category links',async()=>{
@@ -60,9 +61,9 @@ test('actual website detail frontmatter uses shared exact read and returns 404/5
  f.setProducts([]);assert.equal((await ssrFrontmatter('src/pages/products/[id].astro',f,'http://localhost:4321/products/missing',{id:'missing'})).Astro.response.status,404);
  f.setState('error');assert.equal((await ssrFrontmatter('src/pages/products/[id].astro',f,'http://localhost:4321/products/missing',{id:'missing'})).Astro.response.status,503);
 });
-function mobile(f){
+function mobile(f,nativeOverrides={}){
  const components=Object.fromEntries(['ModerationWorkspace','NativeModeration','NativeBuyerOrders','NativeCheckoutReview','NativeAppointments','NativeSellerCatalogue','ProductPhoto','MarketplaceShortcuts','SpeciesDiscovery'].map(name=>['./src/'+name,{[name]:name}]));
- return mountNativeComponent('../App.tsx','default',{}, {...components,'../Vetit-online-transparent.png':'offline-logo','../src/lib/supabase/test-endpoints.js':{resolveMobileApiBase:()=> 'http://localhost:4321'},'../src/lib/marketplace/navigation.js':shortcuts,'../src/lib/marketplace/preview-cart.js':cart,'../src/lib/marketplace/workspace-copy.js':copy,'../src/lib/marketplace/category-navigation.js':navigation,'../src/lib/marketplace/catalog-client':{...client,fetchCatalog:(filters,options)=>client.fetchCatalog(filters,{...options,fetchImpl:f.fetchImpl})},'../src/lib/services/service-client':{},'../src/lib/services/appointment-client.js':{}},{ScrollView:'ScrollView',Image:'Image',StatusBar:'StatusBar',StyleSheet:{create:s=>s}});
+ return mountNativeComponent('../App.tsx','default',{}, {...components,'../Vetit-online-transparent.png':'offline-logo','../src/lib/supabase/test-endpoints.js':{resolveMobileApiBase:()=> 'http://localhost:4321'},'../src/lib/marketplace/catalog-contract.js':contract,'../src/lib/marketplace/discovery-images.js':images,'../src/lib/marketplace/navigation.js':shortcuts,'../src/lib/marketplace/preview-cart.js':cart,'../src/lib/marketplace/workspace-copy.js':copy,'../src/lib/marketplace/category-navigation.js':navigation,'../src/lib/marketplace/catalog-client':{...client,fetchCatalog:(filters,options)=>client.fetchCatalog(filters,{...options,fetchImpl:f.fetchImpl})},'../src/lib/services/service-client':{},'../src/lib/services/appointment-client.js':{}},{ScrollView:'ScrollView',Image:'Image',StatusBar:'StatusBar',StyleSheet:{create:s=>s},...nativeOverrides});
 }
 const settle=async ui=>{await new Promise(resolve=>setTimeout(resolve,15));await drainNativeTasks();ui.render();};
 const chip=(ui,label)=>ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='Chip'&&n.props.label===label);
@@ -77,4 +78,52 @@ test('native pagination follows the returned page after the published result set
  const f=fixture(),ui=mobile(f);await settle(ui);ui.button('Explore marketplace').props.onPress();ui.render();await settle(ui);
  ui.button('Next ›').props.onPress();ui.render();await settle(ui);ui.button('Next ›').props.onPress();ui.render();await settle(ui);
  assert.equal(new URL(f.requests.at(-1)).searchParams.get('page'),'3');ui.button('‹ Previous').props.onPress();ui.render();await settle(ui);assert.equal(new URL(f.requests.at(-1)).searchParams.get('page'),'1');ui.unmount();
+});
+
+
+test('native price drafts do not send partial requests; invalid ranges retain data and valid ranges apply once',async()=>{
+ const f=fixture(),ui=mobile(f);await settle(ui);ui.button('Explore marketplace').props.onPress();ui.render();await settle(ui);
+ const before=f.requests.length;
+ ui.input('Minimum price in rupees','200');ui.input('Maximum price in rupees','100');await settle(ui);
+ assert.equal(f.requests.length,before);ui.button('Apply price range').props.onPress();ui.render();await settle(ui);
+ assert.equal(f.requests.length,before);assert.match(ui.text(),/Maximum price must be at least/);
+ assert.equal(ui.nodes().find(n=>n.props?.accessibilityLabel==='Minimum price in rupees').props.value,'200');
+ ui.input('Maximum price in rupees','300.50');ui.button('Apply price range').props.onPress();ui.render();await settle(ui);
+ assert.equal(f.requests.length,before+1);const params=new URL(f.requests.at(-1)).searchParams;
+ assert.equal(params.get('min'),'200');assert.equal(params.get('max'),'300.50');assert.equal(params.get('page'),'1');
+ assert.ok(!ui.text().includes('Maximum price must be at least'));
+ ui.button('Clear filters').props.onPress();ui.render();await settle(ui);
+ assert.equal(new URL(f.requests.at(-1)).searchParams.has('min'),false);
+ assert.equal(ui.nodes().find(n=>n.props?.accessibilityLabel==='Maximum price in rupees').props.value,'');ui.unmount();
+});
+
+test('native supports name sorting and real editorial category imagery without narrowing category species',async()=>{
+ const f=fixture(),ui=mobile(f);await settle(ui);
+ const photo=ui.nodes().find(n=>n.type==='ProductPhoto'&&n.props.label==='Food');assert.equal(photo.props.uri,'http://localhost:4321/images/discovery/essentials.webp');
+ ui.button('Explore marketplace').props.onPress();ui.render();await settle(ui);chip(ui,'Name').props.onPress();ui.render();await settle(ui);
+ assert.equal(new URL(f.requests.at(-1)).searchParams.get('sort'),'name');chip(ui,'Food').props.onPress();ui.render();await settle(ui);
+ assert.equal(new URL(f.requests.at(-1)).searchParams.has('animal'),false);ui.unmount();
+});
+
+test('native buyer and account handoffs redact launch errors, coalesce taps and retry the exact route',async()=>{
+ let fail=true,release;const urls=[];const f=fixture();
+ const ui=mobile(f,{Linking:{openURL:async url=>{urls.push(url);await new Promise(resolve=>release=resolve);if(fail)throw Error('private-token');}}});await settle(ui);
+ ui.button('Account').props.onPress();ui.render();ui.button('Continue to sign in online').props.onPress();ui.button('Continue to sign in online').props.onPress();ui.render();
+ assert.equal(urls.length,1);assert.match(ui.text(),/Opening Vetit Online/);release();await drainNativeTasks();ui.render();
+ assert.match(ui.text(),/Website could not be opened/);assert.ok(!ui.text().includes('private-token'));
+ fail=false;ui.button('Retry opening website').props.onPress();ui.render();assert.equal(urls[1],urls[0]);assert.equal(urls[1],'http://localhost:4321/login');release();await drainNativeTasks();ui.render();
+ assert.ok(!ui.text().includes('Website could not be opened'));ui.unmount();
+});
+
+
+test('website invalid price feedback retains bounds and agrees with the shared native rule',async()=>{
+ const f=fixture(),result=await ssrFrontmatter('src/pages/products.astro',f,'http://localhost:4321/products?min=200&max=100');
+ assert.equal(result.Astro.response.status,400);assert.equal(result.priceIssue.field,'max');assert.equal(result.priceIssue.message,contract.catalogPriceRange('200','100').issue.message);assert.equal(f.reads.length,0);
+});
+
+test('variable-price native product buttons open details without claiming variant checkout',async()=>{
+ const f=fixture();f.setProducts([{...product(1),priceIsFrom:true}]);const ui=mobile(f);await settle(ui);
+ const tile=ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='ProductTile');const tree=tile.type(tile.props);
+ const controls=tree.children.filter(n=>n?.type==='Pressable');const action=controls[1];assert.equal(action.props.disabled,false);assert.equal(action.children[0].children[0],'View product details');
+ action.props.onPress();ui.render();await settle(ui);const detail=ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='ProductDetail');assert.equal(detail.props.product.priceIsFrom,true);assert.equal(typeof detail.props.onOpenWeb,'function');ui.unmount();
 });

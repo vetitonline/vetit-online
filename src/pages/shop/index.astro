@@ -3,13 +3,11 @@ import '../../../styles.css';
 import { getProductTaxonomy } from '../../lib/marketplace/featured-products';
 import SiteHeader from '../../components/SiteHeader.astro';
 import PhotoCategoryArt from '../../components/marketplace/PhotoCategoryArt.astro';
+import {categoryDiscoveryArt} from '../../lib/marketplace/discovery-images.js';
 const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
 const roots = taxonomy.categories.filter((category) => !category.parentId);
 const groups = roots.map((root) => ({ root, children: taxonomy.categories.filter((category) => category.parentId === root.id) }));
-const categoryHref = (category: (typeof taxonomy.categories)[number]) => {
-  const animal = taxonomy.animals.find((item) => category.species.includes(item.id));
-  return animal ? `/shop/${animal.slug}/${category.slug}` : `/products?category=${encodeURIComponent(category.slug)}`;
-};
+const categoryHref = (category: (typeof taxonomy.categories)[number]) => `/products?category=${encodeURIComponent(category.slug)}`;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +27,11 @@ const categoryHref = (category: (typeof taxonomy.categories)[number]) => {
     </div>
     {taxonomy.animals.length === 0 && <p class="product-empty-state">{taxonomy.state === 'error' ? 'Pet and livestock categories are temporarily unavailable.' : 'No pet or livestock categories have been published yet.'}</p>}
     <h2 class="discovery-subtitle">Browse product categories</h2>
-    <div class="browse-group-grid">{groups.map(({ root, children }) => <section class="browse-group"><h3>{root.label}</h3><div class="browse-category-links"><a href={`/products?category=${encodeURIComponent(root.slug)}`}>All {root.label}<span aria-hidden="true">→</span></a>{children.map((category) => <a href={categoryHref(category)}>{category.label}<span aria-hidden="true">→</span></a>)}</div></section>)}</div>
+    <div class="browse-group-grid">{groups.map(({ root, children }) => <section class="browse-group"><a class="browse-group-image" href={categoryHref(root)}><PhotoCategoryArt slug={categoryDiscoveryArt(root,taxonomy.categories,taxonomy.animals)} label={root.label} /></a><h3>{root.label}</h3><div class="browse-category-links"><a href={`/products?category=${encodeURIComponent(root.slug)}`}>All {root.label}<span aria-hidden="true">→</span></a>{children.map((category) => <a href={categoryHref(category)}>{category.label}<span aria-hidden="true">→</span></a>)}</div></section>)}</div>
   </section></main>
 </div><script src="../../../script.js"></script></body>
 </html>
+
+<style>
+.browse-group-image{display:block;height:140px;overflow:hidden;border-radius:12px;margin-bottom:16px;}
+</style>

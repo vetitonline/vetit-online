@@ -1,3 +1,20 @@
+# Active development — customer browsing and handoff repair, 24 October 2026
+
+Repository: C:\Users\DELL\vetit-online (website, Expo mobile and shared contracts), branch codex/development-readiness-2026-10-21. Starting local and remote HEAD both matched c560f24caa5f0e2499b803636094779e97092264; tracked tree was clean. No recovery audit was restarted. All 31 unrelated untracked archives/evidence files remain excluded and preserved.
+
+Implemented: homepage and /shop category discovery now browse all assigned species instead of silently choosing the first. Explicit species routes retain their existing scope. Shared admin-taxonomy-based category art uses existing dog/cat/bird/fish/livestock assets; mixed/unknown categories use neutral essentials art. Homepage visual cards, new bounded-height /shop category images and native category cards use the same mapping; seller photo fallbacks and the four homepage shortcuts are preserved. Homepage search now describes its actual product/category/seller scope.
+
+Web products/shop price fields accept paise and show shared field-specific range feedback while retaining entered filters. Native price inputs are drafts until Apply price range: incomplete or invalid edits issue no catalogue request, prior applied results remain labelled, valid application resets page, and Clear filters resets both draft/applied state. Native now includes the existing Name sort. API version, price validation rules, publication/market/ownership/RLS paths are unchanged.
+
+Native buyer/account/service website handoffs now display pending/failure guidance, coalesce taps and retry the original route without exposing platform error details or sending session tokens. Stay in app dismisses failures; filters/cart are not changed. Existing native seller editor handoff and privacy clearing are untouched. Variable-price cards open details rather than displaying a disabled Choose option online action; website handoff wording no longer promises variant selection. Variant selection and live checkout remain unfinished.
+
+Validation: 32 focused offline tests passed (30 catalogue/reader/client/shop cases plus two newly added targeted cases), mobile TypeScript passed, focused catalogue TypeScript passed, four modified Astro templates compiled with installed compiler-rs, git diff --check passed. No full build/install, hosted access/SQL/migration, production/environment or deployment change. These synthetic DOM/hook/read-model tests do not establish browser layout, physical-device, protected-storage or hosted-session acceptance. Existing unrelated Node module-type warning remains non-fatal; dependencies/lockfiles were not modified.
+
+Private evidence: C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\browse-journeys-20261024\validation-receipt.json and post-push synchronization-receipt.json. Resulting commit/remote SHA are in the receipt and final chat. Source push does not synchronize private laptop evidence/backups to phone. Preview is not verified; a development-branch push may trigger Vercel Preview, without main/production changes.
+
+Next bounded batch: remove the disclosed 1,000-record public catalogue scan using a security-preserving database-side reader/filter/pagination contract with local adapter tests. Authenticated Supabase Test installation/acceptance, backend concurrency, device and protected-storage checks remain separately approval-gated; no full recovery/launch certification is claimed.
+
+---
 # Active platform development — paginated shop landing pages, 24 October 2026
 
 Continued on `codex/development-readiness-2026-10-21` in the same laptop monorepo from verified local/remote `d7a9310197f74d434d2756b374bfb6725392a2a0`; tracked tree was clean. `/shop/[animal]` and `/shop/[animal]/[category]` now use the existing shared public catalogue reader, including clamped pagination, descendant filtering and the disclosed 1,000-listing cap. Existing product/image cards, category links, site header, branding and responsive styles remain in use; `/shop` image-based taxonomy discovery is unchanged.

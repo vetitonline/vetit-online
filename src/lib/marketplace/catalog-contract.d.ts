@@ -34,3 +34,4 @@ export function paginateCatalogItems<T>(items: T[], page: number, pageSize: numb
   items: T[];
   pagination: { page: number; pageSize: number; total: number; pageCount: number; hasPrevious: boolean; hasNext: boolean };
 };
+export function catalogPriceRange(minRaw?:string|null,maxRaw?:string|null):{minPrice:number|null;maxPrice:number|null;issue:{field:'min'|'max';message:string}|null};

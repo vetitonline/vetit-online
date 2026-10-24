@@ -1,4 +1,5 @@
 ---
+import {catalogPriceRange} from '../lib/marketplace/catalog-contract.js';
 import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
 import {readPublicCatalog} from '../lib/marketplace/catalog-reader';
@@ -17,6 +18,7 @@ const animal = params.get('animal')?.trim() ?? '';
 const category = params.get('category')?.trim() ?? '';
 const minPriceRaw = params.get('min') ?? '';
 const maxPriceRaw = params.get('max') ?? '';
+const priceIssue=catalogPriceRange(minPriceRaw,maxPriceRaw).issue;
 const sort = result.filters.sort;
 const selectedAnimal = taxonomy.animals.find(item=>item.slug===result.filters.animal);
 const categoryOptions = categoriesForSpecies(taxonomy.categories,selectedAnimal?.id);
@@ -77,8 +79,8 @@ const browseHref=(categorySlug?:string,requestedPage?:number)=>buildProductsUrl(
               {categoryOptions.map((item) => <option value={item.slug} selected={category === item.slug}>{item.label}</option>)}
             </select>
           </label>
-          <label>Min price (₹)<input name="min" type="number" min="0" step="1" value={minPriceRaw} inputmode="numeric"></label>
-          <label>Max price (₹)<input name="max" type="number" min="0" step="1" value={maxPriceRaw} inputmode="numeric"></label>
+          <label>Min price (₹)<input name="min" aria-invalid={priceIssue?.field==='min'?true:undefined} aria-describedby={priceIssue?'catalog-price-error':undefined} type="number" min="0" step="0.01" value={minPriceRaw} inputmode="decimal"></label>
+          <label>Max price (₹)<input name="max" aria-invalid={priceIssue?.field==='max'?true:undefined} aria-describedby={priceIssue?'catalog-price-error':undefined} type="number" min="0" step="0.01" value={maxPriceRaw} inputmode="decimal"></label>
           <label>Sort by
             <select name="sort">
               <option value="newest" selected={sort === 'newest'}>Newest</option>
@@ -89,7 +91,8 @@ const browseHref=(categorySlug?:string,requestedPage?:number)=>buildProductsUrl(
           </label>
           <button class="button button-primary" type="submit">Apply filters</button>
           <a class="catalog-clear" href="/products">Clear</a>
-        </form>
+        {priceIssue&&<p id="catalog-price-error" role="alert">{priceIssue.message} Your filters have been kept; correct the range and apply again.</p>}
+</form>
         <nav class="subcategory-links" aria-label="Product category navigation">
           <a class="catalog-chip" href={browseHref()} aria-current={!category?'page':undefined}>All categories</a>
           {tree.roots.map(item=><a class="catalog-chip" href={browseHref(item.slug)} aria-current={category===item.slug?'page':undefined}>{item.label}</a>)}

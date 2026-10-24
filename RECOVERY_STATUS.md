@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
 
+## Customer browsing increment — 24 October 2026
+
+From synchronized c560f24caa5f0e2499b803636094779e97092264: fixed category discovery's unintended first-species narrowing; shared existing-asset category art now appears on web/native. Added shared price feedback, decimal web bounds, native explicit price application/reset/name sort, and actionable native website-launch failure/retry. Variable-price cards now open details without promising unsupported selection. 32 focused tests, mobile/focused TypeScript, four Astro template compiles and diff checks passed. See newest development handover and private browse-journeys-20261024 validation/synchronization receipts. No hosted SQL, production, dependencies, deployments or recovery archives changed. Real hosted/device/Storage/concurrency acceptance remains unverified and approval-gated; source progress does not close operational recovery certification.
+
 ## Paginated shop species/category pages
 
 From synchronized `d7a9310197f74d434d2756b374bfb6725392a2a0`, `/shop` species/category listing routes now share the public reader and pagination contract used by `/products` and mobile. Added filter-preserving links, route-bound scope, search/price/sort controls and counts; existing image/card/navigation components remain. Fifteen focused cases passed, with template/type-check details in the newest development handover and private `shop-catalogue-20261024` evidence. No recovery audit, hosted/customer-data access, migrations, production or deployment operation occurred; real acceptance and authenticated Test evidence remain separately approval-gated.
