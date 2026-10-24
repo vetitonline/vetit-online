@@ -12,23 +12,32 @@ class Element{
  set textContent(value){this.text=value;this.children=[];}get textContent(){return this.text??'';}
  addEventListener(name,callback){this.listeners[name]=callback;}append(...children){this.children.push(...children);}
 }
-function mount({fetchImpl,upload=async()=>({error:null}),files=[{type:'image/png',size:100,name:'synthetic.png'}]}={}){
+function mount({fetchImpl,upload=async()=>({error:null}),files=[{type:'image/png',size:100,name:'synthetic.png'}],fields={}}={}){
  const button=new Element(),status=new Element(),images=new Element(),form=new Element();images.files=files;images.dataset.maxImages='5';form.action='http://localhost:4321/api/seller/product';
- let listingField=null,deletes=0;const navigations=[];
- form.querySelector=selector=>({'[data-product-images]':images,'[data-image-status]':status,'button[type="submit"]':button,'input[name="species_ids"]:checked':{checked:true},'input[name="listing_id"]':listingField})[selector]??null;
+ let listingField=null,deletes=0,fieldIssue=null;const navigations=[];
+ form.querySelector=selector=>({'[data-product-images]':images,'[data-image-status]':status,'button[type="submit"]':button,'input[name="species_ids"]:checked':{checked:true},'input[name="listing_id"]':listingField,'[data-seller-category]':{options:[{value:id,dataset:{species:id}}]}})[selector]??null;
  form.append=element=>{listingField=element;};
- class SyntheticFormData extends FormData{constructor(){super();this.set('title','Synthetic draft');this.set('business_id',id);if(listingField)this.set('listing_id',listingField.value);}}
+ class SyntheticFormData extends FormData{constructor(){super();for(const [key,value] of Object.entries({title:'Synthetic draft',business_id:id,category_id:id,species_ids:id,base_amount_minor:'100',...fields}))this.set(key,value);if(listingField)this.set('listing_id',listingField.value);}}
  const document={querySelector:selector=>selector==='[data-seller-product-form]'?form:null,createElement:()=>new Element()};
  const window={addEventListener(){},location:{assign:url=>navigations.push(url)}};
  const source=fs.readFileSync(new URL('../src/components/seller/SellerProductForm.astro',import.meta.url),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
  const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
- const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection},'../../lib/seller/validation.js':sellerValidation};
+ const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection},'../../lib/seller/validation.js':sellerValidation,'../../lib/seller/field-feedback.js':{clearSellerFieldFeedback:()=>{fieldIssue=null;},showSellerFieldFeedback:(_form,issue)=>{fieldIssue=issue;return Boolean(issue);}}};
  new Function('require','exports','document','window','fetch','FormData',compiled)(name=>{if(!(name in modules))throw Error('Unexpected dependency');return modules[name];},{},document,window,fetchImpl,SyntheticFormData);
- return{button,status,navigations,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
+ return{button,status,navigations,fieldIssue:()=>fieldIssue,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
 }
 test('a confirmed draft survives thrown upload failure without a second save or automatic cleanup',async()=>{
  let saves=0;const ui=mount({fetchImpl:async url=>url.includes('image-reservation')?new Response(JSON.stringify({imageId:id,path:`${id}/${id}/${id}.png`})):(saves++,new Response(JSON.stringify({listingId:id}))),upload:async()=>{throw Error('private upload diagnostic');}});
  await ui.submit();assert.equal(ui.listingField().value,id);assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/Draft saved/);assert.ok(!ui.status.textContent.includes('private'));const link=ui.status.children.find(c=>typeof c!=='string');assert.equal(link.href,`/seller/products/${id}?images=unavailable`);await ui.submit();assert.equal(saves,1);assert.equal(ui.deletes(),0);
+});
+test('web shared field validation retains entered values and selected photos without starting a request',async()=>{
+ let calls=0;const fields={title:'x'};const ui=mount({fields,fetchImpl:async()=>{calls++;return new Response(JSON.stringify({listingId:id}));}});
+ await ui.submit();assert.equal(ui.fieldIssue().field,'title');assert.equal(fields.title,'x');assert.equal(calls,0);assert.equal(ui.button.disabled,false);
+ fields.title='Corrected draft';await ui.submit();assert.ok(calls>0);assert.equal(ui.fieldIssue(),null);
+});
+test('fresh server field rejection is displayed without redirecting or clearing the web draft',async()=>{
+ const issue={field:'category_id',message:'That category is not available for seller listings.'};const ui=mount({files:[],fetchImpl:async()=>Response.json({fieldIssue:issue},{status:422})});
+ await ui.submit();assert.deepEqual(ui.fieldIssue(),issue);assert.equal(ui.button.disabled,false);assert.deepEqual(ui.navigations,[]);assert.equal(ui.deletes(),0);
 });
 test('uncertain save responses lock retry and preserve a draft-inspection route',async()=>{
  for(const response of [()=>{throw Error('network diagnostic');},()=>new Response('{}',{status:503}),()=>new Response(JSON.stringify({listingId:'invalid'}))]){let calls=0;const ui=mount({files:[],fetchImpl:async()=>{calls++;return response();}});await ui.submit();await ui.submit();assert.equal(calls,1);assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/confirmation unavailable/);assert.equal(ui.status.children.find(c=>typeof c!=='string').href,'/seller');}

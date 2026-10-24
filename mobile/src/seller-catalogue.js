@@ -25,7 +25,7 @@ function project(data){
 }
 /** No token persistence; Test-origin only. Reads reverify identity; writes confirm
  * and reconcile complete validated product contents, never just a row count. */
-export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,render,renderAction,request=requestSellerCatalogue,timeoutMs=10000}){
+export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,render,renderAction,renderValidation=()=>{},request=requestSellerCatalogue,timeoutMs=10000}){
  if(!Number.isFinite(timeoutMs)||timeoutMs<1||timeoutMs>10000)throw Error('Invalid timeout');
  const baseUrl=resolveMobileApiBase(apiBaseUrl,testApiOrigin);let view=blank('idle'),owner=session.snapshot()?.userId??null,epoch=0,disposed=false,pending=null,abort=null,expected=null,acknowledgedRevision=null,before=new Set();
  const emit=value=>{view=value;if(!disposed)render(value);};
@@ -37,13 +37,15 @@ export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,re
   const work=async()=>{const auth=await session.getSession();if(!current()||!owner||auth.userId!==owner)throw Error('Session changed');const data=await request({baseUrl,accessToken:auth.accessToken,signal:controller.signal});const latest=await session.getSession();if(!current()||latest.userId!==owner||auth.userId!==owner)throw Error('Session changed');return project(data);};
   pending=Promise.race([work(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Read deadline')),timeoutMs);})]).then(data=>{if(current())emit(data);}).catch(error=>{if(current())emit(blank(error?.status===401?'signin':'error'));}).finally(()=>{clearTimeout(timer);controller.abort();if(current())pending=null;});return pending;
  }
- const actions=createConfirmedWrite({session,timeoutMs,render:renderAction,refresh:load,validate:input=>{
+ const actions=createConfirmedWrite({session,timeoutMs,render:renderAction,refresh:load,validate:input=>{try{
+  renderValidation(null);
   if(view.phase!=='ready'||!view.businesses.some(b=>b.id===input.businessId))throw Error('Seller unavailable');
   const product=input.listingId?view.products.find(p=>p.id===input.listingId&&p.businessId===input.businessId):null;
   if(input.listingId&&(!product?.editable||product.revision!==input.expectedRevision))throw Error('Draft changed');
   if(input.action==='submit'){if(!product)throw Error('Draft required');normalizeCatalogueSave({businessId:input.businessId,listingId:product.id,fields:product.fields},view.categories);return{action:'submit',businessId:input.businessId,listingId:product.id,expectedRevision:product.revision};}
   if(input.action!=='save')throw Error('Unsupported action');
   const normalized=normalizeCatalogueSave(input,view.categories);if(normalized.product.speciesIds.some(id=>!view.animals.some(a=>a.id===id)))throw Error('Species unavailable');return JSON.parse(JSON.stringify(input));
+ }catch(error){renderValidation(error?.fieldIssue??null);throw error;}
  },send:async(command,accessToken,signal)=>{const result=await request({baseUrl,command,accessToken,signal});if(signal.aborted)return;if(!validCatalogueReceipt({apiVersion:2,...result},command.listingId,command.expectedRevision)||(!command.listingId&&before.has(result.listingId)))throw Error('Invalid acknowledgement');expected=result.listingId;acknowledgedRevision=result.revision;},matches:command=>{
   if(view.phase!=='ready')return false;
   const candidates=view.products.filter(p=>p.businessId===command.businessId&&(expected?p.id===expected:command.listingId?p.id===command.listingId:!before.has(p.id)));

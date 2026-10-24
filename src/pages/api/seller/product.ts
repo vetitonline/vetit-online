@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { getSellerTaxonomy } from '../../../lib/seller/data';
-import { sellerProductInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
+import { sellerProductInput, sellerProductValidationIssue, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canEditSellerProduct, canManageSellerBusiness } from '../../../lib/seller/permissions.js';
 import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
 
@@ -78,6 +78,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   } catch (error) {
     console.error('[seller] Product draft operation failed.');
     if (request.headers.get('accept')?.includes('application/json')) {
+      const fieldIssue=!saveStarted?sellerProductValidationIssue(error):null;
+      if(fieldIssue)return Response.json({error:'draft_validation_failed',fieldIssue},{status:422,headers:{'cache-control':'no-store'}});
       return new Response(JSON.stringify({ error: saveStarted ? 'draft_save_unconfirmed' : 'draft_save_failed' }), { status: saveStarted ? 503 : 422, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
     }
     return redirect(request, listingPath);

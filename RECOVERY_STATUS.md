@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
 
+## Seller field-validation milestone
+
+From synchronized `269e7d60bbef7917b8a9bd48367cbf7ea4d575cb`, web/native seller drafts now display first-invalid-field and exact variant-row feedback from the unchanged shared validation rules. Web preserves entered fields/photos and exposes typed pre-save server rejection; native preserves edits and confirmation/retry boundaries. Fifty-eight focused cases passed across targeted runs, mobile TypeScript passed, and the changed Astro form compiled. Details/evidence are in the newest development handover and private `seller-field-feedback-20261024` evidence directory. No recovery audit, hosted access, migrations, production or deployment changes occurred; hosted prerequisites and actual browser/device acceptance remain separately approval-gated.
+
 ## Native seller website-handoff milestone — 24 October 2026
 
 From synchronized `b612a288d79a63cd651c3f59717fe24a70d3b8a0`, added visible browser-launch failure/retry and explicit save/discard guidance without losing edits on a failed foreground launch. Background/sign-out privacy clearing, confirmed saves and token-free trusted website links remain intact. Seven new handoff tests and sixteen affected seller/finder regressions passed; focused TypeScript/evidence/checkpoint details are in the newest `docs/development-handover-2026-10-21.md` section and private `seller-handoff-20261024` evidence directory. No hosted access or recovery re-audit occurred. Genuine hosted/backup/device acceptance remains pending and separately approval-gated.

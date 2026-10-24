@@ -75,14 +75,23 @@ export function isCanonicalSellerImagePath(path, businessId, listingId) {
     && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|jpeg|png|webp|avif)$/i.test(parts[2]);
 }
 
+export class SellerProductValidationError extends Error {
+  constructor(field, message, index) { super(message); this.field=field; if(index!==undefined)this.index=index; }
+}
+export function sellerProductValidationIssue(error) {
+  return error instanceof SellerProductValidationError ? {field:error.field,message:error.message,...(error.index===undefined?{}:{index:error.index})} : null;
+}
+const invalidProduct=(field,message,index)=>{throw new SellerProductValidationError(field,message,index);};
 export function sellerProductInput(formData, allowedCategorySpecies = new Map()) {
-  assertSingleSellerFields(formData, ['title', 'description', 'category_id', 'base_amount_minor']);
+  for(const field of ['title', 'description', 'category_id', 'base_amount_minor']){
+    try{assertSingleSellerFields(formData,[field]);}catch(error){invalidProduct(field,error.message);}
+  }
   // Match the native JSON contract before coercion/deduplication. File-valued
   // option labels must never silently become "[object File]" in JSONB.
   const textRows = field => {
     const values = formData.getAll(field);
     if (!Array.isArray(values) || values.length > 20 || values.some(value => typeof value !== 'string' || value.length > 5000)) {
-      throw new Error('Seller repeated fields must contain at most 20 bounded text values.');
+      invalidProduct(field,'Seller repeated fields must contain at most 20 bounded text values.');
     }
     return values;
   };
@@ -90,13 +99,13 @@ export function sellerProductInput(formData, allowedCategorySpecies = new Map())
   const description = String(formData.get('description') ?? '').trim();
   const categoryId = String(formData.get('category_id') ?? '').trim();
   const speciesIds = [...new Set(textRows('species_ids').map(value => value.trim()).filter(Boolean))];
-  if (title.length < 3 || title.length > 160) throw new Error('Enter a product name between 3 and 160 characters.');
-  if (description.length > 5000) throw new Error('Product details must be 5,000 characters or fewer.');
-  if (!isSellerUuid(categoryId)) throw new Error('Choose a product category.');
-  if (speciesIds.length < 1 || speciesIds.length > 8 || speciesIds.some(id => !isSellerUuid(id))) throw new Error('Choose between 1 and 8 pets or livestock types.');
+  if (title.length < 3 || title.length > 160) invalidProduct('title','Enter a product name between 3 and 160 characters.');
+  if (description.length > 5000) invalidProduct('description','Product details must be 5,000 characters or fewer.');
+  if (!isSellerUuid(categoryId)) invalidProduct('category_id','Choose a product category.');
+  if (speciesIds.length < 1 || speciesIds.length > 8 || speciesIds.some(id => !isSellerUuid(id))) invalidProduct('species_ids','Choose between 1 and 8 pets or livestock types.');
   const permittedSpecies = allowedCategorySpecies.get(categoryId);
-  if (!permittedSpecies) throw new Error('That category is not available for seller listings.');
-  if (permittedSpecies.size && speciesIds.some(id => !permittedSpecies.has(id))) throw new Error('Choose a pet or livestock type supported by this category.');
+  if (!permittedSpecies) invalidProduct('category_id','That category is not available for seller listings.');
+  if (permittedSpecies.size && speciesIds.some(id => !permittedSpecies.has(id))) invalidProduct('species_ids','Choose a pet or livestock type supported by this category.');
 
   const baseRaw = String(formData.get('base_amount_minor') ?? '').trim();
   const baseAmountMinor = baseRaw === '' ? null : parseMinorAmount(baseRaw);
@@ -104,34 +113,36 @@ export function sellerProductInput(formData, allowedCategorySpecies = new Map())
   const names = textRows('variant_name');
   const values = textRows('variant_value');
   const amounts = textRows('variant_amount_minor');
-  const variants = [];
+  const variants = [], variantRows=[];
   for (let i = 0; i < Math.max(skus.length, names.length, values.length, amounts.length); i += 1) {
     const sku = normalizeSellerSku(skus[i]);
     const name = (names[i] ?? '').trim();
     const value = (values[i] ?? '').trim();
     const amount = (amounts[i] ?? '').trim();
     if (!sku && !name && !value && !amount) continue;
-    if (sku.length < 1 || sku.length > 80 || name.length < 1 || name.length > 60 || value.length < 1 || value.length > 120 || amount === '') {
-      throw new Error('Complete every variant with a SKU, option name, option value and INR price.');
-    }
-    variants.push({ seller_sku: sku, option_attributes: { [name]: value }, amount_minor: parseMinorAmount(amount) });
+    const incomplete=[[sku.length<1||sku.length>80,'variant_sku'],[name.length<1||name.length>60,'variant_name'],[value.length<1||value.length>120,'variant_value'],[amount==='','variant_amount_minor']].find(([bad])=>bad);
+    if(incomplete)invalidProduct(incomplete[1],'Complete every variant with a SKU, option name, option value and INR price.',i);
+    variants.push({ seller_sku: sku, option_attributes: { [name]: value }, amount_minor: parseMinorAmount(amount,'variant_amount_minor',i) });
+    variantRows.push(i);
   }
-  if (variants.length > 20) throw new Error('A listing can have up to 20 product variants.');
-  if (new Set(variants.map(variant => variant.seller_sku)).size !== variants.length) throw new Error('Variant SKUs must be unique after normalization.');
-  if (variants.some(variant => !/^[A-Z0-9][A-Z0-9._-]*$/.test(variant.seller_sku))) throw new Error('Variant SKUs may contain letters, numbers, dots, underscores and dashes.');
-  if (variants.length && baseAmountMinor !== null) throw new Error('Use either one base price or variant prices, not both.');
-  if (!variants.length && baseAmountMinor === null) throw new Error('Enter an INR price or add at least one priced variant.');
+  if (variants.length > 20) invalidProduct('variant_sku','A listing can have up to 20 product variants.');
+  const duplicate=variants.findIndex((variant,index)=>variants.slice(0,index).some(previous=>previous.seller_sku===variant.seller_sku));
+  if (duplicate!==-1) invalidProduct('variant_sku','Variant SKUs must be unique after normalization.',variantRows[duplicate]);
+  const badSku=variants.findIndex(variant=>!/^[A-Z0-9][A-Z0-9._-]*$/.test(variant.seller_sku));
+  if (badSku!==-1) invalidProduct('variant_sku','Variant SKUs may contain letters, numbers, dots, underscores and dashes.',variantRows[badSku]);
+  if (variants.length && baseAmountMinor !== null) invalidProduct('base_amount_minor','Use either one base price or variant prices, not both.');
+  if (!variants.length && baseAmountMinor === null) invalidProduct('base_amount_minor','Enter an INR price or add at least one priced variant.');
   const slug = slugifySellerProduct(title);
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error('Product name must contain letters or numbers.');
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) invalidProduct('title','Product name must contain letters or numbers.');
   return {
     title, slug, description, categoryId, speciesIds,
     baseAmountMinor, variants,
   };
 }
 
-function parseMinorAmount(input) {
-  if (!/^\d{1,9}$/.test(input)) throw new Error('Enter a whole INR amount between ₹1 and ₹9,99,99,999.');
+function parseMinorAmount(input,field='base_amount_minor',index) {
+  if (!/^\d{1,9}$/.test(input)) invalidProduct(field,'Enter a whole INR amount between ₹1 and ₹9,99,99,999.',index);
   const amount = Number(input);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 99999999) throw new Error('Enter a whole INR amount between ₹1 and ₹9,99,99,999.');
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > 99999999) invalidProduct(field,'Enter a whole INR amount between ₹1 and ₹9,99,99,999.',index);
   return amount * 100;
 }
