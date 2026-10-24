@@ -1,6 +1,6 @@
 import type { FeaturedProduct, ProductAnimal, ProductCategory } from './catalog-types.js';
 
-export const CATALOG_API_VERSION: number;
+export const CATALOG_API_VERSION: 1;
 export const CATALOG_DEFAULT_PAGE_SIZE: number;
 export const CATALOG_MAX_PAGE_SIZE: number;
 

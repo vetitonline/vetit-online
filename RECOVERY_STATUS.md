@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
 
+## Shared buyer catalogue implementation milestone
+
+From synchronized `d9aadbc741f318214fbdcf1611071b1320231ddf`, connected web listing/detail pages and the native HTTP catalogue to one shared public read model, preserving the existing published-listing/market/RLS adapter. Added matching category navigation/detail return links and clamped pagination; configuration failures and the existing 1,000-listing cap are explicit. Sixteen focused cases, mobile/server TypeScript and two Astro template compilations passed. Newest development handover and private `buyer-catalogue-flow-20261024` evidence contain the details. No audit was restarted, no application fixtures/live customer data were introduced/accessed, and no hosted database/deployment action occurred. Actual device/browser and authenticated Test acceptance remain unverified and approval-gated.
+
 ## Seller field-validation milestone
 
 From synchronized `269e7d60bbef7917b8a9bd48367cbf7ea4d575cb`, web/native seller drafts now display first-invalid-field and exact variant-row feedback from the unchanged shared validation rules. Web preserves entered fields/photos and exposes typed pre-save server rejection; native preserves edits and confirmation/retry boundaries. Fifty-eight focused cases passed across targeted runs, mobile TypeScript passed, and the changed Astro form compiled. Details/evidence are in the newest development handover and private `seller-field-feedback-20261024` evidence directory. No recovery audit, hosted access, migrations, production or deployment changes occurred; hosted prerequisites and actual browser/device acceptance remain separately approval-gated.

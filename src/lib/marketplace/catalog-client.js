@@ -35,6 +35,9 @@ function isCatalogResponse(value) {
     && allowedStates.has(value.state);
 }
 
+/** Website links use exactly the same filter serialization as native API reads. */
+export function buildProductsUrl(filters={}){return buildCatalogUrl(filters).replace('/api/catalog','/products');}
+
 function isCatalogProduct(value) {
   return value !== null && typeof value === 'object'
     && typeof value.id === 'string' && typeof value.slug === 'string'

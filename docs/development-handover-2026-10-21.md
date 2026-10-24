@@ -1,4 +1,17 @@
-# Active platform development — seller field validation, 24 October 2026
+# Active platform development — shared buyer catalogue flow, 24 October 2026
+
+Continued in `C:\Users\DELL\vetit-online`, shared website/mobile monorepo `vetitonline/vetit-online`, branch `codex/development-readiness-2026-10-21`, from verified local/remote `d9aadbc741f318214fbdcf1611071b1320231ddf`; tracked tree was clean. Website `/products` and `/products/[id]` now use the same `readPublicCatalog` read model as `/api/catalog` consumed by native. It delegates to the unchanged publication/market/RLS-filtered data adapter and shared filter/pagination contracts, without an internal HTTP loop, privileged client or invented products.
+
+**Working increment:** web category roots, clickable parent breadcrumbs and subcategories preserve species/search/price/sort while resetting the page; native parent breadcrumbs are now actionable. Product detail links back to its category on both platforms. Detail reads use the exact UUID/slug; missing web products return 404 and unavailable connections return 503 rather than a successful fake page. Web and native now follow the same clamped page after results shrink. Configuration failure is explicit; existing product cards, real seller images, logo, violet/orange styling, responsive layouts, language architecture and preview-only cart boundaries are preserved.
+
+**Validation:** eight new offline integration cases and eight affected catalogue contract/client cases passed. Tests execute actual SSR frontmatter, HTTP route/client and native App event flow with clearly synthetic, isolated test data; no fixture fallback ships in application code. Mobile TypeScript and focused server TypeScript passed; both changed Astro pages compiled with installed compiler-rs. TypeScript 6's focused CLI invocation required `--ignoreConfig`; no dependency/config change was made. No full build/audit, live data access, hosted SQL, migration or deployment operation occurred. Real browser/device/layout/hosted acceptance remains unverified.
+
+**Limits/next:** the existing adapter still scans at most 1,000 published listings before in-memory filtering, disclosed on web/native. This increment does not implement variant selection, live checkout or certify authentication/Storage. Next practical task: reuse the paginated reader on species/category landing routes under `/shop`, which still use their previous public adapters. Authenticated Test prerequisite/backup verification remains separately approval-gated.
+
+Private evidence: `C:\Users\DELL\.codex\visualizations\2026\10\20\01a158a4-4a1d-7bb2-9119-365e6b275fa7\buyer-catalogue-flow-20261024\integration-tests.log`, `validation-receipt.json`, and post-push `synchronization-receipt.json`. Resulting commit/remote SHA are recorded in the final chat/receipt. Backups, frozen SQL and 31 unrelated untracked files remain preserved and excluded; GitHub source sync does not synchronize private laptop evidence/fixtures automatically.
+
+---
+# Completed platform milestone — seller field validation, 24 October 2026
 
 Continued in the same `C:\Users\DELL\vetit-online` monorepo and `codex/development-readiness-2026-10-21` branch, from synchronized `269e7d60bbef7917b8a9bd48367cbf7ea4d575cb`. Added first-invalid-field feedback to the existing shared `sellerProductInput` rules: title, description, category/species, base price and exact variant row/SKU/option/value/price. Validation limits, normalized product output, ownership, revision conflict and publication rules are unchanged. The same typed issue is retained by the native catalogue contract rather than replacing it with an unspecified validation failure.
 

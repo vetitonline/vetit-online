@@ -14,6 +14,7 @@ export function mountNativeComponent(filename,exportName,props,extraModules={},n
   useState:initial=>{const i=cursor++;if(!slots[i])slots[i]={value:typeof initial==='function'?initial():initial};return[slots[i].value,value=>{slots[i].value=typeof value==='function'?value(slots[i].value):value;}];},
   useRef:initial=>{const i=cursor++;return slots[i]??(slots[i]={current:initial});},
   useMemo:(make,deps)=>{const i=cursor++;if(!slots[i]||!same(slots[i].deps,deps))slots[i]={value:make(),deps};return slots[i].value;},
+  useCallback:(fn,deps)=>react.useMemo(()=>fn,deps),
   useEffect:(setup,deps)=>{const i=cursor++;if(!slots[i]||!same(slots[i].deps,deps)){const previous=slots[i];slots[i]={setup,deps,cleanup:previous?.cleanup};effects.push(slots[i]);}},
  };
  const native=Object.fromEntries(['View','Text','TextInput','Pressable','ActivityIndicator'].map(name=>[name,name]));

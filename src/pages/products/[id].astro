@@ -1,12 +1,16 @@
 ---
 import '../../../styles.css';
-import { formatProductPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
+import { formatProductPrice } from '../../lib/marketplace/featured-products';
+import {readPublicCatalog} from '../../lib/marketplace/catalog-reader';
+import {buildProductsUrl} from '../../lib/marketplace/catalog-client.js';
 import SiteHeader from '../../components/SiteHeader.astro';
 import ProductImage from '../../components/marketplace/ProductImage.astro';
 
 const productId = Astro.params.id ?? '';
-const result = await getMarketplaceProduct(Astro.request, Astro.cookies, productId);
-const product = result.product;
+const response=await readPublicCatalog(Astro.request,Astro.cookies,new URLSearchParams({product:productId,pageSize:'1'}));
+const result=response.body;
+const product=result.products[0]??null;
+if(!product)Astro.response.status=result.state==='error'||result.state==='unconfigured'?503:404;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -20,7 +24,7 @@ const product = result.product;
   <SiteHeader />
   <main><section class="product-showcase product-detail-page">
     {product ? <>
-      <p class="product-breadcrumb"><a href="/products">Marketplace</a> / {product.category}</p>
+      <p class="product-breadcrumb"><a href="/products">Marketplace</a> / <a href={buildProductsUrl({category:product.categorySlug})}>{product.category}</a></p>
       <div class="product-detail-layout">
         <div class="product-detail-image"><ProductImage imageUrl={product.imageUrl} imageAlt={product.imageAlt} title={product.title} category={product.category} /><span class="product-tag">{product.category}</span></div>
         <div class="product-detail-copy">

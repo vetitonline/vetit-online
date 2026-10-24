@@ -24,6 +24,7 @@ export type CatalogApiResponse = {
 
 export class CatalogClientError extends Error { status: number }
 export function buildCatalogUrl(filters?: CatalogRequestFilters, baseUrl?: string): string;
+export function buildProductsUrl(filters?: CatalogRequestFilters):string;
 export function fetchCatalog(filters?: CatalogRequestFilters, options?: {
   baseUrl?: string;
   fetchImpl?: typeof fetch;

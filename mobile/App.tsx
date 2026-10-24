@@ -68,11 +68,11 @@ function ProductTile({ product, onPress, onAdd }: { product: FeaturedProduct; on
   </View>;
 }
 
-function ProductDetail({ product, onBack, onAdd }: { product: FeaturedProduct; onBack: () => void; onAdd: () => void }) {
+function ProductDetail({ product, onBack, onAdd, onCategory }: { product: FeaturedProduct; onBack: () => void; onAdd: () => void; onCategory:()=>void }) {
   return <View>
     <Pressable onPress={onBack}><Text style={styles.backLink}>‹ Back to browsing</Text></Pressable>
     <ProductPhoto uri={product.imageUrl} style={styles.detailImage} fallbackStyle={[styles.imageFallback, styles.detailFallback]} label={product.imageAlt || product.title} fallback={`${product.category} · Seller photo unavailable`} />
-    <Text style={styles.eyebrow}>{product.category}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Browse ${product.category}`} onPress={onCategory}><Text style={styles.eyebrow}>{product.category}</Text></Pressable>
     <Text style={styles.detailTitle}>{product.title}</Text>
     <Text style={styles.sellerName}>{product.sellerName}</Text>
     <Text style={styles.productPrice}>{money(product)}</Text>
@@ -212,7 +212,9 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     setQuery(''); setAnimalSlug(''); setCategorySlug(''); setMinPrice(''); setMaxPrice(''); setSort('newest'); setPage(1);
   };
 
-  const productList = (list: FeaturedProduct[]) => list.length === 0
+  const productList = (list: FeaturedProduct[]) => catalog.data?.state==='unconfigured'
+    ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Marketplace connection is not configured</Text><Text style={styles.muted}>Published products cannot be loaded yet. Try again after the Test website connection is configured.</Text></View>
+    : list.length === 0
     ? <View style={styles.emptyBox}><Text style={styles.emptyTitle}>No products found</Text><Text style={styles.muted}>Try another category or clear your filters.</Text><Pressable onPress={resetFilters}><Text style={styles.inlineLink}>Clear filters</Text></Pressable></View>
     : <View style={styles.productList}>{list.map((product) => <ProductTile key={product.id} product={product} onPress={() => setDetailKey(product.slug || product.id)} onAdd={() => addToCart(product)} />)}</View>;
 
@@ -263,7 +265,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       <Chip label="All categories" selected={!categorySlug} onPress={() => { setCategorySlug(''); setPage(1); }} />
       {categoryTree.roots.map((category) => <Chip key={category.id} label={category.label} selected={categoryTree.breadcrumbs[0]?.id === category.id} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
     </ScrollView>
-    {!!categoryTree.breadcrumbs.length && <Text style={styles.note}>{categoryTree.breadcrumbs.map(category => category.label).join(' › ')}</Text>}
+    {!!categoryTree.breadcrumbs.length && <View style={styles.filterRow} accessibilityLabel="Category breadcrumb">{categoryTree.breadcrumbs.map(category=><Chip key={category.id} label={category.label} selected={categorySlug===category.slug} onPress={()=>{setCategorySlug(category.slug);setPage(1);}}/>)}</View>}
     {!!categoryTree.children.length && <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
       {categoryTree.children.map(category => <Chip key={category.id} label={category.label} selected={categorySlug === category.slug} onPress={() => { setCategorySlug(category.slug); setPage(1); }} />)}
     </ScrollView>}
@@ -275,11 +277,12 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       </View>
     </View>
     {catalog.loading && catalog.data && <Text style={styles.note} accessibilityLiveRegion="polite">Updating results… / परिणाम अपडेट हो रहे हैं…</Text>}
+    {catalog.data?.pagination.truncated&&<Text style={styles.note}>Results are limited to the first 1,000 published listings.</Text>}
     {catalog.loading && !catalog.data ? <LoadingState /> : catalog.error ? <ErrorState message={catalog.error} onRetry={() => setBrowseReload((current) => current + 1)} /> : productList(products)}
     {catalog.data && !catalog.error && <View style={styles.pagination}>
-      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasPrevious} onPress={() => setPage((current) => Math.max(1, current - 1))}><Text style={catalog.data.pagination.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
+      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasPrevious} onPress={() => setPage(Math.max(1,(catalog.data?.pagination.page??1)-1))}><Text style={catalog.data.pagination.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
       <Text style={styles.muted}>Page {catalog.data.pagination.page} of {catalog.data.pagination.pageCount}</Text>
-      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasNext} onPress={() => setPage((current) => current + 1)}><Text style={catalog.data.pagination.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
+      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasNext} onPress={() => setPage((catalog.data?.pagination.page??1)+1)}><Text style={catalog.data.pagination.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
     </View>}
   </>;
 
@@ -352,7 +355,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     <View style={styles.topBar}><Image source={require('../Vetit-online-transparent.png')} style={styles.topLogo} resizeMode="contain" /><Pressable accessibilityRole="button" accessibilityLabel="Switch English or Hindi" onPress={() => setLanguage(current => current === 'en' ? 'hi' : 'en')}><Text style={styles.inlineLink}>{language === 'en' ? 'हिन्दी' : 'English'}</Text></Pressable><Pressable onPress={() => setTab('cart')}><Text style={styles.cartBadge}>{copy.cart} · {cartCount}</Text></Pressable></View>
     <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
       {!!cartMessage && <Text style={styles.note} accessibilityLiveRegion="polite">{cartMessage}</Text>}
-      {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
+      {detailKey ? detail.loading ? <LoadingState /> : detail.error ? <ErrorState message={detail.error} onRetry={() => setDetailReload((current) => current + 1)} /> : selectedProduct ? <ProductDetail product={selectedProduct} onBack={() => setDetailKey(null)} onAdd={() => addToCart(selectedProduct)} onCategory={()=>{setCategorySlug(selectedProduct.categorySlug);setAnimalSlug('');setPage(1);setTab('shop');setDetailKey(null);}} /> : <View style={styles.emptyBox}><Text style={styles.emptyTitle}>Product is no longer available</Text><Pressable onPress={() => setDetailKey(null)}><Text style={styles.inlineLink}>Back to browsing</Text></Pressable></View>
         : tab === 'home' ? renderHome() : tab === 'shop' ? renderShop() : tab === 'cart' ? renderCart() : tab === 'services' ? renderServices() : renderOther()}
     </ScrollView>
     <View style={styles.tabBar}>{tabs.map((item) => <Pressable key={item.id} onPress={() => { setDetailKey(null); setTab(item.id); }} style={styles.tabItem} accessibilityRole="button" accessibilityState={{ selected: tab === item.id }}>

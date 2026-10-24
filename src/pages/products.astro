@@ -1,35 +1,29 @@
 ---
 import '../../styles.css';
 import ProductCard from '../components/marketplace/ProductCard.astro';
-import { getMarketplaceProducts, getProductTaxonomy } from '../lib/marketplace/featured-products';
-import { filterMarketplaceProducts } from '../lib/marketplace/catalog';
-import { parseCatalogParams } from '../lib/marketplace/catalog-contract.js';
-import { categoriesForAnimal, findAnimal, findCategory } from '../lib/marketplace/product-taxonomy';
+import {readPublicCatalog} from '../lib/marketplace/catalog-reader';
+import {buildProductsUrl} from '../lib/marketplace/catalog-client.js';
+import {categoryNavigation,categoriesForSpecies} from '../lib/marketplace/category-navigation.js';
 import SiteHeader from '../components/SiteHeader.astro';
 import PhotoCategoryArt from '../components/marketplace/PhotoCategoryArt.astro';
 
-const result = await getMarketplaceProducts(Astro.request, Astro.cookies);
-const taxonomy = await getProductTaxonomy(Astro.request, Astro.cookies);
+const response = await readPublicCatalog(Astro.request, Astro.cookies);
+const result=response.body;
+if(response.status!==200)Astro.response.status=response.status;
+const taxonomy=result.taxonomy;
 const params = Astro.url.searchParams;
-const catalogParams = parseCatalogParams(params, taxonomy);
-const query = catalogParams.query;
+const query = result.filters.query;
 const animal = params.get('animal')?.trim() ?? '';
 const category = params.get('category')?.trim() ?? '';
 const minPriceRaw = params.get('min') ?? '';
 const maxPriceRaw = params.get('max') ?? '';
-const sort = catalogParams.sort;
-const selectedAnimal = catalogParams.animal ?? findAnimal(taxonomy.animals, animal);
-const selectedCategory = catalogParams.category ?? findCategory(taxonomy.categories, category);
-const categoryOptions = selectedAnimal ? categoriesForAnimal(taxonomy.categories, selectedAnimal) : taxonomy.categories;
-const selectedCategoryIds = catalogParams.categoryIds;
-const filteredProducts = catalogParams.invalid ? [] : filterMarketplaceProducts(result.products, {
-  query, animal: selectedAnimal, category: selectedCategory, categoryIds: selectedCategoryIds,
-  minPrice: catalogParams.minPrice, maxPrice: catalogParams.maxPrice, sort,
-});
-const page = catalogParams.page;
-const pageSize = catalogParams.pageSize;
-const pageCount = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
+const sort = result.filters.sort;
+const selectedAnimal = taxonomy.animals.find(item=>item.slug===result.filters.animal);
+const categoryOptions = categoriesForSpecies(taxonomy.categories,selectedAnimal?.id);
+const tree=categoryNavigation(taxonomy.categories,selectedAnimal?.id,result.filters.category??undefined);
+const {page,pageSize,pageCount}=result.pagination;
+const pageProducts=result.products;
+const browseHref=(categorySlug?:string,requestedPage?:number)=>buildProductsUrl({query,animal:result.filters.animal??animal,category:categorySlug,minPriceRupees:minPriceRaw,maxPriceRupees:maxPriceRaw,sort:sort as 'newest'|'price-asc'|'price-desc'|'name',page:requestedPage,pageSize});
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -96,6 +90,12 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           <button class="button button-primary" type="submit">Apply filters</button>
           <a class="catalog-clear" href="/products">Clear</a>
         </form>
+        <nav class="subcategory-links" aria-label="Product category navigation">
+          <a class="catalog-chip" href={browseHref()} aria-current={!category?'page':undefined}>All categories</a>
+          {tree.roots.map(item=><a class="catalog-chip" href={browseHref(item.slug)} aria-current={category===item.slug?'page':undefined}>{item.label}</a>)}
+        </nav>
+        {tree.breadcrumbs.length>0&&<nav class="subcategory-links" aria-label="Category breadcrumb">{tree.breadcrumbs.map(item=><a class="catalog-chip" href={browseHref(item.slug)} aria-current={category===item.slug?'page':undefined}>{item.label}</a>)}</nav>}
+        {tree.children.length>0&&<nav class="subcategory-links" aria-label="Subcategories">{tree.children.map(item=><a class="catalog-chip" href={browseHref(item.slug)} aria-current={category===item.slug?'page':undefined}>{item.label}</a>)}</nav>}
         <p class="catalog-data-note">Published product details and available seller photos appear here as listings are added.</p>
 
         <div class="product-grid">
@@ -105,6 +105,8 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
             <p class="product-empty-state">
               {result.state === 'error'
                 ? 'The marketplace is temporarily unavailable. Please try again later.'
+                : result.state==='invalid_request' ? 'These catalogue filters are not available. Clear the filters and choose a current category.'
+                : result.state==='unconfigured' ? 'The marketplace connection is not configured. Published products cannot be loaded yet.'
                 : (query || animal || category || minPriceRaw || maxPriceRaw)
                   ? 'No products in this category yet.'
                   : 'No published products yet. Check back when sellers add their listings.'}
@@ -113,11 +115,11 @@ const pageProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSi
           )}
         </div>
         {pageCount > 1 && <nav class="catalog-pagination" aria-label="Product pages">
-          {page > 1 && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page - 1), pageSize: String(pageSize) })}`}>Previous</a>}
+          {page > 1 && <a class="button button-secondary small-button" href={browseHref(category,page-1)}>Previous</a>}
           <span>Page {page} of {pageCount}</span>
-          {page < pageCount && <a class="button button-secondary small-button" href={`?${new URLSearchParams({ q: query, animal, category, min: minPriceRaw, max: maxPriceRaw, sort, page: String(page + 1), pageSize: String(pageSize) })}`}>Next</a>}
+          {page < pageCount && <a class="button button-secondary small-button" href={browseHref(category,page+1)}>Next</a>}
         </nav>}
-        <p class="catalog-count">{filteredProducts.length} product{filteredProducts.length === 1 ? '' : 's'} shown{filteredProducts.length === 1000 ? ' (first 1,000 published listings)' : ''}</p>
+        {result.state==='available'&&<p class="catalog-count">{pageProducts.length} shown on this page · {result.pagination.total} matching product{result.pagination.total===1?'':'s'}{result.pagination.truncated?' (within the first 1,000 published listings)':''}</p>}
         <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
       </section>
     </main>
