@@ -1,5 +1,6 @@
 ---
 import {catalogPriceRange} from '../../lib/marketplace/catalog-contract.js';
+import {buildCatalogueBrowseUrl} from '../../lib/marketplace/catalog-client.js';
 import {buildShopCatalogUrl} from '../../lib/marketplace/shop-navigation.js';
 import type {CatalogApiResponse} from '../../lib/marketplace/catalog-client.js';
 interface Props{animal:string;category?:string;params:URLSearchParams;pagination:CatalogApiResponse['pagination'];position:'filters'|'pagination';available:boolean;}
@@ -14,6 +15,7 @@ const href=(page?:number)=>buildShopCatalogUrl(animal,category,params,page);
  <label>Sort by<select name="sort">{[['newest','Newest'],['price-asc','Price: low to high'],['price-desc','Price: high to low'],['name','Name']].map(([value,label])=><option value={value} selected={(params.get('sort')??'newest')===value}>{label}</option>)}</select></label>
  <input type="hidden" name="pageSize" value={pagination.pageSize} />
  <button class="button button-primary" type="submit">Apply filters</button><a class="catalog-clear" href={buildShopCatalogUrl(animal,category)}>Clear filters</a>
+ <a class="catalog-clear" href={buildCatalogueBrowseUrl({animal,category,query:params.get('q')??undefined,minPriceRupees:params.get('min')??undefined,maxPriceRupees:params.get('max')??undefined})}>Browse newest with cursor navigation</a>
 {priceIssue&&<p id="catalog-price-error" role="alert">{priceIssue.message} Your filters have been kept; correct the range and apply again.</p>}
 </form>:available&&<>
  {pagination.pageCount>1&&<nav class="catalog-pagination" aria-label="Product pages">

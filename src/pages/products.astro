@@ -62,6 +62,7 @@ const browseHref=(categorySlug?:string,requestedPage?:number)=>buildProductsUrl(
           </a>)}
         </nav>
         <p class="catalog-service-link"><a href="/services">Looking for care? Explore Pet &amp; Vet Services →</a></p>
+        <p class="catalog-service-link"><a href={buildProductsUrl({query,animal,category,minPriceRupees:minPriceRaw,maxPriceRupees:maxPriceRaw}).replace('/products','/browse')}>Browse newest with cursor navigation →</a></p>
 
         <form class="catalog-filters" method="get" action="/products">
           <label class="catalog-search-label">Search products

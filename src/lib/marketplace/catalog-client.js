@@ -29,14 +29,20 @@ export function buildCatalogUrl(filters = {}, baseUrl = '') {
   return url.toString();
 }
 
-function isCatalogResponse(value) {
+function isCatalogResponse(value, version=CATALOG_API_VERSION) {
   return value !== null && typeof value === 'object'
-    && value.apiVersion === CATALOG_API_VERSION
+    && value.apiVersion === version
     && allowedStates.has(value.state);
 }
 
 /** Website links use exactly the same filter serialization as native API reads. */
 export function buildProductsUrl(filters={}){return buildCatalogUrl(filters).replace('/api/catalog','/products');}
+
+export function buildCatalogWindowUrl(filters={},baseUrl=''){
+  const url=buildCatalogUrl({...filters,page:undefined,product:undefined,sort:'newest'},baseUrl).replace('/api/catalog','/api/catalog/window');
+  return filters.cursor?`${url}${url.includes('?')?'&':'?'}cursor=${encodeURIComponent(filters.cursor)}`:url;
+}
+export function buildCatalogueBrowseUrl(filters={}){return buildCatalogWindowUrl(filters).replace('/api/catalog/window','/browse');}
 
 function isCatalogProduct(value) {
   return value !== null && typeof value === 'object'
@@ -73,12 +79,24 @@ function isTaxonomy(value) {
 
 /** Fetch and validate the shared public catalogue response. No Supabase key is needed by clients. */
 export async function fetchCatalog(filters = {}, options = {}) {
+  return requestCatalog(filters,options,1);
+}
+export async function fetchCatalogWindow(filters={},options={}){
+  return requestCatalog(filters,options,2);
+}
+function isWindow(value){
+  return value&&Number.isInteger(value.pageSize)&&value.pageSize>0&&value.pageSize<=48
+    &&typeof value.hasNext==='boolean'&&typeof value.hasPrevious==='boolean'
+    &&(value.hasNext?typeof value.nextCursor==='string'&&value.nextCursor.length>0&&value.nextCursor.length<=1024:value.nextCursor===null)
+    &&(value.hasPrevious?typeof value.previousCursor==='string'&&value.previousCursor.length>0&&value.previousCursor.length<=1024:value.previousCursor===null);
+}
+async function requestCatalog(filters,options,version){
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   if (typeof fetchImpl !== 'function') throw new CatalogClientError('Fetch is unavailable in this client.');
 
   let response;
   try {
-    response = await fetchImpl(buildCatalogUrl(filters, options.baseUrl ?? ''), {
+    response = await fetchImpl((version===2?buildCatalogWindowUrl:buildCatalogUrl)(filters, options.baseUrl ?? ''), {
       method: 'GET',
       headers: { Accept: 'application/json' },
       signal: options.signal,
@@ -93,7 +111,7 @@ export async function fetchCatalog(filters = {}, options = {}) {
   } catch {
     throw new CatalogClientError('The catalogue returned an unreadable response.', response.status);
   }
-  if (!isCatalogResponse(payload)) {
+  if (!isCatalogResponse(payload,version)) {
     throw new CatalogClientError('The catalogue response version or format is unsupported.', response.status);
   }
   if (!response.ok || payload.state === 'error' || payload.state === 'invalid_request') {
@@ -101,7 +119,7 @@ export async function fetchCatalog(filters = {}, options = {}) {
   }
   if (payload.marketCode !== 'IN' || !Array.isArray(payload.products)
     || !payload.products.every(isCatalogProduct) || !isTaxonomy(payload.taxonomy)
-    || !isPagination(payload.pagination)) {
+    || !(version===2?isWindow(payload.window)&&payload.products.length<=payload.window.pageSize:isPagination(payload.pagination))) {
     throw new CatalogClientError('The catalogue response is missing required data.', response.status);
   }
   return payload;

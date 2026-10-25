@@ -1,5 +1,9 @@
 # RECOVERY BLOCKED — consolidated readiness handover, 24 October 2026
 
+## Cursor platform increment — 24 October 2026
+
+From synchronized f5ee56c12ab8f184cc5f0e171cfed6eb64efc220: opt-in newest cursor browsing now exists on web/native through explicit API v2, retaining v1 numbered sorting. Forward-only candidate adds trigram indexing/search with narrow EXECUTE and strict predecessor/RLS checks; previous migration/frozen packages are unchanged. 38 focused cases, seven local SQL groups, mobile/server types and three templates passed. Synthetic 22,506-item plans are preserved separately; anonymous RLS still chose a sequential scan, so public index performance is unverified. No approval for exact hosted catalogue migration exists; configured Test origin is confirmed locally only. Hosted preflight/activation and actual device/session/Storage acceptance remain approval-gated. See newest handover and catalogue-server-pagination.md; no recovery audit restarted.
+
 ## Bounded catalogue development — 24 October 2026
 
 From synchronized 22167a7053ea609480594bd8b7235837be2484fe, shared web/native catalogue reads now use a new bounded invoker RPC with server-side filters/search/count/pagination and <=48 products per call, removing the 1,000-row application scan. New migration is prepared only, not hosted-applied; an absent RPC yields 503, so coordinate separately approved Test installation/acceptance before activation. 35 focused cases, six actual synthetic PostgreSQL groups (2,505 products), focused TypeScript and diff checks passed. Source/templates/mobile dependencies and frozen packages are preserved. See newest handover, docs/catalogue-server-pagination.md and private catalogue-server-page-20261024 receipts. Operational recovery/hosted acceptance remains blocked; this local database is synthetic test evidence, not a hosted backup.

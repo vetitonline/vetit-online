@@ -20,8 +20,8 @@ import {
   ActivityIndicator, Image, Linking, Pressable, ScrollView, StatusBar, StyleSheet,
   Text, TextInput, View,
 } from 'react-native';
-import type { CatalogApiResponse, CatalogRequestFilters } from '../src/lib/marketplace/catalog-client';
-import { CatalogClientError, fetchCatalog } from '../src/lib/marketplace/catalog-client';
+import type { CatalogApiResponse, CatalogRequestFilters, CatalogWindowResponse } from '../src/lib/marketplace/catalog-client';
+import { CatalogClientError, fetchCatalog, fetchCatalogWindow } from '../src/lib/marketplace/catalog-client';
 import type { FeaturedProduct, ProductAnimal, ProductCategory } from '../src/lib/marketplace/catalog-types';
 import type { ServiceSearchResponse } from '../src/lib/services/service-client';
 import { requestServices, ServiceClientError } from '../src/lib/services/service-client';
@@ -29,7 +29,7 @@ import { requestAppointmentSlots, formatAppointmentAvailability, AppointmentClie
 
 type Tab = 'home' | 'shop' | 'services' | 'cart' | 'account';
 type CartLine = PreviewCartLine;
-type LoadState = { loading: boolean; data: CatalogApiResponse | null; error: string | null };
+type LoadState = { loading: boolean; data: CatalogApiResponse | CatalogWindowResponse | null; error: string | null };
 type ServiceLoadState = { loading: boolean; data: ServiceSearchResponse | null; error: string | null };
 type AvailabilityState = { loading: boolean; message: string };
 
@@ -99,6 +99,9 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
   const [priceError, setPriceError] = useState<string|null>(null);
   const [sort, setSort] = useState<CatalogRequestFilters['sort']>('newest');
   const [page, setPage] = useState(1);
+  const [cursorMode,setCursorMode]=useState(false);
+  const [loadedWindowScope,setLoadedWindowScope]=useState('');
+  const [cursorPosition,setCursorPosition]=useState<{scope:string;token?:string}>({scope:''});
   const [browseReload, setBrowseReload] = useState(0);
   const [detailReload, setDetailReload] = useState(0);
   const [serviceCity, setServiceCity] = useState('');
@@ -135,10 +138,13 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     pageSize: 24,
   }), [query, animalSlug, categorySlug, appliedPrice, sort, page]);
 
+  const windowMode=cursorMode&&sort==='newest';
+  const cursorScope=JSON.stringify([query.trim(),animalSlug,categorySlug,appliedPrice.min,appliedPrice.max]);
+  const cursorToken=cursorPosition.scope===cursorScope?cursorPosition.token:undefined;
   const loadBrowse = useCallback(async (signal?: AbortSignal) => {
-    const data = await fetchCatalog(filters, { baseUrl: API_BASE_URL, signal });
+    const data = windowMode?await fetchCatalogWindow({...filters,cursor:cursorToken},{baseUrl:API_BASE_URL,signal}):await fetchCatalog(filters, { baseUrl: API_BASE_URL, signal });
     return data;
-  }, [filters]);
+  }, [filters,windowMode,cursorToken]);
 
   useEffect(() => {
     if (tab !== 'home' && tab !== 'shop') return;
@@ -146,7 +152,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     const timer = setTimeout(() => {
       setCatalog((current) => ({ ...current, loading: true, error: null }));
       void loadBrowse(controller.signal).then((data) => {
-        if (!controller.signal.aborted) setCatalog({ loading: false, data, error: null });
+        if (!controller.signal.aborted) {setCatalog({ loading: false, data, error: null });setLoadedWindowScope(cursorScope);}
       }).catch((error: unknown) => {
         if (controller.signal.aborted) return;
         const message = error instanceof CatalogClientError ? error.message : 'The catalogue is unavailable right now.';
@@ -186,6 +192,8 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
   }, [tab, serviceReload]);
 
   const products = catalog.data?.products ?? [];
+  const numbered=catalog.data&&'pagination' in catalog.data?catalog.data.pagination:null;
+  const cursorWindow=catalog.data&&'window' in catalog.data?catalog.data.window:null;
 
   const checkAvailability = useCallback(async (serviceListingId: string) => {
     setAvailability((current) => ({ ...current, [serviceListingId]: { loading: true, message: 'Loading available times…' } }));
@@ -275,6 +283,8 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     <Text style={styles.pageTitle}>Marketplace</Text>
     <Text style={styles.muted}>Find products for pets, livestock and the farm.</Text>
     <TextInput value={query} onChangeText={(value) => { setQuery(value); setPage(1); }} placeholder="Search products" placeholderTextColor={colors.muted} style={styles.input} returnKeyType="search" accessibilityLabel="Search products" />
+    <Pressable accessibilityRole="button" onPress={()=>{setCursorMode(current=>!current);setSort('newest');setPage(1);setCursorPosition({scope:cursorScope});}}><Text style={styles.inlineLink}>{windowMode?'Use numbered pages':'Browse newest with cursor navigation'}</Text></Pressable>
+    {windowMode&&<Text style={styles.note}>Newest first, without page numbers. Products can change while you browse.</Text>}
     <Text style={styles.filterLabel}>Pets & livestock</Text>
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalChips}>
       <Chip label="All" selected={!animalSlug} onPress={() => { setAnimalSlug(''); setCategorySlug(''); setPage(1); }} />
@@ -293,19 +303,24 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
       <TextInput value={minPrice} onChangeText={setMinPrice} placeholder="Min ₹" keyboardType="decimal-pad" style={[styles.input, styles.priceInput]} accessibilityLabel="Minimum price in rupees" />
       <TextInput value={maxPrice} onChangeText={setMaxPrice} placeholder="Max ₹" keyboardType="decimal-pad" style={[styles.input, styles.priceInput]} accessibilityLabel="Maximum price in rupees" />
       <View style={styles.sortGroup}>
-        {(['newest', 'price-asc', 'price-desc','name'] as const).map((option) => <Chip key={option} label={option === 'newest' ? 'Recent' : option === 'price-asc' ? '₹ Low' : option==='name'?'Name':'₹ High'} selected={sort === option} onPress={() => { setSort(option); setPage(1); }} />)}
+        {(['newest', 'price-asc', 'price-desc','name'] as const).map((option) => <Chip key={option} label={option === 'newest' ? 'Recent' : option === 'price-asc' ? '₹ Low' : option==='name'?'Name':'₹ High'} selected={sort === option} onPress={() => { setSort(option); setCursorMode(false); setPage(1); }} />)}
       </View>
     </View>
     {!!priceError&&<Text accessibilityRole="alert" style={styles.note}>{priceError} Your filters have been kept; correct the range and apply again.</Text>}
     {(minPrice.trim()!==appliedPrice.min||maxPrice.trim()!==appliedPrice.max)&&<Text style={styles.note}>Price changes have not been applied. Results still use the previous range.</Text>}
     <View style={styles.filterRow}><Pressable accessibilityRole="button" onPress={applyPrices} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Apply price range</Text></Pressable><Pressable accessibilityRole="button" onPress={resetFilters}><Text style={styles.inlineLink}>Clear filters</Text></Pressable></View>
     {catalog.loading && catalog.data && <Text style={styles.note} accessibilityLiveRegion="polite">Updating results… / परिणाम अपडेट हो रहे हैं…</Text>}
-    {catalog.data?.pagination.truncated&&<Text style={styles.note}>Results are limited to the first 1,000 published listings.</Text>}
+    {numbered?.truncated&&<Text style={styles.note}>Results are limited to the first 1,000 published listings.</Text>}
     {catalog.loading && !catalog.data ? <LoadingState /> : catalog.error ? <ErrorState message={catalog.error} onRetry={() => setBrowseReload((current) => current + 1)} /> : productList(products)}
-    {catalog.data && !catalog.error && <View style={styles.pagination}>
-      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasPrevious} onPress={() => setPage(Math.max(1,(catalog.data?.pagination.page??1)-1))}><Text style={catalog.data.pagination.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
-      <Text style={styles.muted}>Page {catalog.data.pagination.page} of {catalog.data.pagination.pageCount}</Text>
-      <Pressable disabled={catalog.loading || !catalog.data.pagination.hasNext} onPress={() => setPage((catalog.data?.pagination.page??1)+1)}><Text style={catalog.data.pagination.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
+    {numbered && !windowMode && !catalog.error && <View style={styles.pagination}>
+      <Pressable disabled={catalog.loading || !numbered.hasPrevious} onPress={() => setPage(Math.max(1,(numbered?.page??1)-1))}><Text style={numbered.hasPrevious ? styles.inlineLink : styles.disabledLink}>‹ Previous</Text></Pressable>
+      <Text style={styles.muted}>Page {numbered.page} of {numbered.pageCount}</Text>
+      <Pressable disabled={catalog.loading || !numbered.hasNext} onPress={() => setPage((numbered?.page??1)+1)}><Text style={numbered.hasNext ? styles.inlineLink : styles.disabledLink}>Next ›</Text></Pressable>
+    </View>}
+    {cursorWindow&&windowMode&&!catalog.error&&<View style={styles.pagination}>
+     <Pressable accessibilityRole="button" disabled={!windowMode||loadedWindowScope!==cursorScope||catalog.loading||!cursorWindow.previousCursor} onPress={()=>setCursorPosition({scope:cursorScope,token:cursorWindow.previousCursor??undefined})}><Text style={cursorWindow.previousCursor?styles.inlineLink:styles.disabledLink}>‹ Previous</Text></Pressable>
+     <Text style={styles.muted}>{products.length} products shown</Text>
+     <Pressable accessibilityRole="button" disabled={!windowMode||loadedWindowScope!==cursorScope||catalog.loading||!cursorWindow.nextCursor} onPress={()=>setCursorPosition({scope:cursorScope,token:cursorWindow.nextCursor??undefined})}><Text style={cursorWindow.nextCursor?styles.inlineLink:styles.disabledLink}>Next ›</Text></Pressable>
     </View>}
   </>;
 

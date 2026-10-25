@@ -1,0 +1,26 @@
+// Only new migration guards/plan configuration: reuse the preceding local query evidence.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {executePostgresSql} from './appointment-postgres-runner.mjs';
+if(process.argv[2]!=='--run-local')throw Error('Explicit loopback synthetic verification required');
+const executable=process.env.VETIT_CATALOGUE_PSQL;assert.ok(executable);
+const connection='postgresql://vetit_catalogue_test@127.0.0.1:55439/vetit_catalogue_cursor_20261024_1';
+const sql=source=>executePostgresSql(source,{connection,executable});
+assert.equal(await sql("select current_user||'|'||host(inet_server_addr())||'|'||inet_server_port();"),'vetit_catalogue_test|127.0.0.1|55439');
+assert.equal(await sql('select count(*) from public.listings;'),'22515');
+const source=fs.readFileSync('supabase/migrations/20261024151034_catalogue_indexed_search_cursor.sql','utf8');
+await sql(source);
+const inner=source.replace(/^begin;\s*$/m,'').replace(/commit;\s*$/,'');
+await assert.rejects(sql('begin;alter table public.listing_images disable row level security;'+inner+'rollback;'),/requires existing RLS/);
+const a=source.indexOf('create or replace function public.read_public_catalogue_page('),b=source.indexOf('$function$;',a)+'$function$;'.length;
+const altered=source.slice(a,b).replace('begin\n','begin\n-- Simulated separately hardened body: migration must refuse to overwrite it.\n');
+assert.notEqual(altered,source.slice(a,b));
+await assert.rejects(sql('begin;'+altered+inner+'rollback;'),/Reviewed invoker catalogue predecessor required/);
+assert.equal(await sql("select relrowsecurity from pg_class where oid='public.listing_images'::regclass;"),'t');
+assert.equal(await sql("select 'plan_cache_mode=force_custom_plan'=any(proconfig) from pg_proc where proname='read_public_catalogue_window';"),'t');
+console.log('PASS disabled-RLS and unknown-stronger-body guards roll back; directional custom-plan setting verified');
+const explain=async(args='')=>JSON.parse(await sql(`set role anon;explain(analyze,buffers,format json) select public.read_public_catalogue_window(${args});`));
+const first=await explain(),deep=await explain("p_boundary_time=>'2026-10-10T10:00:00.123456Z',p_boundary_id=>'00000000-0000-4000-8000-000000029990'");
+const data={kind:'Local synthetic plan configuration check; not hosted Test acceptance',visibleProducts:22506,firstWindow:first,deepWindow:deep};
+const output=process.env.VETIT_CURSOR_PERFORMANCE_OUTPUT;assert.ok(output&&!fs.existsSync(output),'New evidence path required');fs.writeFileSync(output,JSON.stringify(data,null,2));
+console.log('PASS final first/deep cursor plans recorded without repeating unchanged SQL groups');

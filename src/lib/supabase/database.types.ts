@@ -1675,6 +1675,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      read_public_catalogue_window: {
+        Args: {
+          p_query?: string
+          p_category_ids?: string[] | null
+          p_species_id?: string | null
+          p_min_minor?: number | null
+          p_max_minor?: number | null
+          p_page_size?: number
+          p_boundary_time?: string | null
+          p_boundary_id?: string | null
+          p_direction?: string
+        }
+        Returns: Json
+      }
       read_public_catalogue_page: {
         Args: {
           p_query?: string

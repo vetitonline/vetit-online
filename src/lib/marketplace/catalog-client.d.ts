@@ -22,6 +22,15 @@ export type CatalogApiResponse = {
   taxonomy: { animals: ProductAnimal[]; categories: ProductCategory[] };
 };
 
+export type CatalogWindowFilters=Omit<CatalogRequestFilters,'page'|'sort'|'product'>&{cursor?:string};
+export type CatalogWindowResponse=Omit<CatalogApiResponse,'apiVersion'|'pagination'>&{
+ apiVersion:2;
+ window:{pageSize:number;hasNext:boolean;hasPrevious:boolean;nextCursor:string|null;previousCursor:string|null};
+};
+export function buildCatalogWindowUrl(filters?:CatalogWindowFilters,baseUrl?:string):string;
+export function buildCatalogueBrowseUrl(filters?:CatalogWindowFilters):string;
+export function fetchCatalogWindow(filters?:CatalogWindowFilters,options?:{baseUrl?:string;fetchImpl?:typeof fetch;signal?:AbortSignal}):Promise<CatalogWindowResponse>;
+
 export class CatalogClientError extends Error { status: number }
 export function buildCatalogUrl(filters?: CatalogRequestFilters, baseUrl?: string): string;
 export function buildProductsUrl(filters?: CatalogRequestFilters):string;

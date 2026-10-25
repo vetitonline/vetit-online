@@ -66,7 +66,7 @@ test('actual website detail frontmatter uses shared exact read and returns 404/5
 });
 function mobile(f,nativeOverrides={}){
  const components=Object.fromEntries(['ModerationWorkspace','NativeModeration','NativeBuyerOrders','NativeCheckoutReview','NativeAppointments','NativeSellerCatalogue','ProductPhoto','MarketplaceShortcuts','SpeciesDiscovery'].map(name=>['./src/'+name,{[name]:name}]));
- return mountNativeComponent('../App.tsx','default',{}, {...components,'../Vetit-online-transparent.png':'offline-logo','../src/lib/supabase/test-endpoints.js':{resolveMobileApiBase:()=> 'http://localhost:4321'},'../src/lib/marketplace/catalog-contract.js':contract,'../src/lib/marketplace/discovery-images.js':images,'../src/lib/marketplace/navigation.js':shortcuts,'../src/lib/marketplace/preview-cart.js':cart,'../src/lib/marketplace/workspace-copy.js':copy,'../src/lib/marketplace/category-navigation.js':navigation,'../src/lib/marketplace/catalog-client':{...client,fetchCatalog:(filters,options)=>client.fetchCatalog(filters,{...options,fetchImpl:f.fetchImpl})},'../src/lib/services/service-client':{},'../src/lib/services/appointment-client.js':{}},{ScrollView:'ScrollView',Image:'Image',StatusBar:'StatusBar',StyleSheet:{create:s=>s},...nativeOverrides});
+ return mountNativeComponent('../App.tsx','default',{}, {...components,'../Vetit-online-transparent.png':'offline-logo','../src/lib/supabase/test-endpoints.js':{resolveMobileApiBase:()=> 'http://localhost:4321'},'../src/lib/marketplace/catalog-contract.js':contract,'../src/lib/marketplace/discovery-images.js':images,'../src/lib/marketplace/navigation.js':shortcuts,'../src/lib/marketplace/preview-cart.js':cart,'../src/lib/marketplace/workspace-copy.js':copy,'../src/lib/marketplace/category-navigation.js':navigation,'../src/lib/marketplace/catalog-client':{...client,fetchCatalogWindow:(filters,options)=>client.fetchCatalogWindow(filters,{...options,fetchImpl:f.windowFetch??f.fetchImpl}),fetchCatalog:(filters,options)=>client.fetchCatalog(filters,{...options,fetchImpl:f.fetchImpl})},'../src/lib/services/service-client':{},'../src/lib/services/appointment-client.js':{}},{ScrollView:'ScrollView',Image:'Image',StatusBar:'StatusBar',StyleSheet:{create:s=>s},...nativeOverrides});
 }
 const settle=async ui=>{await new Promise(resolve=>setTimeout(resolve,15));await drainNativeTasks();ui.render();};
 const chip=(ui,label)=>ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='Chip'&&n.props.label===label);
@@ -129,4 +129,20 @@ test('variable-price native product buttons open details without claiming varian
  const tile=ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='ProductTile');const tree=tile.type(tile.props);
  const controls=tree.children.filter(n=>n?.type==='Pressable');const action=controls[1];assert.equal(action.props.disabled,false);assert.equal(action.children[0].children[0],'View product details');
  action.props.onPress();ui.render();await settle(ui);const detail=ui.nodes().find(n=>typeof n.type==='function'&&n.type.name==='ProductDetail');assert.equal(detail.props.product.priceIsFrom,true);assert.equal(typeof detail.props.onOpenWeb,'function');ui.unmount();
+});
+
+
+test('native cursor browsing uses API v2 boundaries, resets changed filters and retains numbered sorts',async()=>{
+ const f=fixture(),windows=[];
+ f.windowFetch=async url=>{const params=new URL(url).searchParams;windows.push(params);const next=params.get('cursor')==='window-next';const start=next?25:1;const products=Array.from({length:next?6:24},(_,i)=>product(start+i));
+ return Response.json({apiVersion:2,state:'available',marketCode:'IN',products,taxonomy,filters:{query:'',animal:null,category:null,product:null,minPriceMinor:null,maxPriceMinor:null,sort:'newest'},window:{pageSize:24,hasNext:!next,hasPrevious:next,nextCursor:next?null:'window-next',previousCursor:next?'window-back':null}});};
+ const ui=mobile(f);await settle(ui);ui.button('Explore marketplace').props.onPress();ui.render();await settle(ui);
+ ui.button('Browse newest with cursor navigation').props.onPress();ui.render();await settle(ui);
+ assert.equal(windows.length,1);assert.equal(windows[0].has('page'),false);assert.ok(ui.text().includes('Use numbered pages'));
+ ui.button('Next ›').props.onPress();ui.render();await settle(ui);assert.equal(windows.at(-1).get('cursor'),'window-next');
+ ui.button('‹ Previous').props.onPress();ui.render();await settle(ui);assert.equal(windows.at(-1).get('cursor'),'window-back');
+ ui.button('Next ›').props.onPress();ui.render();await settle(ui);
+ ui.input('Minimum price in rupees','1');ui.button('Apply price range').props.onPress();ui.render();assert.equal(ui.button('‹ Previous').props.disabled,true);await settle(ui);
+ assert.equal(windows.at(-1).has('cursor'),false);assert.equal(windows.at(-1).get('min'),'1');
+ chip(ui,'Name').props.onPress();ui.render();await settle(ui);assert.equal(new URL(f.requests.at(-1)).searchParams.get('sort'),'name');assert.ok(ui.text().includes('Page '));ui.unmount();
 });

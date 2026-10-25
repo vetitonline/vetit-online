@@ -6,7 +6,7 @@ import type {CatalogApiResponse} from './catalog-client.js';
 import type {FeaturedProduct} from './catalog-types.js';
 
 type PageResult={state:'available'|'unconfigured'|'error';products:FeaturedProduct[];pagination?:CatalogApiResponse['pagination']};
-type PagePhoto=Omit<FeaturedProduct,'imageUrl'>&{imagePath:string|null};
+export type PagePhoto=Omit<FeaturedProduct,'imageUrl'>&{imagePath:string|null};
 type DatabasePage={products:PagePhoto[];pagination:CatalogApiResponse['pagination']};
 const object=(value:unknown):value is Record<string,unknown>=>value!==null&&typeof value==='object'&&!Array.isArray(value);
 const nullableString=(value:unknown)=>value===null||typeof value==='string';
@@ -20,8 +20,13 @@ export function isDatabaseCataloguePage(value:unknown,filters:ParsedCatalogParam
  const page=Math.min(filters.page,count);
  if(p.page!==page||p.pageCount!==count||p.hasPrevious!==(page>1)||p.hasNext!==(page<count)||p.truncated!==false)return false;
  if(value.products.length!==Math.min(filters.pageSize,Number(p.total)-(page-1)*filters.pageSize))return false;
+ return isDatabaseCatalogueProducts(value.products,filters.pageSize);
+}
+
+export function isDatabaseCatalogueProducts(value:unknown,limit:number):value is PagePhoto[]{
+ if(!Array.isArray(value)||value.length>limit)return false;
  const ids=new Set<string>();
- return value.products.every(item=>{
+ return value.every(item=>{
   if(!object(item)||!['id','slug','title','description','category','categorySlug','categoryId','sellerName','currencyCode'].every(key=>typeof item[key]==='string')
     ||!nullableString(item.imagePath)||!nullableString(item.imageAlt)||item.brand!==null
     ||!(item.priceMinor===null||(Number.isSafeInteger(item.priceMinor)&&Number(item.priceMinor)>0))
@@ -42,13 +47,19 @@ export async function getPublicCataloguePage(request:Request,cookies:AstroCookie
    p_page:filters.page,p_page_size:filters.pageSize,p_product:filters.productKey??null,
   });
   if(error||!isDatabaseCataloguePage(data,filters))return{state:'error',products:[]};
-  const products=await Promise.all(data.products.map(async (row):Promise<FeaturedProduct>=>{
+  const products=await signCatalogueProducts(supabase,data.products,config.listingImagesBucket);
+  return{state:'available',products,pagination:data.pagination};
+ }catch{return{state:'error',products:[]};}
+}
+
+export async function signCatalogueProducts(supabase:ReturnType<typeof createSupabaseServerClient>,rows:PagePhoto[],bucket:string|null):Promise<FeaturedProduct[]>{
+ return Promise.all(rows.map(async (row):Promise<FeaturedProduct>=>{
    const {imagePath,...product}=row;
    let imageUrl:string|null=null;
    if(imagePath){
     // Signing remains caller/RLS-bound and limited to this page. A missing image
     // keeps the existing truthful placeholder instead of failing the product page.
-    try{const signed=await supabase.storage.from(config.listingImagesBucket||'listing-images').createSignedUrl(imagePath,3600);
+    try{const signed=await supabase.storage.from(bucket||'listing-images').createSignedUrl(imagePath,3600);
      if(!signed.error)imageUrl=signed.data?.signedUrl??null;
     }catch{/* Existing product placeholder handles unavailable Storage. */}
    }
@@ -57,6 +68,4 @@ export async function getPublicCataloguePage(request:Request,cookies:AstroCookie
     species:product.species,brand:null,sellerName:product.sellerName,priceMinor:product.priceMinor,
     priceIsFrom:product.priceIsFrom,currencyCode:product.currencyCode,imageUrl,imageAlt:imageUrl?product.imageAlt:null};
   }));
-  return{state:'available',products,pagination:data.pagination};
- }catch{return{state:'error',products:[]};}
 }
