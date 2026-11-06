@@ -26,11 +26,14 @@ export function normalizeQuoteLines(input) {
       || !Number.isSafeInteger(line.quantity) || line.quantity < 1 || line.quantity > MAX_LINE_QUANTITY) {
       throw new CheckoutQuoteError('invalid_line', 'A cart line is invalid.');
     }
-    const next = (quantities.get(line.listingId) ?? 0) + line.quantity;
+    // UUIDs are case-insensitive. Canonicalize before combining quantities so
+    // differently cased IDs cannot bypass the per-product quantity limit.
+    const listingId = line.listingId.toLowerCase();
+    const next = (quantities.get(listingId) ?? 0) + line.quantity;
     if (next > MAX_LINE_QUANTITY) {
       throw new CheckoutQuoteError('invalid_quantity', 'A product quantity exceeds the supported limit.');
     }
-    quantities.set(line.listingId, next);
+    quantities.set(listingId, next);
   }
   return [...quantities].map(([listingId, quantity]) => ({ listingId, quantity }));
 }
