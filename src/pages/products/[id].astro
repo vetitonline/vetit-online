@@ -35,6 +35,7 @@ const product = result.product;
           <div class="product-detail-actions" data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
             <button class="button button-primary" type="button" data-add-to-cart disabled={product.priceIsFrom}>{product.priceIsFrom ? 'Variant options coming soon' : 'Add to cart'}</button>
             <a class="button button-secondary" href="/cart">View cart</a>
+            {!product.priceIsFrom && product.priceMinor !== null && product.priceMinor > 0 && product.currencyCode === 'INR' && <a class="button button-secondary" href={`/account/cart?listingId=${encodeURIComponent(product.id)}`}>Save to account cart</a>}
           </div>
           {!product.imageUrl && <p class="catalog-data-note">The seller has not published a public product image.</p>}
         </div>

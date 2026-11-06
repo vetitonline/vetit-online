@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test:account": "node --test tests/account-profile.test.mjs tests/account-page.test.mjs",
+    "test:saved-cart": "node --test tests/saved-cart.test.mjs tests/saved-cart-page.test.mjs",
     "test:marketplace-ui": "node --test --test-isolation=none tests/marketplace-workspace.test.mjs tests/marketplace-pages.test.mjs",
     "test:acceptance-readiness": "node --test --test-isolation=none tests/test-acceptance-readiness.test.mjs",
     "check:test-config": "node scripts/check-test-readiness.mjs",

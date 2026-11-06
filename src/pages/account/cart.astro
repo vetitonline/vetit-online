@@ -1,0 +1,111 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Saved cart | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader/><main class="product-showcase saved-cart-page">
+  <h1>Your saved account cart</h1>
+  <p>Keep product quantities with your signed-in account. Your browser cart stays separate and is never imported automatically.</p>
+  <p>This saves shopping choices only. Products and prices may change; saving does not reserve stock, place an order or take payment.</p>
+  <nav aria-label="Saved cart navigation"><a href="/account">Your account</a> · <a href="/products">Browse products</a> · <a href="/cart">Browser cart</a> · <a href="/orders">Your orders</a></nav>
+  <p id="saved-status" role="status" aria-live="polite">Loading saved items…</p>
+  <a id="saved-signin" href="/login?next=%2Faccount%2Fcart" hidden>Sign in</a>
+  <section id="saved-candidate" class="seller-panel" hidden>
+    <h2 id="saved-product-title"></h2><p id="saved-product-note"></p>
+    <form id="saved-add" class="auth-form">
+      <label for="saved-quantity">Saved quantity</label>
+      <input id="saved-quantity" name="quantity" type="number" min="1" max="99" step="1" value="1" required/>
+      <p>This sets the saved quantity for this product. It does not add to an existing quantity.</p>
+      <button id="saved-add-button" class="button button-primary" type="submit" disabled>Save selected quantity</button>
+    </form>
+  </section>
+  <div id="saved-items" aria-live="polite"></div>
+  <button id="saved-reload" class="button button-secondary" type="button">Reload saved cart</button>
+  <p>No total is calculated here. Ordering and payment remain unavailable.</p>
+  <noscript>Enable JavaScript to manage your saved cart.</noscript>
+</main></div>
+<script>
+  import { createSavedCartWorkspace } from '../../lib/buyer/saved-cart-workspace.js';
+  import type { SavedCartState } from '../../lib/buyer/saved-cart-workspace.js';
+  import { cartId } from '../../lib/buyer/saved-cart-contract.js';
+  import { fetchCatalog } from '../../lib/marketplace/catalog-client.js';
+  import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
+  const get = <T extends HTMLElement = HTMLElement>(name: string) => document.getElementById(`saved-${name}`) as T;
+  const status = get('status'), list = get('items'), signin = get('signin');
+  const quantity = get<HTMLInputElement>('quantity'), add = get<HTMLButtonElement>('add-button'), reload = get<HTMLButtonElement>('reload');
+  let selected: string | undefined, state: SavedCartState;
+  let disposed = false;
+  const candidateRequest = new AbortController();
+  function text(parent: HTMLElement, value: string, tag = 'p') { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; }
+  function render(next: SavedCartState) {
+    state = next;
+    const ready = state.phase === 'ready';
+    const busy = state.phase === 'loading' || state.phase === 'saving';
+    add.disabled = !ready || !selected; quantity.disabled = !ready; reload.disabled = busy;
+    signin.hidden = state.phase !== 'signin';
+    signin.setAttribute('href', `/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+    status.textContent = state.message || (state.phase === 'saving' ? 'Saving and checking your cart…' : state.phase === 'loading' ? 'Loading saved items…' : state.phase === 'signin' ? 'Sign in, then reload your saved cart.' : ready ? 'Your saved cart is ready.' : 'Saved cart is unavailable.');
+    list.replaceChildren(); list.setAttribute('aria-busy', String(busy));
+    if (!state.cart) { quantity.value = '1'; return; }
+    const existing = state.cart.items.find(item => item.listing_id === selected && item.product_variant_id === null);
+    quantity.value = String(existing?.quantity ?? 1);
+    if (!state.cart.items.length) text(list, 'Your account cart is empty. Save a product from its catalogue page.');
+    for (const item of state.cart.items) {
+      const row = document.createElement('article'); row.className = 'seller-panel';
+      text(row, item.title ?? 'Product details are currently unavailable', 'h2');
+      const link = document.createElement('a'); link.href = `/products/${encodeURIComponent(item.listing_id)}`; link.textContent = 'View current product details'; row.append(link);
+      if (item.product_variant_id) text(row, `Saved option: ${item.product_variant_id}. Check current options with the seller before ordering.`);
+      const form = document.createElement('form'); form.className = 'auth-form';
+      const label = document.createElement('label'); label.textContent = 'Quantity';
+      const input = document.createElement('input'); input.type = 'number'; input.min = '1'; input.max = '99'; input.step = '1'; input.required = true; input.value = String(item.quantity); input.disabled = !ready;
+      label.append(input); form.append(label);
+      const update = document.createElement('button'); update.type = 'submit'; update.className = 'button button-secondary'; update.textContent = 'Set quantity'; update.disabled = !ready; form.append(update);
+      form.addEventListener('submit', event => { event.preventDefault(); if (form.reportValidity()) void controller.mutate({ action: 'set', item: { listingId: item.listing_id, productVariantId: item.product_variant_id, quantity: Number(input.value), marketCode: 'IN' } }); });
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'button button-secondary'; remove.textContent = 'Remove saved item'; remove.disabled = !ready;
+      remove.addEventListener('click', () => void controller.mutate({ action: 'remove', itemId: item.id }));
+      row.append(form, remove); list.append(row);
+    }
+  }
+  const controller = createSavedCartWorkspace({ render });
+  get<HTMLFormElement>('add').addEventListener('submit', event => {
+    event.preventDefault();
+    if (selected && (event.currentTarget as HTMLFormElement).reportValidity()) void controller.mutate({ action: 'set', item: { listingId: selected, productVariantId: null, quantity: Number(quantity.value), marketCode: 'IN' } });
+  });
+  reload.addEventListener('click', () => void controller.load());
+  async function candidate() {
+    const requested = new URLSearchParams(location.search).get('listingId');
+    if (!requested) return;
+    get('candidate').hidden = false;
+    try {
+      const id = cartId(requested);
+      const result = await fetchCatalog({ product: id }, { signal: candidateRequest.signal });
+      if (disposed) return;
+      const product = result.products.find(value => value.id === id);
+      if (!product || product.priceIsFrom || product.currencyCode !== 'INR' || !Number.isSafeInteger(product.priceMinor) || product.priceMinor! <= 0) throw Error();
+      selected = id; get('product-title').textContent = product.title;
+      get('product-note').textContent = 'Save this product to your account cart. The server checks current eligibility and pricing again when saving.';
+    } catch {
+      if (disposed) return;
+      selected = undefined; get('product-title').textContent = 'Product cannot be saved right now';
+      get('product-note').textContent = 'Browse the current catalogue. Products requiring option selection cannot be added here yet.';
+    }
+    if (state) {
+      add.disabled = state.phase !== 'ready' || !selected;
+      const existing = state.cart?.items.find(item => item.listing_id === selected && item.product_variant_id === null);
+      quantity.value = String(existing?.quantity ?? 1);
+    }
+  }
+  let unsubscribe = () => {};
+  try {
+    const { data: { subscription } } = createSupabaseBrowserClient().auth.onAuthStateChange(event => {
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') controller.clear();
+    });
+    unsubscribe = () => subscription.unsubscribe();
+    void controller.load();
+  } catch { status.textContent = 'Saved account carts are not configured in this environment.'; reload.disabled = true; }
+  void candidate();
+  window.addEventListener('pagehide', () => { disposed = true; candidateRequest.abort(); controller.dispose(); unsubscribe(); list.replaceChildren(); quantity.value = '1'; }, { once: true });
+  window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
+</script>
+<style>[hidden] {display:none!important;} .saved-cart-page {max-width:1000px;} nav, article, button {margin-bottom:1rem;} article {overflow-wrap:anywhere;}</style>
+</body></html>
