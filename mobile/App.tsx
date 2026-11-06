@@ -333,6 +333,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     {nativeModeration&&<NativeAppointments session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
     {nativeModeration&&<NativeSellerCatalogue session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} language={language}/>}
     <Pressable onPress={() => openWeb('/login')} style={styles.primaryButton}><Text style={styles.primaryButtonText}>Continue to sign in online</Text></Pressable>
+    <Pressable onPress={() => openWeb('/account')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Manage your profile online</Text></Pressable>
     <Pressable onPress={() => openWeb('/seller')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{language === 'hi' ? 'विक्रेता स्थिति और समीक्षा ऑनलाइन' : 'Seller status and review online'}</Text></Pressable>
     <Pressable onPress={() => openWeb('/appointments')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Appointment history and notifications online</Text></Pressable>
     <Pressable onPress={() => openWeb(`/orders?lang=${language}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{copy.account}</Text></Pressable>

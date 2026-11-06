@@ -9,6 +9,7 @@ const { adminMode = false, sellerMode = false } = Astro.props;
   <nav class="main-nav" aria-label="Main navigation">
     <a href="/products">Marketplace</a><a href="/shop">Pets &amp; Livestock</a><a href="/services">Pet &amp; Vet Services</a><a href="/seller" aria-current={sellerMode ? 'page' : undefined}>Sell on Vetit</a>
     <a href="/orders">Your orders</a>
+    <a href="/account">Your account</a>
     {adminMode && <a href="/admin" aria-current="page">Admin panel</a>}
     {!adminMode && <a href="/#how-it-works">How it works</a>}
   </nav>

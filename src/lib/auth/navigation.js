@@ -13,5 +13,5 @@ export function sessionLoginPath(path, origin) {
 }
 
 export function isProtectedPath(path) {
-  return /^\/(appointments|orders|checkout)\/?$/.test(path) || /^\/(seller|admin)(\/|$)/.test(path) && !/^\/admin\/login\/?$/.test(path);
+  return /^\/(account|appointments|orders|checkout)\/?$/.test(path) || /^\/(seller|admin)(\/|$)/.test(path) && !/^\/admin\/login\/?$/.test(path);
 }

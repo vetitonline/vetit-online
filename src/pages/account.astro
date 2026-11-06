@@ -1,0 +1,74 @@
+---
+import '../../styles.css';
+import SiteHeader from '../components/SiteHeader.astro';
+---
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Your account | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader/><main class="product-showcase">
+  <h1>Your Vetit account</h1>
+  <p>Manage your customer profile and visit your seller workspace with the same sign-in.</p>
+  <nav aria-label="Account navigation"><a href="/orders">Your orders</a> · <a href="/appointments">Appointments</a> · <a href="/seller">Seller dashboard</a> · <a href="/cart">Your cart</a></nav>
+  <section class="seller-panel" aria-labelledby="profile-title">
+    <h2 id="profile-title">Your profile</h2>
+    <p id="profile-status" role="status" aria-live="polite">Loading your account…</p>
+    <a id="profile-signin" href="/login?next=%2Faccount" hidden>Sign in</a>
+    <form id="profile-form" class="auth-form" hidden>
+      <label for="profile-name">Display name</label>
+      <input id="profile-name" name="fullName" type="text" autocomplete="name" required maxlength="200" aria-describedby="profile-help"/>
+      <p id="profile-help">Use up to 100 characters. This changes your profile name. Sign-in email, verified phone and seller verification are managed separately.</p>
+      <button id="profile-save" class="button button-primary" type="submit">Save display name</button>
+    </form>
+    <button id="profile-reload" class="button button-secondary" type="button">Reload profile</button>
+    <noscript>Enable JavaScript to load and edit your profile securely.</noscript>
+  </section>
+</main></div>
+<script>
+  import { requestProfile } from '../lib/account/profile-client.js';
+  import { createSupabaseBrowserClient } from '../lib/supabase/browser';
+  const form = document.getElementById('profile-form') as HTMLFormElement;
+  const input = document.getElementById('profile-name') as HTMLInputElement;
+  const save = document.getElementById('profile-save') as HTMLButtonElement;
+  const reload = document.getElementById('profile-reload') as HTMLButtonElement;
+  const status = document.getElementById('profile-status')!;
+  const signin = document.getElementById('profile-signin')!;
+  let profileId: string | undefined;
+  let revision = 0, disposed = false, active: AbortController | undefined;
+  function clear() { revision++; active?.abort(); profileId = undefined; input.value = ''; form.hidden = true; save.disabled = false; reload.disabled = false; input.disabled = false; }
+  async function run(writing = false) {
+    if (disposed || writing && !profileId) return;
+    active?.abort(); active = new AbortController();
+    const version = ++revision;
+    save.disabled = true; reload.disabled = true; input.disabled = true; signin.hidden = true;
+    status.textContent = writing ? 'Saving your display name…' : 'Loading your account…';
+    try {
+      const result = await requestProfile({ signal: active.signal, ...(writing ? { profileId, update: { fullName: input.value } } : {}) });
+      if (disposed || version !== revision) return;
+      profileId = result.id; input.value = result.fullName ?? ''; form.hidden = false;
+      status.textContent = writing ? 'Your display name has been saved.' : 'Your profile is ready.';
+    } catch (error) {
+      if (disposed || version !== revision) return;
+      profileId = undefined; input.value = ''; form.hidden = true;
+      status.textContent = error instanceof Error ? error.message : 'Account is unavailable. Reload to try again.';
+      signin.hidden = (error as { status?: number }).status !== 401;
+    } finally {
+      if (!disposed && version === revision) { save.disabled = false; reload.disabled = false; input.disabled = false; }
+    }
+  }
+  form.addEventListener('submit', event => { event.preventDefault(); void run(true); });
+  reload.addEventListener('click', () => { clear(); void run(); });
+  let unsubscribe = () => {};
+  try {
+    const { data: { subscription } } = createSupabaseBrowserClient().auth.onAuthStateChange(event => {
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
+        clear(); status.textContent = 'Your sign-in changed. Reload your profile to continue.';
+      }
+    });
+    unsubscribe = () => subscription.unsubscribe();
+    void run();
+  } catch { status.textContent = 'Account access is not configured in this environment.'; reload.disabled = true; }
+  window.addEventListener('pagehide', () => { disposed = true; clear(); unsubscribe(); }, { once: true });
+  window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
+</script>
+<style>[hidden] { display: none !important; } nav { margin-bottom: 2rem; }</style>
+</body></html>

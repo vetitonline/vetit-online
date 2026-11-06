@@ -8,6 +8,7 @@ import {requestBuyerOrders} from '../src/lib/buyer/orders-client.js';
 import {workspaceCopy,orderStatusLabel,formatWorkspaceMoney} from '../src/lib/marketplace/workspace-copy.js';
 import {requestCheckoutQuote,QuoteClientError} from '../src/lib/commerce/quote-client.js';
 import {normalizeQuoteLines} from '../src/lib/commerce/checkout-quote.js';
+import {resolveIndianLocale} from '../src/lib/i18n/locales.js';
 const id='10000000-0000-4000-8000-000000000001';
 const order={id,market_code:'IN',order_status:'processing',currency_code:'INR',subtotal_minor:12550,delivery_minor:0,tax_minor:0,total_minor:12550,created_at:'2026-10-18T10:00:00Z'};
 class Element {
@@ -38,7 +39,7 @@ async function mount(file,dependencies,query='',saved='[]') {
   await flush();
   return {elements,document,events,flush};
 }
-function orderDependencies(fetchImpl){return{createOrderWorkspace:options=>createOrderWorkspace({...options,read:input=>requestBuyerOrders({...input,baseUrl:'http://localhost:4321',fetchImpl})}),workspaceCopy,orderStatusLabel,formatWorkspaceMoney};}
+function orderDependencies(fetchImpl){return{createOrderWorkspace:options=>createOrderWorkspace({...options,read:input=>requestBuyerOrders({...input,baseUrl:'http://localhost:4321',fetchImpl})}),workspaceCopy,orderStatusLabel,formatWorkspaceMoney,resolveIndianLocale};}
 test('actual order-page script renders list, switches language without refetch and builds safe detail links',async()=>{
   let calls=0;
   const page=await mount('src/pages/orders.astro',orderDependencies(async()=>{calls++;return new Response(JSON.stringify({apiVersion:1,state:'available',orders:[order],nextCursor:null}));}));
