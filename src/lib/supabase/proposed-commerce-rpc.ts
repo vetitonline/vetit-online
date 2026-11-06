@@ -48,5 +48,11 @@ export async function callProposedCommerceRpc<Name extends keyof ProposedCommerc
     functionName: Name,
     functionArgs: object,
   ) => PromiseLike<RpcResult<Name>>;
+  if (name === 'advance_seller_fulfilment') {
+    const newer = await invoke('advance_checkout_fulfilment' as Name, args);
+    // Only missing-function/schema-cache errors permit the legacy path. Never
+    // retry a rejected or uncertain write under another RPC name.
+    if (newer.error?.code !== 'PGRST202') return newer;
+  }
   return await invoke(name, args);
 }

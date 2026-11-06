@@ -39,6 +39,16 @@ export async function createCheckoutOrder(input, customerId, { repository, payme
   if (!repository || repository.atomic !== true) throw new CheckoutError('Order placement is unavailable until the transactional backend is approved.',503);
   if (payments && payments.mode !== 'sandbox') throw new CheckoutError('Live payments are disabled.',503);
   const key = orderId(input?.idempotencyKey), owner = orderId(customerId);
+  // Reconcile completed attempts before re-quoting an expired price/shipping offer.
+  // The database lookup checks the same quote, canonical request, owner and total.
+  if (repository.findExistingOrder) {
+    const existing = await repository.findExistingOrder({customerId:owner,idempotencyKey:key,expectedTotalMinor:input.expectedTotalMinor,request:normalizeCheckout(input)});
+    if (existing) {
+      const order=normalizeOrderSummary(existing);
+      if(existing.customer_profile_id!==owner||order.total_minor!==input.expectedTotalMinor)throw new CheckoutError('Order response needs reconciliation.',503);
+      return {apiVersion:1,state:'existing',order,payment:{state:'disabled'}};
+    }
+  }
   const review = await reviewCheckout(input, reviewDependencies);
   if (review.totalMinor === null) throw new CheckoutError('Shipping and tax must be calculated before placing an order.',503);
   if (review.summary.lines.some(line=>line.unitAmountMinor<=0)) throw new CheckoutError('Order lines require a positive current price.',409);
