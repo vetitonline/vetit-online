@@ -1,4 +1,4 @@
-export type QuoteRequestLine = { listingId: string; quantity: number };
+export type QuoteRequestLine = { listingId: string; productVariantId?: string; quantity: number };
 export type QuoteRequest = { lines: QuoteRequestLine[] };
 export type CheckoutQuoteLine = QuoteRequestLine & {
   title: string;
@@ -32,4 +32,5 @@ export function calculateCheckoutQuote(lines: QuoteRequestLine[], products: Arra
   priceMinor: number | null;
   priceIsFrom: boolean;
   currencyCode: string;
+  options?: Array<{variantId: string | null; priceMinor: number; stockQuantity: number | null}>;
 }>): CheckoutQuote;

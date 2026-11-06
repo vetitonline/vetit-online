@@ -14,6 +14,25 @@ import SiteHeader from '../components/SiteHeader.astro';
 <button id="quote-refresh" class="button button-secondary" type="button">Check current prices / मौजूदा कीमतें देखें</button>
 <button id="quote-payment" class="button button-primary" type="button" disabled>Order and payment unavailable / ऑर्डर और भुगतान उपलब्ध नहीं हैं</button>
 <p>Delivery, tax and final total: not calculated. Any quoted subtotal is informational and can change.</p>
+<section class="seller-panel" aria-labelledby="delivery-heading">
+  <h2 id="delivery-heading">Customer and delivery details</h2>
+  <p>Review a browser or saved account cart with a delivery address. Details are used for this review only and are not stored in your browser.</p>
+  <form id="checkout-details" class="checkout-details">
+    <label>Cart source<select name="source"><option value="browser">This browser's cart</option><option value="account">Saved account cart</option></select></label>
+    <label>Contact email<input name="email" type="email" autocomplete="email" maxlength="254" required/></label>
+    <label>Recipient name<input name="recipientName" autocomplete="name" maxlength="120" required/></label>
+    <label>Indian mobile number<input name="phone" type="tel" autocomplete="tel" required/></label>
+    <label>Address line 1<input name="addressLine1" autocomplete="address-line1" maxlength="200" required/></label>
+    <label>Address line 2 (optional)<input name="addressLine2" autocomplete="address-line2" maxlength="200"/></label>
+    <label>City<input name="city" autocomplete="address-level2" maxlength="120" required/></label>
+    <label>State / union territory<input name="stateRegion" autocomplete="address-level1" maxlength="120" required/></label>
+    <label>PIN code<input name="postalCode" autocomplete="postal-code" inputmode="numeric" pattern="[1-9][0-9]{5}" required/></label>
+    <button class="button button-primary" type="submit">Review delivery and order summary</button>
+  </form>
+  <p id="checkout-details-status" role="status" aria-live="polite"></p><div id="checkout-details-summary"></div>
+  <button type="button" class="button button-primary" disabled>Place order — backend integration pending</button>
+  <p>Shipping and tax charges must come from configured server services. No live payment method is active.</p>
+</section>
 </main></div>
 <script>
   import { requestCheckoutQuote, QuoteClientError } from '../lib/commerce/quote-client.js';
@@ -32,7 +51,7 @@ import SiteHeader from '../components/SiteHeader.astro';
     try {
       const saved = JSON.parse(localStorage.getItem('vetit-cart-v1') || '[]');
       if (!Array.isArray(saved) || !saved.length) { status.textContent = 'Your browser cart is empty. / आपकी कार्ट खाली है।'; return; }
-      input = normalizeQuoteLines({lines:saved.map(item => ({listingId:item?.id,quantity:item?.quantity}))});
+      input = normalizeQuoteLines({lines:saved.map(item => ({listingId:item?.id,productVariantId:item?.productVariantId,quantity:item?.quantity}))});
     } catch { status.textContent = 'The saved cart cannot be reviewed. Return to the cart and check its items. / कार्ट की वस्तुओं की जाँच करें।'; return; }
     const controller = new AbortController(); active = controller; refresh.disabled = true;
     status.textContent = 'Checking current prices… / कीमतें जाँची जा रही हैं…';
@@ -54,4 +73,4 @@ import SiteHeader from '../components/SiteHeader.astro';
   });
   window.addEventListener('storage', event => { if (event.key === 'vetit-cart-v1' || event.key === null) { invalidate(); status.textContent = 'The cart changed. Check current prices again. / कार्ट बदल गई है। कीमतें फिर जाँचें।'; } });
   window.addEventListener('pagehide', invalidate, {once:true});
-</script><style>[hidden] {display:none!important;} .checkout-review {max-width:1000px;} button {margin:12px 12px 12px 0;} article {overflow-wrap:anywhere;}</style></body></html>
+</script><script src="../lib/commerce/checkout-page.ts"></script><style>[hidden] {display:none!important;} .checkout-review {max-width:1000px;} button {margin:12px 12px 12px 0;} article {overflow-wrap:anywhere;} .checkout-details {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:1rem;} .checkout-details label {display:flex;flex-direction:column;gap:.5rem;} .checkout-details input,.checkout-details select {padding:.8rem;min-width:0;}</style></body></html>

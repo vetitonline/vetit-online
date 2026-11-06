@@ -23,7 +23,7 @@ const detailHref = `/products/${encodeURIComponent(product.slug || product.id)}`
     <h2><a href={detailHref}>{product.title}</a></h2>
     <div class="product-bottom">
       <strong>{formatProductPrice(product)}</strong>
-      <button type="button" data-add-to-cart disabled={product.priceIsFrom} aria-label={product.priceIsFrom ? `Variant selection is not available for ${product.title}` : `Add ${product.title} to cart`} title={product.priceIsFrom ? 'Variant selection is not available yet' : `Add ${product.title} to cart`}>+</button>
+      {product.priceIsFrom ? <a class="button button-secondary small-button" href={detailHref}>Choose options</a> : <button type="button" data-add-to-cart disabled={!product.priceMinor || product.currencyCode !== 'INR'} aria-label={`Add ${product.title} to cart`} title={`Add ${product.title} to cart`}>+</button>}
     </div>
   </div>
 </article>

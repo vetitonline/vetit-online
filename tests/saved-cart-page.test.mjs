@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 import { createSavedCartWorkspace } from '../src/lib/buyer/saved-cart-workspace.js';
 import { cartId } from '../src/lib/buyer/saved-cart-contract.js';
+import { selectProductOption } from '../src/lib/commerce/product-selection.js';
 
 const owner = '10000000-0000-4000-8000-000000000001', listing = '10000000-0000-4000-8000-000000000002', line = '10000000-0000-4000-8000-000000000003';
 const item = { id: line, listing_id: listing, product_variant_id: null, quantity: 2, title: '<script>untrusted title</script>' };
@@ -21,7 +22,7 @@ class Element {
   reportValidity() { return true; }
   emit(name) { return this.events[name]?.({ preventDefault() {}, currentTarget: this }); }
 }
-async function mount({ initial = saved([item]), candidate = product, query = '', read } = {}) {
+async function mount({ initial = saved([item]), candidate = product, query = '', read, options } = {}) {
   const source = fs.readFileSync(new URL('../src/pages/account/cart.astro', import.meta.url), 'utf8');
   const nodes = new Map();
   for (const match of source.matchAll(/<([a-zA-Z][a-zA-Z0-9]*)\b([^<>]*\bid="([^"]+)"[^<>]*)>/g)) {
@@ -43,6 +44,8 @@ async function mount({ initial = saved([item]), candidate = product, query = '',
     '../../lib/buyer/saved-cart-workspace.js': { createSavedCartWorkspace: options => createSavedCartWorkspace({ ...options, read: request }) },
     '../../lib/buyer/saved-cart-contract.js': { cartId },
     '../../lib/marketplace/catalog-client.js': { fetchCatalog: async () => ({ products: candidate ? [candidate] : [] }) },
+    '../../lib/commerce/options-client.js': { requestProductOptions:async()=>options??(candidate&&!candidate.priceIsFrom&&candidate.priceMinor?[{variantId:null,label:'Standard product',priceMinor:candidate.priceMinor,stockQuantity:null}]:[]) },
+    '../../lib/commerce/product-selection.js': { selectProductOption },
     '../../lib/supabase/browser': { createSupabaseBrowserClient: () => ({ auth: { onAuthStateChange(listener) { authListener = listener; return { data: { subscription: { unsubscribe() { unsubscribed = true; } } } }; } } }) },
   };
   new Function('require', 'exports', 'document', 'window', 'location', code)(name => {
@@ -65,7 +68,7 @@ test('actual saved-cart page renders titles as text, updates quantities and remo
 });
 test('product handoff loads current catalogue data and saves an explicit absolute quantity', async () => {
   const ui = await mount({ query: '?listingId=' + listing });
-  assert.equal(ui.get('product-title').textContent, 'Food'); assert.equal(ui.get('add-button').disabled, false);
+  assert.equal(ui.get('product-title').textContent, 'Food · Standard product'); assert.equal(ui.get('add-button').disabled, false);
   assert.equal(ui.get('quantity').value, '2'); ui.get('quantity').value = '7';
   ui.get('add').emit('submit'); await ui.flush();
   assert.equal(ui.calls[1].command.item.quantity, 7); assert.equal(ui.calls[1].command.item.productVariantId, null);
@@ -82,6 +85,13 @@ test('sign-out clears private cart immediately and disables edits; page exit rel
   assert.equal(ui.get('items').children.length, 0); assert.equal(ui.get('add-button').disabled, true); assert.equal(ui.get('quantity').value, '1');
   assert.equal(ui.get('signin').hidden, false); assert.match(ui.get('signin').attributes.href, /next=%2Faccount%2Fcart/);
   ui.hide(); assert.equal(ui.unsubscribed(), true);
+});
+test('variant handoff saves the selected size/colour and explicitly requested quantity', async () => {
+  const selected='abcdefab-1234-4abc-8def-abcdefabcdef';
+  const ui=await mount({candidate:{...product,priceIsFrom:true},query:`?listingId=${listing}&productVariantId=${selected}&quantity=3`,options:[{variantId:selected,label:'Size M · Blue',priceMinor:15000,stockQuantity:4}]});
+  assert.equal(ui.get('add-button').disabled,false);assert.equal(ui.get('quantity').value,'3');
+  ui.get('add').emit('submit');await ui.flush();
+  assert.equal(ui.calls[1].command.item.productVariantId,selected);assert.equal(ui.calls[1].command.item.quantity,3);
 });
 test('expired sessions and unavailable saved-cart RPCs expose clear states without private rows or automatic writes', async () => {
   for (const status of [401, 503]) {

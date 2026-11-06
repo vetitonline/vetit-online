@@ -15,13 +15,19 @@ export async function requestCheckoutQuote(lines, { baseUrl = globalThis.locatio
   try {
     const body = await response.json();
     if (body?.apiVersion !== 1 || body.state !== 'quote_only' || body.checkoutEnabled !== false || body.marketCode !== 'IN' || body.currencyCode !== 'INR' || body.deliveryMinor !== null || body.feesMinor !== null || body.totalMinor !== null || !Array.isArray(body.lines) || body.lines.length !== normalized.length) throw Error();
-    const byId = new Map(body.lines.map(line => [line.listingId,line]));
+    const key = line => `${line.listingId}:${line.productVariantId ?? ''}`;
+    const byId = new Map(body.lines.map(line => [key(line),line]));
     if (byId.size !== normalized.length) throw Error();
     for (const line of normalized) {
-      const returned = byId.get(line.listingId);
+      const returned = byId.get(key(line));
       if (!returned || returned.quantity !== line.quantity || returned.currencyCode !== 'INR' || !['title','category','sellerName'].every(key => typeof returned[key] === 'string' && returned[key].length <= 1000) || returned.lineAmountMinor !== returned.unitAmountMinor * line.quantity) throw Error();
     }
-    const quote = calculateCheckoutQuote(normalized, body.lines.map(line => ({id:line.listingId, title:line.title, category:line.category, sellerName:line.sellerName, priceMinor:line.unitAmountMinor, priceIsFrom:false, currencyCode:line.currencyCode})));
+    const products = new Map();
+    for (const line of body.lines) {
+      if (!products.has(line.listingId)) products.set(line.listingId, {id:line.listingId,title:line.title,category:line.category,sellerName:line.sellerName,priceMinor:null,priceIsFrom:false,currencyCode:'INR',options:[]});
+      products.get(line.listingId).options.push({variantId:line.productVariantId ?? null,priceMinor:line.unitAmountMinor,stockQuantity:null});
+    }
+    const quote = calculateCheckoutQuote(normalized, [...products.values()]);
     if (quote.subtotalMinor !== body.subtotalMinor) throw Error();
     return { ...quote, apiVersion:1 };
   } catch { throw new QuoteClientError(503); }

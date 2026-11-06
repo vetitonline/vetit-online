@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const defaultImage =
     "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=800&q=80";
   const status = document.querySelector("[data-cart-status]");
+  const lineKey = (item) => `${item.id.toLowerCase()}:${item.productVariantId?.toLowerCase() || ''}`;
 
   function readCart() {
     try {
@@ -17,6 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
         item.quantity > 0
       ).map((item) => ({
         id: item.id,
+        ...(typeof item.productVariantId === 'string' ? {productVariantId:item.productVariantId.toLowerCase()} : {}),
+        optionLabel: typeof item.optionLabel === 'string' ? item.optionLabel : '',
         title: item.title,
         category: typeof item.category === "string" ? item.category : "Product",
         seller: typeof item.seller === "string" ? item.seller : "Vetit seller",
@@ -104,6 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const row = document.createElement("article");
       row.className = "cart-line";
       row.dataset.productId = item.id;
+      row.dataset.cartKey = lineKey(item);
 
       const imageWrap = document.createElement("div");
       imageWrap.className = "product-image-wrap";
@@ -123,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
       seller.className = "product-seller";
       seller.textContent = item.seller;
       const title = document.createElement("h2");
-      title.textContent = item.title;
+      title.textContent = item.title + (item.optionLabel ? ` · ${item.optionLabel}` : '');
       const price = document.createElement("p");
       price.textContent = `${formatPrice(item.pricePaise)} · Quantity ${item.quantity}`;
 
@@ -167,17 +171,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const rawPrice = card.dataset.productPricePaise;
       const price = rawPrice === "" || rawPrice === undefined ? null : Number(rawPrice);
-      const existing = cart.find((item) => item.id === id);
-      if (existing) existing.quantity = Math.min(existing.quantity + 1, 99);
+      const productVariantId = card.dataset.productVariantId || null;
+      const quantity = Number(card.dataset.productQuantity || 1);
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99 || !Number.isSafeInteger(price) || price <= 0) { say('Choose an available option, price and quantity.'); return; }
+      const existing = cart.find((item) => lineKey(item) === lineKey({id,productVariantId}));
+      const stock = card.dataset.productStockQuantity;
+      if (stock !== undefined && stock !== '' && (!Number.isSafeInteger(Number(stock)) || (existing?.quantity || 0) + quantity > Number(stock))) { say('The requested quantity exceeds the latest available stock.'); return; }
+      if (existing && existing.quantity + quantity > 99) { say('A saved option supports at most 99 units.'); return; }
+      if (!existing && cart.length >= 50) { say('The browser cart supports up to 50 product options.'); return; }
+      if (existing) { existing.quantity += quantity; existing.pricePaise = price; }
       else {
         cart.push({
           id,
+          ...(productVariantId ? {productVariantId} : {}),
+          optionLabel: card.dataset.productOptionLabel || '',
           title,
           category: card.dataset.productCategory || "Product",
           seller: card.dataset.productSeller || "Vetit seller",
           image: safeImage(card.dataset.productImage),
           pricePaise: Number.isSafeInteger(price) && price >= 0 ? price : null,
-          quantity: 1,
+          quantity,
         });
       }
 
@@ -194,11 +207,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const row = button?.closest("[data-product-id]");
     if (!button || !row) return;
 
-    const item = cart.find((entry) => entry.id === row.dataset.productId);
+    const item = cart.find((entry) => lineKey(entry) === row.dataset.cartKey);
     if (!item) return;
     const action = button.dataset.cartAction;
     if (action === "remove" || (action === "decrease" && item.quantity === 1)) {
-      cart = cart.filter((entry) => entry.id !== item.id);
+      cart = cart.filter((entry) => lineKey(entry) !== lineKey(item));
     } else if (action === "decrease") {
       item.quantity -= 1;
     } else if (action === "increase") {

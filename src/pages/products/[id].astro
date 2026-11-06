@@ -3,10 +3,17 @@ import '../../../styles.css';
 import { formatProductPrice, getMarketplaceProduct } from '../../lib/marketplace/featured-products';
 import SiteHeader from '../../components/SiteHeader.astro';
 import ProductPlaceholder from '../../components/marketplace/ProductPlaceholder.astro';
+import { loadProductOptions } from '../../lib/commerce/product-selection.js';
+import { createSupabaseServerClient } from '../../lib/supabase/server';
 
 const productId = Astro.params.id ?? '';
 const result = await getMarketplaceProduct(Astro.request, Astro.cookies, productId);
 const product = result.product;
+let options: import('../../lib/commerce/product-selection.js').ProductOption[] = [];
+if (product) {
+  try { options = (await loadProductOptions(createSupabaseServerClient({request:Astro.request,cookies:Astro.cookies}), [product]))[0].options; }
+  catch { /* Disable selection when current options cannot be verified. */ }
+}
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -29,13 +36,16 @@ const product = result.product;
           <h1>{product.title}</h1>
           <p class="product-detail-seller">Sold by {product.sellerName}</p>
           <p class="product-detail-price">{formatProductPrice(product)}</p>
-          {product.priceIsFrom && <p class="catalog-data-note">Price shown is the lowest current price across active variants. Variant selection is not available yet.</p>}
+          <label for="product-option">Size, colour or product option</label>
+          <select id="product-option"><option value="">Choose an option</option>{options.map(option => <option value={option.variantId ?? 'base'}>{option.label} · {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(option.priceMinor/100)}</option>)}</select>
+          <label for="product-quantity">Quantity</label><input id="product-quantity" type="number" min="1" max="99" step="1" value="1"/>
+          <p id="product-selection-status" role="status">Choose a product option and quantity. Stock availability is not yet confirmed.</p>
           <p class="product-detail-availability">Availability: Active published marketplace listing. Stock quantity is not provided.</p>
           <div class="product-description"><h2>Product details</h2><p>{product.description.trim() || 'The seller has not provided a product description.'}</p></div>
-          <div class="product-detail-actions" data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise={product.priceMinor ?? ''}>
-            <button class="button button-primary" type="button" data-add-to-cart disabled={product.priceIsFrom}>{product.priceIsFrom ? 'Variant options coming soon' : 'Add to cart'}</button>
+          <div id="product-selection" class="product-detail-actions" data-options={JSON.stringify(options)} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise="">
+            <button class="button button-primary" type="button" data-add-to-cart disabled>Add selected option to cart</button>
             <a class="button button-secondary" href="/cart">View cart</a>
-            {!product.priceIsFrom && product.priceMinor !== null && product.priceMinor > 0 && product.currencyCode === 'INR' && <a class="button button-secondary" href={`/account/cart?listingId=${encodeURIComponent(product.id)}`}>Save to account cart</a>}
+            <a id="product-save-option" class="button button-secondary" aria-disabled="true">Save selected option to account cart</a>
           </div>
           {!product.imageUrl && <p class="catalog-data-note">The seller has not published a public product image.</p>}
         </div>
@@ -48,5 +58,34 @@ const product = result.product;
     </div>}
     <p class="sr-only" data-cart-status role="status" aria-live="polite"></p>
   </section></main>
-</div><script src="../../../script.js"></script></body>
-</html>
+</div><script src="../../../script.js"></script>
+<script>
+  import { selectProductOption } from '../../lib/commerce/product-selection.js';
+  const host = document.getElementById('product-selection');
+  if (host) {
+    const options = JSON.parse(host.dataset.options!);
+    const choice = document.getElementById('product-option') as HTMLSelectElement;
+    const quantity = document.getElementById('product-quantity') as HTMLInputElement;
+    const button = host.querySelector<HTMLButtonElement>('[data-add-to-cart]')!;
+    const saved = document.getElementById('product-save-option') as HTMLAnchorElement;
+    const status = document.getElementById('product-selection-status')!;
+    function update() {
+      button.disabled = true; saved.removeAttribute('href'); saved.setAttribute('aria-disabled','true'); host!.dataset.productPricePaise = '';
+      try {
+        if (!choice.value) throw Error('Choose a size, colour or product option.');
+        const selected = selectProductOption(options, choice.value === 'base' ? null : choice.value, Number(quantity.value));
+        host!.dataset.productVariantId = selected.variantId ?? ''; host!.dataset.productQuantity = String(selected.quantity);
+        host!.dataset.productOptionLabel = selected.label; host!.dataset.productPricePaise = String(selected.priceMinor);
+        host!.dataset.productStockQuantity = selected.stockQuantity === null ? '' : String(selected.stockQuantity);
+        button.disabled = false; saved.setAttribute('aria-disabled','false');
+        saved.href = `/account/cart?listingId=${encodeURIComponent(host!.dataset.productId!)}&${new URLSearchParams({productVariantId:selected.variantId ?? '',quantity:String(selected.quantity)})}`;
+        status.textContent = `${selected.label} · ${new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(selected.priceMinor*selected.quantity/100)} for ${selected.quantity}. ${selected.stockQuantity === null ? 'Stock not confirmed; no reservation is made.' : `${selected.stockQuantity} available.`}`;
+      } catch (error) { status.textContent = error instanceof Error ? error.message : 'Product selection is unavailable.'; }
+    }
+    choice.addEventListener('change', update); quantity.addEventListener('input', update);
+    if (options.length === 1) choice.value = options[0].variantId ?? 'base';
+    update();
+  }
+</script>
+<style>#product-option,#product-quantity {display:block;max-width:100%;padding:.8rem;margin:.5rem 0 1rem;} [aria-disabled="true"] {opacity:.6;pointer-events:none;}</style>
+</body></html>

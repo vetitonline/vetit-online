@@ -3,6 +3,7 @@ import type { QuoteRequestLine } from '../../../lib/commerce/checkout-quote.js';
 import { calculateCheckoutQuote, CheckoutQuoteError, normalizeQuoteLines } from '../../../lib/commerce/checkout-quote.js';
 import { getMarketplaceProducts } from '../../../lib/marketplace/featured-products';
 import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
+import { loadProductOptions } from '../../../lib/commerce/product-selection.js';
 
 export const prerender = false;
 
@@ -79,7 +80,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (catalogue.state !== 'available') {
       return json({ state: 'unavailable', message: 'Marketplace quoting is temporarily unavailable.' }, 503);
     }
-    const quote = calculateCheckoutQuote(lines, catalogue.products);
+    const products = await loadProductOptions(auth.supabase, catalogue.products);
+    const quote = calculateCheckoutQuote(lines, products);
     return json({ ...quote, apiVersion: 1 }, 200);
   } catch (error) {
     if (error instanceof CheckoutQuoteError) {

@@ -29,11 +29,15 @@ import SiteHeader from '../../components/SiteHeader.astro';
   import type { SavedCartState } from '../../lib/buyer/saved-cart-workspace.js';
   import { cartId } from '../../lib/buyer/saved-cart-contract.js';
   import { fetchCatalog } from '../../lib/marketplace/catalog-client.js';
+  import { requestProductOptions } from '../../lib/commerce/options-client.js';
+  import { selectProductOption } from '../../lib/commerce/product-selection.js';
   import { createSupabaseBrowserClient } from '../../lib/supabase/browser';
   const get = <T extends HTMLElement = HTMLElement>(name: string) => document.getElementById(`saved-${name}`) as T;
   const status = get('status'), list = get('items'), signin = get('signin');
   const quantity = get<HTMLInputElement>('quantity'), add = get<HTMLButtonElement>('add-button'), reload = get<HTMLButtonElement>('reload');
   let selected: string | undefined, state: SavedCartState;
+  let selectedVariant: string | null = null;
+  let requestedQuantity: number | undefined;
   let disposed = false;
   const candidateRequest = new AbortController();
   function text(parent: HTMLElement, value: string, tag = 'p') { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; }
@@ -47,8 +51,8 @@ import SiteHeader from '../../components/SiteHeader.astro';
     status.textContent = state.message || (state.phase === 'saving' ? 'Saving and checking your cart…' : state.phase === 'loading' ? 'Loading saved items…' : state.phase === 'signin' ? 'Sign in, then reload your saved cart.' : ready ? 'Your saved cart is ready.' : 'Saved cart is unavailable.');
     list.replaceChildren(); list.setAttribute('aria-busy', String(busy));
     if (!state.cart) { quantity.value = '1'; return; }
-    const existing = state.cart.items.find(item => item.listing_id === selected && item.product_variant_id === null);
-    quantity.value = String(existing?.quantity ?? 1);
+    const existing = state.cart.items.find(item => item.listing_id === selected && item.product_variant_id === selectedVariant);
+    quantity.value = String(requestedQuantity ?? existing?.quantity ?? 1);
     if (!state.cart.items.length) text(list, 'Your account cart is empty. Save a product from its catalogue page.');
     for (const item of state.cart.items) {
       const row = document.createElement('article'); row.className = 'seller-panel';
@@ -69,7 +73,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
   const controller = createSavedCartWorkspace({ render });
   get<HTMLFormElement>('add').addEventListener('submit', event => {
     event.preventDefault();
-    if (selected && (event.currentTarget as HTMLFormElement).reportValidity()) void controller.mutate({ action: 'set', item: { listingId: selected, productVariantId: null, quantity: Number(quantity.value), marketCode: 'IN' } });
+    if (selected && (event.currentTarget as HTMLFormElement).reportValidity()) { requestedQuantity = undefined; void controller.mutate({ action: 'set', item: { listingId: selected, productVariantId: selectedVariant, quantity: Number(quantity.value), marketCode: 'IN' } }); }
   });
   reload.addEventListener('click', () => void controller.load());
   async function candidate() {
@@ -81,18 +85,24 @@ import SiteHeader from '../../components/SiteHeader.astro';
       const result = await fetchCatalog({ product: id }, { signal: candidateRequest.signal });
       if (disposed) return;
       const product = result.products.find(value => value.id === id);
-      if (!product || product.priceIsFrom || product.currencyCode !== 'INR' || !Number.isSafeInteger(product.priceMinor) || product.priceMinor! <= 0) throw Error();
-      selected = id; get('product-title').textContent = product.title;
+      if (!product) throw Error();
+      const params = new URLSearchParams(location.search);
+      selectedVariant = params.get('productVariantId') ? cartId(params.get('productVariantId')) : null;
+      requestedQuantity = params.has('quantity') ? Number(params.get('quantity')) : undefined;
+      const options = await requestProductOptions(id, {signal:candidateRequest.signal});
+      const option = selectProductOption(options, selectedVariant, requestedQuantity ?? 1);
+      if (disposed) return;
+      selected = id; get('product-title').textContent = `${product.title} · ${option.label}`;
       get('product-note').textContent = 'Save this product to your account cart. The server checks current eligibility and pricing again when saving.';
     } catch {
       if (disposed) return;
       selected = undefined; get('product-title').textContent = 'Product cannot be saved right now';
-      get('product-note').textContent = 'Browse the current catalogue. Products requiring option selection cannot be added here yet.';
+      get('product-note').textContent = 'Return to the product page and choose a currently available option and quantity.';
     }
     if (state) {
       add.disabled = state.phase !== 'ready' || !selected;
-      const existing = state.cart?.items.find(item => item.listing_id === selected && item.product_variant_id === null);
-      quantity.value = String(existing?.quantity ?? 1);
+      const existing = state.cart?.items.find(item => item.listing_id === selected && item.product_variant_id === selectedVariant);
+      quantity.value = String(requestedQuantity ?? existing?.quantity ?? 1);
     }
   }
   let unsubscribe = () => {};
