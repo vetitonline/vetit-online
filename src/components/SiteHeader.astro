@@ -22,6 +22,14 @@ const { adminMode = false, sellerMode = false } = Astro.props;
 </header>
 <style>
   .header-actions [hidden] { display: none !important; }
+  @media (max-width: 760px) {
+    .site-header { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .site-header .site-logo-link { min-width: 0; }
+    .site-header .site-logo-link img { width: 150px; max-width: 100%; }
+    .site-header .header-actions { min-width: 0; height: auto; flex-wrap: wrap; white-space: normal; }
+    .header-actions [data-session-status] { flex-basis: 100%; white-space: normal; overflow-wrap: anywhere; font-size: .8rem; }
+    .site-header .main-nav { min-width: 0; max-width: 100%; }
+  }
 </style>
 <script>
   import { createSupabaseBrowserClient } from '../lib/supabase/browser';

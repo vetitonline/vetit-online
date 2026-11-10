@@ -11,7 +11,7 @@ export function createCheckoutHandler({ authenticate, dependencies, createOrder 
       const auth = await authenticate(request,cookies);
       if (auth.state !== 'authenticated') return json({state:auth.state === 'unavailable'?'unavailable':'unauthorized'},auth.state === 'unavailable'?503:401);
       if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return json({state:'invalid_request'},415);
-      if (createOrder && request.headers.get('x-vetit-profile-id') !== auth.user.id) return json({state:'session_changed'},409);
+      if ((createOrder || request.headers.has('x-vetit-profile-id')) && request.headers.get('x-vetit-profile-id') !== auth.user.id) return json({state:'session_changed'},409);
       if (createOrder && orderCreationEnabled !== true) return json({state:'unavailable',message:'Hosted order creation remains disabled pending explicit deployment approval.'},503);
       const body = await readJsonBody(request);
       if (!body.ok) return json({state:'invalid_request'},body.status);

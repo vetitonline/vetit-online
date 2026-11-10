@@ -3,18 +3,21 @@ import { normalizeAddressInput } from '../buyer/validation.js';
 import { normalizeOrderSummary, orderId } from '../buyer/order-contract.js';
 
 export class CheckoutError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
+export function normalizeDeliveryAddress(input) {
+  const address = normalizeAddressInput(input);
+  if (Object.values(address).some(value => typeof value === 'string' && /[\u0000-\u001f\u007f]/.test(value))) throw new CheckoutError('Delivery details contain unsupported characters.');
+  if (address.countryCode !== 'IN' || !/^[1-9]\d{5}$/.test(address.postalCode ?? '') || !address.stateRegion || !/^(?:\+91)?[6-9]\d{9}$/.test((address.phone ?? '').replace(/[\s()-]/g,''))) throw new CheckoutError('An Indian delivery address, state, six-digit PIN and mobile number are required.');
+  // Copy only delivery fields; IDs, geolocation, default flags and claimed totals are not authority.
+  return {
+    recipientName:address.recipientName,phone:address.phone,addressLine1:address.addressLine1,addressLine2:address.addressLine2,locality:address.locality,city:address.city,stateRegion:address.stateRegion,postalCode:address.postalCode,countryCode:'IN',
+  };
+}
 export function normalizeCheckout(input) {
   const lines = normalizeQuoteLines(input);
   const customer = input?.customer;
   if (!customer || typeof customer.email !== 'string' || customer.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email.trim())) throw new CheckoutError('Enter a valid contact email.');
-  const address = normalizeAddressInput(input.deliveryAddress);
-  if (Object.values(address).some(value => typeof value === 'string' && /[\u0000-\u001f\u007f]/.test(value))) throw new CheckoutError('Delivery details contain unsupported characters.');
-  if (address.countryCode !== 'IN' || !/^[1-9]\d{5}$/.test(address.postalCode ?? '') || !address.stateRegion || !/^(?:\+91)?[6-9]\d{9}$/.test((address.phone ?? '').replace(/[\s()-]/g,''))) throw new CheckoutError('An Indian delivery address, state, six-digit PIN and mobile number are required.');
-  if ([address.recipientName,address.addressLine1,address.city,address.stateRegion].some(value => /[\u0000-\u001f\u007f]/.test(value))) throw new CheckoutError('Delivery details contain unsupported characters.');
-  // Copy only delivery fields; IDs, geolocation, default flags and claimed totals are not authority.
-  return { lines, customer: { email: customer.email.trim().toLowerCase(), name: address.recipientName }, deliveryAddress: {
-    recipientName:address.recipientName,phone:address.phone,addressLine1:address.addressLine1,addressLine2:address.addressLine2,locality:address.locality,city:address.city,stateRegion:address.stateRegion,postalCode:address.postalCode,countryCode:'IN',
-  } };
+  const deliveryAddress=normalizeDeliveryAddress(input.deliveryAddress);
+  return {lines,customer:{email:customer.email.trim().toLowerCase(),name:deliveryAddress.recipientName},deliveryAddress};
 }
 
 /** Shipping and tax adapters return trusted server quotes, never browser-supplied charges. */

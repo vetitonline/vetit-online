@@ -11,6 +11,7 @@ export type ExistingOrderCommand={customerId:string;idempotencyKey:string;expect
 export type OrderDependencies=ReviewDependencies & {repository?:{atomic:boolean;findExistingOrder?:(input:ExistingOrderCommand)=>Promise<(OrderSummary&{customer_profile_id:string})|null>;createPendingOrder:(input:AtomicOrderCommand)=>Promise<OrderSummary&{customer_profile_id:string}>};payments?:{mode:'sandbox';prepare:(input:{orderId:string;amountMinor:number;currencyCode:'INR';idempotencyKey:string})=>Promise<{reference:string}>}};
 export class CheckoutError extends Error { status:number; constructor(message:string,status?:number); }
 export function normalizeCheckout(input:unknown): NormalizedCheckout;
+export function normalizeDeliveryAddress(input:unknown):DeliveryAddress;
 export function reviewCheckout(input:unknown, dependencies:ReviewDependencies):Promise<CheckoutReview>;
 export function createCheckoutOrder(input:unknown, customerId:string, dependencies:OrderDependencies):Promise<{apiVersion:1;state:'created'|'existing';order:OrderSummary;payment:{state:'disabled'|'unavailable'|'sandbox';reference?:string}}>;
 export function transitionReturn(input:{state:string;action:string;role:string;deliveredAt:string;returnWindowDays:number;now?:number}):string;

@@ -225,5 +225,21 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       assert.equal(await sql(`select consumed from vetit_checkout.reservations where order_id='${order.id}';`),'0');
       assert.equal(await sql(`select count(*) from public.inventory_movements where inventory_level_id='${products[19].inventory}';`),'0');
     });
+    await t.test('saved delivery addresses enforce ownership, default rollback and immutable existing order snapshots',async()=>{
+      const save=(owner,id,label,defaultAddress)=>actor(owner,`select public.save_my_address(${id?literal(id):'null'},${literal(label)},'Synthetic Customer','9876543210','9 Address-book Road',null,null,'Mumbai','Maharashtra','400001','IN',null,null,${defaultAddress})`);
+      const snapshots=()=>sql(`select jsonb_agg(delivery_address_snapshot order by id) from public.orders where customer_profile_id='${alice}';`);
+      const before=await snapshots();
+      const home=await save(alice,null,'Home',true),foreign=await save(bob,null,'Foreign',true),work=await save(alice,null,'Work',true);
+      assert.equal(await actor(alice,'select id from public.addresses where is_default'),work);
+      assert.equal(await actor(alice,`select count(*) from public.addresses where id='${foreign}'`),'0');
+      await assert.rejects(save(alice,foreign,'Attempted foreign edit',true),/Address not found/);
+      assert.equal(await actor(alice,'select id from public.addresses where is_default'),work,'Failed foreign update must roll back the earlier default reset');
+      await actor(alice,`delete from public.addresses where id='${foreign}'`);
+      assert.equal(await actor(bob,`select count(*) from public.addresses where id='${foreign}' and is_default`),'1');
+      await save(alice,work,'Updated work',true);
+      assert.equal(await actor(alice,`select label from public.addresses where id='${work}'`),'Updated work');
+      await actor(alice,`delete from public.addresses where id='${home}'`);
+      assert.equal(await snapshots(),before,'Address-book edits/removal cannot rewrite placed-order delivery snapshots');
+    });
   }finally{await db.stop();}
 });

@@ -17,6 +17,14 @@ import SiteHeader from '../components/SiteHeader.astro';
 <section class="seller-panel" aria-labelledby="delivery-heading">
   <h2 id="delivery-heading">Customer and delivery details</h2>
   <p>Review a browser or saved account cart with a delivery address. Details are used for this review only and are not stored in your browser.</p>
+  <div class="saved-address-picker">
+    <button id="checkout-address-load" class="button button-secondary" type="button">Load saved addresses</button>
+    <label for="checkout-address-choice">Saved delivery address</label><select id="checkout-address-choice" disabled><option value="">Choose an address</option></select>
+    <button id="checkout-address-use" class="button button-secondary" type="button" disabled>Use this address</button>
+    <button id="checkout-address-manual" class="button button-secondary" type="button">Enter a different address</button>
+    <a href="/account/addresses">Manage saved addresses</a>
+    <p id="checkout-address-status" role="status" aria-live="polite">Load saved addresses or enter delivery details below.</p>
+  </div>
   <form id="checkout-details" class="checkout-details">
     <label>Cart source<select name="source"><option value="browser">This browser's cart</option><option value="account">Saved account cart</option></select></label>
     <label>Contact email<input name="email" type="email" autocomplete="email" maxlength="254" required/></label>
@@ -24,6 +32,7 @@ import SiteHeader from '../components/SiteHeader.astro';
     <label>Indian mobile number<input name="phone" type="tel" autocomplete="tel" required/></label>
     <label>Address line 1<input name="addressLine1" autocomplete="address-line1" maxlength="200" required/></label>
     <label>Address line 2 (optional)<input name="addressLine2" autocomplete="address-line2" maxlength="200"/></label>
+    <label>Locality (optional)<input name="locality" maxlength="120"/></label>
     <label>City<input name="city" autocomplete="address-level2" maxlength="120" required/></label>
     <label>State / union territory<input name="stateRegion" autocomplete="address-level1" maxlength="120" required/></label>
     <label>PIN code<input name="postalCode" autocomplete="postal-code" inputmode="numeric" pattern="[1-9][0-9]{5}" required/></label>

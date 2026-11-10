@@ -7,7 +7,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
   <h1>Your saved account cart</h1>
   <p>Keep product quantities with your signed-in account. Your browser cart stays separate and is never imported automatically.</p>
   <p>This saves shopping choices only. Products and prices may change; saving does not reserve stock, place an order or take payment.</p>
-  <nav aria-label="Saved cart navigation"><a href="/account">Your account</a> · <a href="/products">Browse products</a> · <a href="/cart">Browser cart</a> · <a href="/orders">Your orders</a></nav>
+  <nav aria-label="Saved cart navigation"><a href="/account">Your account</a> · <a href="/products">Browse products</a> · <a href="/cart">Browser cart</a> · <a href="/orders">Your orders</a> · <a href="/checkout?source=account">Review this cart at checkout</a></nav>
   <p id="saved-status" role="status" aria-live="polite">Loading saved items…</p>
   <a id="saved-signin" href="/login?next=%2Faccount%2Fcart" hidden>Sign in</a>
   <section id="saved-candidate" class="seller-panel" hidden>

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import ts from 'typescript';
 import { selectProductOption } from '../src/lib/commerce/product-selection.js';
 import { normalizeQuoteLines } from '../src/lib/commerce/checkout-quote.js';
+import { createCheckoutAddressPicker } from '../src/lib/commerce/checkout-address-picker.js';
 const id='10000000-0000-4000-8000-000000000001',variant='10000000-0000-4000-8000-000000000002';
 class Node{
   constructor(){this.children=[];this.events={};this.attributes={};this.dataset={};this.value='';this.textContent='';this.disabled=false;}
@@ -37,6 +38,7 @@ async function checkout({source='browser',read,review}={}){
     './checkout-review-client.js':{requestCheckoutReview:review??(async input=>{calls.push(input);return{profileId:id,summary:{lines:[{title:'<b>Harness</b>',productVariantId:variant,quantity:2,unitAmountMinor:12500,lineAmountMinor:25000}],subtotalMinor:25000},shipping:null,taxMinor:null,totalMinor:null,blockers:['Shipping service is not configured.']};})},
     '../buyer/saved-cart-client.js':{requestSavedCart:read??(async()=>({profileId:id,items:[{listing_id:id,product_variant_id:variant,quantity:2}]}))},
     './checkout-quote.js':{normalizeQuoteLines},
+    './checkout-address-picker.js':{createCheckoutAddressPicker},
     '../supabase/browser':{createSupabaseBrowserClient:()=>({auth:{onAuthStateChange(fn){auth=fn;return{data:{subscription:{unsubscribe(){}}}};}}})},
   };
   new Function('require','exports','document','window','FormData','localStorage',compile(fs.readFileSync(new URL('../src/lib/commerce/checkout-page.ts',import.meta.url),'utf8')))(name=>{assert.ok(name in modules);return modules[name];},{},{getElementById:name=>nodes.get(name),createElement:()=>new Node()},{addEventListener(name,fn){events[name]=fn;}},class{get(name){return fields[name]??null;}},{getItem:()=>JSON.stringify([{id,productVariantId:variant,quantity:2}])});

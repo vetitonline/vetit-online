@@ -1,0 +1,37 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Delivery addresses | Vetit Online</title></head>
+<body><div class="page-shell"><SiteHeader/><main class="product-showcase address-book">
+  <h1>Your delivery addresses</h1><p>Manage delivery details for your account, then choose an address during checkout review.</p>
+  <nav aria-label="Account navigation"><a href="/account">Your account</a> · <a href="/account/cart">Saved cart</a> · <a href="/checkout">Checkout review</a></nav>
+  <p id="addresses-status" role="status" aria-live="polite">Loading delivery addresses…</p>
+  <a id="addresses-signin" href="/login?next=%2Faccount%2Faddresses" hidden>Sign in</a>
+  <button id="addresses-reload" class="button button-secondary" type="button">Reload addresses</button>
+  <div class="address-book-layout">
+    <section aria-labelledby="address-list-heading"><h2 id="address-list-heading">Saved addresses</h2><div id="addresses-list"></div></section>
+    <section class="seller-panel" aria-labelledby="address-editor-heading">
+      <h2 id="address-editor-heading">Add a delivery address</h2>
+      <form id="addresses-form" class="address-form">
+        <fieldset id="addresses-fields" disabled>
+          <label>Address label (optional)<input name="label" maxlength="40" placeholder="Home or work"/></label>
+          <label>Recipient name<input name="recipientName" autocomplete="name" maxlength="120" required/></label>
+          <label>Mobile number<input name="phone" type="tel" autocomplete="tel" maxlength="32"/></label>
+          <label>Address line 1<input name="addressLine1" autocomplete="address-line1" maxlength="200" required/></label>
+          <label>Address line 2 (optional)<input name="addressLine2" autocomplete="address-line2" maxlength="200"/></label>
+          <label>Locality (optional)<input name="locality" maxlength="120"/></label>
+          <label>City<input name="city" autocomplete="address-level2" maxlength="120" required/></label>
+          <label>State / union territory<input name="stateRegion" autocomplete="address-level1" maxlength="120"/></label>
+          <label>Postal / PIN code<input name="postalCode" autocomplete="postal-code" maxlength="20"/></label>
+          <label>Country code<input name="countryCode" value="IN" pattern="[A-Za-z]{2}" maxlength="2" required aria-describedby="addresses-help"/></label>
+          <label class="address-checkbox"><input name="isDefault" type="checkbox"/> Make this my default address</label>
+          <button class="button button-primary" type="submit">Save address</button>
+          <button id="addresses-new" class="button button-secondary" type="button">Start a new address</button>
+        </fieldset>
+      </form>
+      <p id="addresses-help">Checkout currently supports India. It requires a mobile number, state and valid six-digit PIN. Saving an address does not place an order.</p>
+    </section>
+  </div><noscript>Enable JavaScript to manage saved addresses securely.</noscript>
+</main></div><script src="../../lib/buyer/address-book-page.ts"></script>
+<style>[hidden]{display:none!important}.address-book{max-width:1200px}.address-book-layout{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:2rem;align-items:start}.address-form fieldset{border:0;padding:0;min-width:0;display:grid;gap:.9rem}.address-form label{display:flex;flex-direction:column;gap:.4rem}.address-form input{padding:.7rem;min-width:0;max-width:100%}.address-form .address-checkbox{flex-direction:row;align-items:center}.address-book article{margin-bottom:1rem;overflow-wrap:anywhere}.address-book article button{margin:.5rem .5rem 0 0}</style></body></html>
