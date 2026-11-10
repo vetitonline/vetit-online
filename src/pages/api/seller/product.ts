@@ -4,7 +4,7 @@ import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { getSellerTaxonomy } from '../../../lib/seller/data';
 import { sellerProductInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canEditSellerProduct, canManageSellerBusiness } from '../../../lib/seller/permissions.js';
-import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
+import { isSameOriginFormMutation, matchesFormAccount } from '../../../lib/api/request-security.js';
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
 
@@ -23,6 +23,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     let form:FormData;
     try { form = await request.formData(); assertSingleSellerFields(form, ['business_id', 'listing_id']); }
     catch { return new Response('Invalid seller product form.', { status: 400 }); }
+    if (!matchesFormAccount(form,user.id)) return new Response('Your account changed. Reload the seller page before saving.', {status:409,headers:{'cache-control':'private, no-store'}});
     const businessId = String(form.get('business_id') ?? '').trim();
     const listingId = String(form.get('listing_id') ?? '').trim() || null;
     if (!isSellerUuid(businessId) || (listingId && !isSellerUuid(listingId))) return new Response('Choose a valid seller profile.', { status: 400 });

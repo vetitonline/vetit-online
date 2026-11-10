@@ -31,7 +31,7 @@ export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,re
  function load(){
   if(disposed)return Promise.resolve();if(pending)return pending;const generation=++epoch,controller=new AbortController();abort=controller;emit(blank('loading'));let timer;
   const current=()=>!disposed&&generation===epoch;
-  const work=async()=>{const auth=await session.getSession();if(!current()||!owner||auth.userId!==owner)throw Error('Session changed');const data=await request({baseUrl,accessToken:auth.accessToken,signal:controller.signal});const latest=await session.getSession();if(!current()||latest.userId!==owner||auth.userId!==owner)throw Error('Session changed');return project(data);};
+  const work=async()=>{const auth=await session.getSession();if(!current()||!owner||auth.userId!==owner)throw Error('Session changed');const data=await request({baseUrl,profileId:auth.userId,accessToken:auth.accessToken,signal:controller.signal});const latest=await session.getSession();if(!current()||latest.userId!==owner||auth.userId!==owner||data.profileId!==auth.userId)throw Error('Session changed');return project(data);};
   pending=Promise.race([work(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Read deadline')),timeoutMs);})]).then(data=>{if(current())emit(data);}).catch(error=>{if(current())emit(blank(error?.status===401?'signin':'error'));}).finally(()=>{clearTimeout(timer);controller.abort();if(current())pending=null;});return pending;
  }
  const actions=createConfirmedWrite({session,timeoutMs,render:renderAction,refresh:load,validate:input=>{
@@ -41,7 +41,7 @@ export function createNativeSellerCatalogue({session,apiBaseUrl,testApiOrigin,re
   if(input.action==='submit'){if(!product)throw Error('Draft required');normalizeCatalogueSave({businessId:input.businessId,listingId:product.id,fields:product.fields},view.categories);return{action:'submit',businessId:input.businessId,listingId:product.id,expectedUpdatedAt:product.updatedAt};}
   if(input.action!=='save')throw Error('Unsupported action');
   const normalized=normalizeCatalogueSave(input,view.categories);if(normalized.product.speciesIds.some(id=>!view.animals.some(a=>a.id===id)))throw Error('Species unavailable');return JSON.parse(JSON.stringify(input));
- },send:async(command,accessToken,signal)=>{const result=await request({baseUrl,command,accessToken,signal});if(signal.aborted)return;if(!isSellerUuid(result.listingId)||(command.listingId&&command.listingId!==result.listingId)||(!command.listingId&&before.has(result.listingId)))throw Error('Invalid acknowledgement');expected=result.listingId;},matches:command=>{
+ },send:async(command,accessToken,signal)=>{const result=await request({baseUrl,profileId:owner,command,accessToken,signal});if(signal.aborted)return;if(result.profileId!==owner||!isSellerUuid(result.listingId)||(command.listingId&&command.listingId!==result.listingId)||(!command.listingId&&before.has(result.listingId)))throw Error('Invalid acknowledgement');expected=result.listingId;},matches:command=>{
   if(view.phase!=='ready')return false;
   const candidates=view.products.filter(p=>p.businessId===command.businessId&&(expected?p.id===expected:command.listingId?p.id===command.listingId:!before.has(p.id)));
   if(command.action==='submit')return candidates.some(p=>p.status==='submitted');

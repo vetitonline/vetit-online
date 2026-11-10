@@ -29,10 +29,10 @@ const selectedBusinessId = catalogBusinesses.some(item => item.id === requestedB
 ---
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>New product draft | Vetit Online</title></head>
-<body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page seller-onboarding">
+<body><div class="page-shell"><SiteHeader sellerMode /><main data-seller-account data-profile-id={dashboard?.user?.id} class="seller-page seller-onboarding">
   {unavailable || taxonomy?.state === 'error' ? <section class="seller-panel"><h1>Product editor is unavailable</h1><p>Vetit could not load the protected seller catalogue. Please try again shortly.</p></section> : <section class="seller-panel seller-form-panel">
     <span class="section-label dark-label"><span></span>Seller catalogue</span><h1>Create a product draft</h1><p>Choose a Vetit category and the pets or livestock this product is for. You can save now and submit for review later.</p>
     {Astro.url.searchParams.has('error') && <p class="seller-feedback is-error" role="alert">The draft could not be saved. Review the details and try again.</p>}
-    {!taxonomy?.categories.length || !taxonomy.animals.length ? <p class="seller-empty">Vetit categories are not available yet. Please try again later.</p> : <SellerProductForm businesses={catalogBusinesses} selectedBusinessId={selectedBusinessId} categories={taxonomy.categories} animals={taxonomy.animals} />}
+    {!taxonomy?.categories.length || !taxonomy.animals.length ? <p class="seller-empty">Vetit categories are not available yet. Please try again later.</p> : <SellerProductForm profileId={dashboard!.user!.id} businesses={catalogBusinesses} selectedBusinessId={selectedBusinessId} categories={taxonomy.categories} animals={taxonomy.animals} />}
   </section>}
-</main></div></body></html>
+</main></div><script src="../../../lib/seller/account-page.ts"></script></body></html>

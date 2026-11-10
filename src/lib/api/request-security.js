@@ -18,3 +18,15 @@ export function isSameOriginMutation(request, { allowBearer = true } = {}) {
 export function isSameOriginFormMutation(request) {
   return isSameOriginMutation(request, { allowBearer: false });
 }
+
+const PROFILE_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** A loaded account is a request precondition, never an authorization grant. */
+export function matchesExpectedAccount(request,verifiedId){
+  const expected=request.headers.get('x-vetit-profile-id');
+  return typeof expected==='string'&&PROFILE_ID.test(expected)&&expected.toLowerCase()===verifiedId;
+}
+/** HTML forms use one explicit value because native form submits cannot set headers. */
+export function matchesFormAccount(form,verifiedId){
+  const values=form.getAll('expected_profile_id');
+  return values.length===1&&typeof values[0]==='string'&&PROFILE_ID.test(values[0])&&values[0].toLowerCase()===verifiedId;
+}

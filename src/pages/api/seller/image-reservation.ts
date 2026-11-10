@@ -4,7 +4,7 @@ import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerImage } from '../../../lib/seller/permissions.js';
 import { sellerImageExtension, isSellerUuid } from '../../../lib/seller/validation.js';
 import { readJsonBody } from '../../../lib/api/json-body.js';
-import { isSameOriginMutation } from '../../../lib/api/request-security.js';
+import { isSameOriginMutation, matchesExpectedAccount } from '../../../lib/api/request-security.js';
 
 const json = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -19,6 +19,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return json({ error: 'authentication_required' }, 401);
+    if (!matchesExpectedAccount(request,user.id)) return json({error:'session_changed'},409);
     const body = await readJsonBody(request, 4096);
     if (!body.ok) return json({ error: 'invalid_image_request' }, body.status);
     const input = body.value as Record<string, unknown> | null;
@@ -68,6 +69,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return json({ error: 'authentication_required' }, 401);
+    if (!matchesExpectedAccount(request,user.id)) return json({error:'session_changed'},409);
     const body = await readJsonBody(request, 4096);
     if (!body.ok) return json({ error: 'invalid_image_request' }, body.status);
     const input = body.value as Record<string, unknown> | null;

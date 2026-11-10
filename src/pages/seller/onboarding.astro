@@ -22,11 +22,11 @@ if (!getSupabasePublicConfig()) {
 ---
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seller onboarding | Vetit Online</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin></head>
-<body><div class="page-shell"><SiteHeader sellerMode /><main class="seller-page seller-onboarding">
+<body><div class="page-shell"><SiteHeader sellerMode /><main data-seller-account data-profile-id={user?.id} class="seller-page seller-onboarding">
   {unavailable ? <section class="seller-panel"><h1>Seller onboarding is unavailable</h1><p>Vetit could not connect to the seller workspace. Please try again shortly.</p></section> : <section class="seller-panel seller-form-panel">
     <span class="section-label dark-label"><span></span>Seller onboarding</span><h1>Create your seller profile</h1><p>Use your existing Vetit account. Your business begins as pending verification, and all products start as drafts.</p>
     {Astro.url.searchParams.has('error') && <p class="seller-feedback is-error" role="alert">We could not create that seller profile. Check the details and try again.</p>}
-    <form class="seller-form" method="post" action="/api/seller/business">
+    <form class="seller-form" method="post" action="/api/seller/business"><input type="hidden" name="expected_profile_id" value={user?.id}/>
       <label>Business display name / व्यवसाय का नाम<input name="display_name" minlength="2" maxlength="120" required autocomplete="organization" placeholder="Your shop or farm name"></label>
       <label>Legal name (optional)<input name="legal_name" maxlength="180" autocomplete="organization-title"></label>
       <label>Business type<select name="business_type" required><option value="individual">Individual seller</option><option value="company">Company</option><option value="farm">Farm or livestock business</option><option value="other">Other seller</option></select></label>
@@ -38,4 +38,4 @@ if (!getSupabasePublicConfig()) {
     </form>
     <p class="seller-security-note">Creating a profile does not verify your business or publish any listing. Vetit administrators manage verification and marketplace moderation.</p>
   </section>}
-</main></div></body></html>
+</main></div><script src="../../lib/seller/account-page.ts"></script></body></html>

@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { canManageSellerBusiness, canSellerTransitionListing } from '../../../lib/seller/permissions.js';
-import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
+import { isSameOriginFormMutation, matchesFormAccount } from '../../../lib/api/request-security.js';
 import { executeModeration } from '../../../lib/moderation/workflow.js';
 import type { QueueClient } from '../../../lib/moderation/queue.js';
 
@@ -27,6 +27,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const supabase = createSupabaseServerClient({ request, cookies });
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return redirect(request, `/login?mode=join&next=${encodeURIComponent(returnPath)}`);
+    if (!matchesFormAccount(form,user.id)) return new Response('Your account changed. Reload the seller page before saving.', {status:409,headers:{'cache-control':'private, no-store'}});
     const { data: membership, error: membershipError } = await supabase.from('business_memberships')
       .select('profile_id, business_id, member_role, membership_status').eq('business_id', businessId).eq('profile_id', user.id)
       .eq('membership_status', 'active').maybeSingle();

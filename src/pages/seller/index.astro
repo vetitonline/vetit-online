@@ -30,7 +30,7 @@ const visibleProducts = filterSellerProducts(dashboard?.products ?? [],filters);
 <!doctype html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seller dashboard | Vetit Online</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin></head>
 <body><div class="page-shell"><SiteHeader sellerMode />
-  <main class="seller-page">
+  <main data-seller-account data-profile-id={dashboard?.user?.id} class="seller-page">
     {loadFailed ? <section class="seller-panel"><span class="section-label dark-label"><span></span>Seller space</span><h1>Seller dashboard is unavailable</h1><p>Vetit could not reach the authenticated seller data. Please try again shortly.</p><a class="button button-secondary" href="/">Return to marketplace</a></section> : <>
       <section class="seller-heading"><div><span class="section-label dark-label"><span></span>Seller workspace</span><h1>Your Vetit business</h1><p>Manage your business details and product drafts. Vetit reviews products before marketplace publication.</p></div><a class="button button-primary" href="/seller/onboarding">Add seller profile</a></section>
       {query.has('saved') && <p class="seller-feedback" role="status">Your changes were saved.</p>}
@@ -42,7 +42,7 @@ const visibleProducts = filterSellerProducts(dashboard?.products ?? [],filters);
           <div class="seller-business-title"><div><span class="seller-status">{business.verification_status.replace('_', ' ')}</span><h2 id={`business-${business.id}`}>{business.display_name}</h2></div>{canCatalog(business.id) && <a href={`/seller/products/new?business=${business.id}`} class="button button-secondary small-button">Add product</a>}</div>
           <p class="seller-muted">Seller profile · India · {business.business_type}</p><a href={`/seller/review?kind=seller&subject=${business.id}`}>Application review / आवेदन समीक्षा</a>
           <form class="seller-business-form" method="post" action="/api/seller/business">
-            <input type="hidden" name="business_id" value={business.id}>
+            <input type="hidden" name="expected_profile_id" value={dashboard.user?.id}/><input type="hidden" name="business_id" value={business.id}>
             <label>Business name<input name="display_name" maxlength="120" required value={business.display_name} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
             <label>Legal name<input name="legal_name" maxlength="180" value={business.legal_name ?? ''} disabled={!['owner','admin'].includes(roleByBusiness.get(business.id) ?? '')}></label>
             <p class="seller-muted">Business type · {business.business_type.replace('_', ' ')}</p>
@@ -71,4 +71,4 @@ const visibleProducts = filterSellerProducts(dashboard?.products ?? [],filters);
       <section id="seller-operations" class="seller-panel"><h2>Inventory and order operations</h2><p>Stock adjustments and fulfilment updates require the reviewed commerce backend and an active operational role.</p><a class="button button-secondary small-button" href="/seller/inventory">Manage product inventory</a> <a class="button button-secondary small-button" href="/seller/orders">Manage orders and shipments</a></section>
     </>}
   </main>
-</div><script src="../../../script.js"></script></body></html>
+</div><script src="../../../script.js"></script><script src="../../lib/seller/account-page.ts"></script></body></html>

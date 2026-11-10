@@ -17,14 +17,14 @@ function mount({fetchImpl,upload=async()=>({error:null}),files=[{type:'image/png
  let listingField=null,deletes=0;const navigations=[];
  form.querySelector=selector=>({'[data-product-images]':images,'[data-image-status]':status,'button[type="submit"]':button,'input[name="species_ids"]:checked':{checked:true},'input[name="listing_id"]':listingField})[selector]??null;
  form.append=element=>{listingField=element;};
- class SyntheticFormData extends FormData{constructor(){super();this.set('title','Synthetic draft');this.set('business_id',id);if(listingField)this.set('listing_id',listingField.value);}}
+ class SyntheticFormData extends FormData{constructor(){super();this.set('title','Synthetic draft');this.set('business_id',id);this.set('expected_profile_id',id);if(listingField)this.set('listing_id',listingField.value);}}
  const document={querySelector:selector=>selector==='[data-seller-product-form]'?form:null,createElement:()=>new Element()};
  const window={addEventListener(){},location:{assign:url=>navigations.push(url)}};
  const source=fs.readFileSync(new URL('../src/components/seller/SellerProductForm.astro',import.meta.url),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
  const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
  const modules={'../../lib/supabase/browser':{createSupabaseBrowserClient:()=>({storage:{from:()=>({upload,remove:async()=>{deletes++;}})}})},'../../lib/seller/image-selection.js':{validateSellerImageSelection},'../../lib/seller/validation.js':sellerValidation};
  new Function('require','exports','document','window','fetch','FormData',compiled)(name=>{if(!(name in modules))throw Error('Unexpected dependency');return modules[name];},{},document,window,fetchImpl,SyntheticFormData);
- return{button,status,navigations,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
+ return{invalidate:()=>{form.dataset.accountInvalidated='true';},button,status,navigations,deletes:()=>deletes,listingField:()=>listingField,submit:()=>form.listeners.submit({preventDefault(){}})};
 }
 test('a confirmed draft survives thrown upload failure without a second save or automatic cleanup',async()=>{
  let saves=0;const ui=mount({fetchImpl:async url=>url.includes('image-reservation')?new Response(JSON.stringify({imageId:id,path:`${id}/${id}/${id}.png`})):(saves++,new Response(JSON.stringify({listingId:id}))),upload:async()=>{throw Error('private upload diagnostic');}});
@@ -41,3 +41,11 @@ test('double submit and failed upload responses preserve existing objects and re
  const pending=ui.submit();await ready;await ui.submit();finish(new Response(JSON.stringify({listingId:id})));await pending;assert.equal(saves,1);assert.equal(ui.deletes(),0);assert.match(ui.navigations[0],/images=unavailable/);
 });
 test('validated photo paths upload with replacement disabled; forged reservation paths preserve the saved draft and never upload',async()=>{for(const valid of [true,false]){let uploads=0;const ui=mount({fetchImpl:async url=>new Response(JSON.stringify(url.includes('image-reservation')?{imageId:id,path:valid?`${id}/${id}/${id}.png`:`${id}/${id}/../foreign.png`}:{listingId:id})),upload:async(path,_file,options)=>{uploads++;assert.equal(path,`${id}/${id}/${id}.png`);assert.equal(options.upsert,false);return{error:null};}});await ui.submit();assert.equal(uploads,valid?1:0);assert.equal(ui.listingField().value,id);assert.equal(ui.deletes(),0);if(valid)assert.equal(ui.navigations[0],`/seller/products/${id}?saved=1`);else{assert.equal(ui.button.disabled,true);assert.match(ui.status.textContent,/Draft saved/);}}});
+test('account invalidation drops an in-flight draft acknowledgement before follow-on photos, navigation or duplicate saves',async()=>{
+ let resolve,saves=0,photos=0,uploads=0;
+ const ui=mount({fetchImpl:async url=>{if(url.includes('image-reservation')){photos++;throw Error('Must not reserve after account change');}saves++;return new Promise(done=>resolve=done);},upload:async()=>{uploads++;return{error:null};}});
+ const pending=ui.submit();ui.invalidate();resolve(Response.json({listingId:id}));await pending;await ui.submit();assert.equal(saves,1);assert.equal(photos,0);assert.equal(uploads,0);assert.deepEqual(ui.navigations,[]);assert.equal(ui.deletes(),0);
+});
+test('photo reservation requests keep the original server-rendered account precondition',async()=>{
+ const ui=mount({fetchImpl:async(url,options)=>{if(url.includes('image-reservation')){assert.equal(options.headers['x-vetit-profile-id'],id);return Response.json({imageId:id,path:`${id}/${id}/${id}.png`});}assert.equal(options.body.get('expected_profile_id'),id);return Response.json({listingId:id});}});await ui.submit();assert.equal(ui.navigations.length,1);
+});

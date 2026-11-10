@@ -12,6 +12,8 @@
     "test:addresses": "node --test tests/address-book.test.mjs",
     "test:order-cancellation": "node --test tests/customer-order-cancellation.test.mjs",
     "test:order-cancellation-browser": "node scripts/run-cancellation-browser.mjs",
+    "test:seller-account-isolation": "node --test tests/seller-account-isolation.test.mjs tests/seller-submission-boundaries.test.mjs tests/seller-catalogue.test.mjs tests/native-seller-catalogue.test.mjs tests/seller-image-management.test.mjs tests/seller-draft-recovery.test.mjs",
+    "test:seller-account-browser": "node scripts/run-seller-account-browser.mjs",
     "test:inventory": "node --test tests/seller-inventory.test.mjs",
     "test:inventory-browser": "node scripts/run-inventory-browser.mjs",
     "test:addresses-browser": "node scripts/run-address-browser.mjs",

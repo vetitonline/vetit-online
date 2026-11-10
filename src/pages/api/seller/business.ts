@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from '../../../lib/supabase/server';
 import { getSupabasePublicConfig } from '../../../lib/supabase/config';
 import { sellerBusinessInput, assertSingleSellerFields, isSellerUuid } from '../../../lib/seller/validation.js';
 import { canManageSellerBusiness } from '../../../lib/seller/permissions.js';
-import { isSameOriginFormMutation } from '../../../lib/api/request-security.js';
+import { isSameOriginFormMutation, matchesFormAccount } from '../../../lib/api/request-security.js';
 
 const redirect = (request: Request, path: string) => Response.redirect(new URL(path, request.url), 303);
 
@@ -21,6 +21,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     let form:FormData;
     try { form = await request.formData(); assertSingleSellerFields(form, ['business_id']); }
     catch { return new Response('Invalid seller business form.', { status: 400 }); }
+    if (!matchesFormAccount(form,user.id)) return new Response('Your account changed. Reload the seller page before saving.', {status:409,headers:{'cache-control':'private, no-store'}});
     const existingBusinessId = String(form.get('business_id') ?? '').trim();
     if (existingBusinessId && !isSellerUuid(existingBusinessId)) return new Response('Invalid seller profile.', { status: 400 });
     if (existingBusinessId) {

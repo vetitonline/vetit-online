@@ -4,6 +4,7 @@ import type { ProductAnimal, ProductCategory } from '../../lib/marketplace/featu
 type VariantValue = { seller_sku: string; option_attributes: Record<string, string>; amountMinor?: number | null };
 type ExistingProduct = { id: string; business_id: string; title: string; description: string | null; category_id: string; moderation_status: string };
 interface Props {
+  profileId: string;
   businesses: Array<{ id: string; display_name: string }>;
   categories: ProductCategory[];
   animals: ProductAnimal[];
@@ -14,11 +15,12 @@ interface Props {
   variants?: VariantValue[];
   existingImageCount?: number;
 }
-const { businesses, categories, animals, product, selectedBusinessId, selectedSpeciesIds = [], baseAmountRupees, variants = [], existingImageCount = 0 } = Astro.props;
+const { profileId, businesses, categories, animals, product, selectedBusinessId, selectedSpeciesIds = [], baseAmountRupees, variants = [], existingImageCount = 0 } = Astro.props;
 const displayVariants: VariantValue[] = variants.length ? variants : [{ seller_sku: '', option_attributes: {}, amountMinor: null }];
 const remainingImageSlots = Math.max(0, 5 - existingImageCount);
 ---
 <form class="seller-form" method="post" action="/api/seller/product" data-seller-product-form>
+  <input type="hidden" name="expected_profile_id" value={profileId}/>
   {product && <input type="hidden" name="listing_id" value={product.id} />}
   <label>Seller profile
     <select name="business_id" required>
@@ -81,6 +83,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
   const previews = form?.querySelector<HTMLElement>('[data-image-previews]');
   let previewUrls: string[] = [];
   let saving = false, saveUncertain = false;
+  const invalidated=()=>form?.dataset.accountInvalidated==='true';
   let savedListingId: string | null = null;
   const validId = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   const clearPreviews = () => { previewUrls.forEach(url => URL.revokeObjectURL(url)); previewUrls = []; previews?.replaceChildren(); };
@@ -96,7 +99,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (saving || saveUncertain) return;
+    if (saving || saveUncertain || invalidated()) return;
     if (!form.querySelector('input[name="species_ids"]:checked')) {
       if (imageStatus) { imageStatus.hidden = false; imageStatus.classList.add('is-error'); imageStatus.textContent = 'Choose at least one pet or livestock type for this product.'; }
       return;
@@ -113,6 +116,7 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
     try {
       const payload = new FormData(form);
       const response = await fetch(form.action, { method: 'POST', body: payload, credentials:'same-origin', redirect:'error', headers: { Accept: 'application/json' } });
+      if(invalidated())return;
       if (!response.ok) { rejected = response.status >= 400 && response.status < 500; throw new Error('The product draft was not accepted.'); }
       const { listingId } = await response.json();
       if (!validId(listingId)) throw new Error('Draft confirmation unavailable.');
@@ -125,13 +129,16 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
         if (imageStatus) imageStatus.textContent = 'Draft saved. Uploading your photos…';
         const supabase = createSupabaseBrowserClient();
         for (const [index, file] of files.entries()) {
+          if(invalidated())return;
           const reservationResponse = await fetch('/api/seller/image-reservation', {
-            method: 'POST', credentials:'same-origin', redirect:'error', headers: { 'content-type': 'application/json', accept: 'application/json' },
+            method: 'POST', credentials:'same-origin', redirect:'error', headers: { 'content-type': 'application/json', accept: 'application/json', 'x-vetit-profile-id': String(payload.get('expected_profile_id')) },
             body: JSON.stringify({ listing_id: listingId, content_type: file.type, alt_text: `${String(payload.get('title') ?? 'Product')} photo ${index + 1}` }),
           });
+          if(invalidated())return;
           if (!reservationResponse.ok) { imageFailure = true; continue; }
           const { path } = await reservationResponse.json();
           if (!isCanonicalSellerImagePath(path,String(payload.get('business_id')),listingId) || !path.endsWith('.'+sellerImageExtension(file.type))) throw new Error('Photo reservation confirmation unavailable.');
+          if(invalidated())return;
           const { error: uploadError } = await supabase.storage.from('listing-images').upload(path, file, { contentType: file.type, upsert: false });
           if (uploadError) {
             imageFailure = true;
@@ -140,8 +147,10 @@ const remainingImageSlots = Math.max(0, 5 - existingImageCount);
           }
         }
       }
+      if(invalidated())return;
       window.location.assign(`/seller/products/${listingId}?saved=1${imageFailure ? '&images=unavailable' : ''}`);
     } catch {
+      if(invalidated())return;
       saveUncertain = Boolean(savedListingId) || !rejected;
       if (imageStatus) {
         imageStatus.hidden = false; imageStatus.classList.add('is-error');

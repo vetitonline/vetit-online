@@ -4,7 +4,7 @@ import { BuyerInputError, normalizeFulfilmentTransitionInput } from '../../../li
 import { readJsonBody } from '../../../lib/api/json-body.js';
 import { authenticateApiRequest } from '../../../lib/supabase/api-auth';
 import { callProposedCommerceRpc } from '../../../lib/supabase/proposed-commerce-rpc';
-import { isSameOriginMutation } from '../../../lib/api/request-security.js';
+import { isSameOriginMutation, matchesExpectedAccount } from '../../../lib/api/request-security.js';
 
 export const prerender = false;
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -17,6 +17,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
   const auth = await authenticateApiRequest(request, cookies);
   if (auth.state === 'unavailable') return json({ state: 'unavailable' }, 503);
   if (auth.state !== 'authenticated') return json({ state: 'unauthorized' }, 401);
+  if (!matchesExpectedAccount(request,auth.user.id)) return json({state:'session_changed'},409);
   const { supabase } = auth;
   const body = await readJsonBody(request);
   if (!body.ok) return json({ state: 'invalid_request' }, body.status);
@@ -30,7 +31,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
     if (error) {
       const status = error.code === '42501' ? 403 : error.code === 'P0002' ? 404 : error.code === '22023' || error.code === '23514' ? 422 : 503;
-      return json({ state: status === 503 ? 'unavailable' : 'invalid_request', message: 'Fulfilment was not changed.' }, status);
+      return json({ state: status === 503 ? 'unavailable' : 'invalid_request', message: 'Fulfilment change could not be confirmed. Reload before trying again.' }, status);
     }
     return json({ state: 'updated', fulfilmentId: data });
   } catch (error) {
