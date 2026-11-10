@@ -29,13 +29,7 @@ export function createPostgresOrderRepository(client,{approved=false,quoteId}={}
       if(!result||result.subtotal_minor!==input.expectedSubtotalMinor||result.delivery_minor!==input.shippingQuote.amountMinor||result.tax_minor!==input.taxMinor)throw new CheckoutError('Order response needs reconciliation.',503);
       return result;
     },
-    async cancelOrder({orderId:target,customerId}){
-      const id=orderId(target);const {data,error}=await client.rpc('cancel_my_checkout_order',{p_order_id:id});
-      if(error)throw failure(error);
-      const order=normalizeOrderSummary(data);
-      if(data.customer_profile_id!==orderId(customerId)||order.id!==id||order.order_status!=='cancelled')throw new CheckoutError('Cancellation needs reconciliation.',503);
-      return order;
-    },
+    cancelOrder:input=>cancelPostgresOrder(client,input),
   };
 }
 
@@ -47,4 +41,14 @@ export async function issuePostgresCheckoutQuote(workerClient,input,{approved=fa
   if(error)throw new CheckoutError('Trusted checkout quote is unavailable.',503);
   if(!data||data.id!==orderId(data.id)||data.currencyCode!=='INR'||data.deliveryMinor!==deliveryMinor||data.taxMinor!==taxMinor||!Number.isSafeInteger(data.subtotalMinor)||data.subtotalMinor<=0||data.totalMinor!==data.subtotalMinor+deliveryMinor+taxMinor||!Number.isSafeInteger(data.totalMinor)||!Number.isFinite(Date.parse(data.expiresAt))||Date.parse(data.expiresAt)<=Date.now())throw new CheckoutError('Trusted checkout quote is invalid.',503);
   return data;
+}
+
+/** Existing atomic, customer-scoped cancellation; never inserts or deletes orders. */
+export async function cancelPostgresOrder(client,{orderId:target,customerId}){
+  const id=orderId(target),owner=orderId(customerId);
+  const {data,error}=await client.rpc('cancel_my_checkout_order',{p_order_id:id});
+  if(error)throw failure(error);
+  const order=normalizeOrderSummary(data);
+  if(data.customer_profile_id!==owner||order.id!==id||order.order_status!=='cancelled')throw new CheckoutError('Cancellation needs reconciliation.',503);
+  return order;
 }

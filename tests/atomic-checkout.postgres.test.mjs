@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { startCheckoutDatabase } from './checkout-postgres-runner.mjs';
 import { createPostgresOrderRepository,issuePostgresCheckoutQuote } from '../src/lib/commerce/postgres-order-repository.server.js';
+import { createBuyerOrderCancelHandler } from '../src/lib/buyer/order-cancel-api.js';
 import { createCheckoutOrder } from '../src/lib/commerce/checkout-service.js';
 
 const literal=value=>"'"+String(value).replaceAll("'","''")+"'";
@@ -297,6 +298,30 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       assert.deepEqual(await read(),[]);
       await sql(`update public.categories set moderation_status='active' where id='${category}'`);
       assert.equal((await read()).length,1);
+    });
+    await t.test('customer cancellation HTTP boundary releases stock once, rolls back downstream failures and blocks authorized payments',async()=>{
+      const input=request([28],2),quote=await issue(input),order=await place(quote,input);
+      await assert.rejects(actor(alice,`set local vetit.test.failure='yes';select public.cancel_my_checkout_order('${order.id}')`),/Synthetic downstream failure/);
+      assert.equal(await sql(`select order_status from public.orders where id='${order.id}'`),'pending');
+      assert.equal(await sql(`select quantity_reserved from public.inventory_levels where id='${products[28].inventory}'`),'2');
+      assert.equal(await sql(`select status from public.fulfilments where order_id='${order.id}'`),'pending');
+      const handler=owner=>createBuyerOrderCancelHandler({authenticate:async()=>({state:'authenticated',user:{id:owner},supabase:{
+        from(table){assert.equal(table,'orders');const filters=new Map(),q={select:()=>q,eq:(field,value)=>{filters.set(field,value);return q;},maybeSingle:async()=>({data:JSON.parse(await actor(owner,`select row_to_json(o) from (select id,order_status from public.orders where customer_profile_id=${literal(filters.get('customer_profile_id'))} and id=${literal(filters.get('id'))}) o`)||'null')})};return q;},
+        async rpc(name,args){assert.equal(name,'cancel_my_checkout_order');try{return{data:JSON.parse(await actor(owner,`select public.cancel_my_checkout_order(${literal(args.p_order_id)})`))};}catch(error){return{error:{code:/Payment reconciliation|not found|unpaid pending/.test(error.message)?'42501':'XX000'}};}}
+      }})});
+      const cancel=(owner,target)=>handler(owner)({request:new Request('https://vetit.invalid/api/buyer/orders/cancel',{method:'POST',headers:{origin:'https://vetit.invalid','content-type':'application/json','x-vetit-profile-id':owner},body:JSON.stringify({orderId:target})})});
+      assert.equal((await cancel(bob,order.id)).status,404);
+      const cancelled=await Promise.all([cancel(alice,order.id),cancel(alice,order.id)]);
+      assert.deepEqual(cancelled.map(r=>r.status),[200,200]);
+      assert.equal(await sql(`select quantity_reserved from public.inventory_levels where id='${products[28].inventory}'`),'0');
+      assert.equal(await actor(null,`select max_quantity from public.get_product_stock(array['${products[28].variant}'::uuid])`,'anon'),'3');
+      assert.equal(await sql(`select count(*) from vetit_checkout.order_events where order_id='${order.id}' and new_status='cancelled'`),'1');
+      assert.equal(await sql(`select bool_and(status='cancelled') from public.fulfilments where order_id='${order.id}'`),'t');
+      const paidInput=request([28],1),paid=await place(await issue(paidInput),paidInput);
+      await sql(`insert into public.payments(order_id,customer_profile_id,provider,provider_payment_reference,status,amount_minor,currency_code) values('${paid.id}','${alice}','sandbox','${randomUUID()}','authorized',${paid.total_minor},'INR')`);
+      assert.equal((await cancel(alice,paid.id)).status,403);
+      assert.equal(await sql(`select order_status from public.orders where id='${paid.id}'`),'pending');
+      assert.equal(await sql(`select quantity_reserved from public.inventory_levels where id='${products[28].inventory}'`),'1');
     });
   }finally{await db.stop();}
 });

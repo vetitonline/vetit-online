@@ -11,12 +11,13 @@ export async function requestBuyerOrders({baseUrl,orderId:detail,limit,cursor,ac
   if(!response.ok)throw new BuyerOrderError(response.status===401?'Sign in to view your orders.':response.status===404?'Order not found.':'Order history is temporarily unavailable.',response.status);
   try{
     const body=await response.json();if(!body||body.apiVersion!==1||body.state!=='available')throw Error();
+    const identity=body.profileId===undefined?{}:{profileId:orderId(body.profileId)};
     if(detail!==undefined){
       const order=normalizeOrderSummary(body.order);if(order.id!==orderId(detail)||!Array.isArray(body.items)||!Array.isArray(body.fulfilments)||body.items.length>100||body.fulfilments.length>100||typeof body.truncated!=='boolean')throw Error();
-      return{apiVersion:1,state:'available',order,items:body.items.map(row=>normalizeOrderItem(row,order.currency_code)),fulfilments:body.fulfilments.map(normalizeOrderFulfilment),truncated:body.truncated};
+      return{apiVersion:1,state:'available',...identity,order,items:body.items.map(row=>normalizeOrderItem(row,order.currency_code)),fulfilments:body.fulfilments.map(normalizeOrderFulfilment),truncated:body.truncated};
     }
     if(!Array.isArray(body.orders)||body.orders.length>(limit??20)||!(body.nextCursor===null||typeof body.nextCursor==='string'))throw Error();
     if(body.nextCursor!==null)normalizeOrderHistoryQuery(new URLSearchParams({cursor:body.nextCursor}));
-    return{apiVersion:1,state:'available',orders:body.orders.map(normalizeOrderSummary),nextCursor:body.nextCursor};
+    return{apiVersion:1,state:'available',...identity,orders:body.orders.map(normalizeOrderSummary),nextCursor:body.nextCursor};
   }catch{throw new BuyerOrderError('Order history returned an invalid response.',503);}
 }

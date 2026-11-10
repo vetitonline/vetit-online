@@ -1,6 +1,7 @@
 import {resolveIndianLocale} from '../i18n/locales.js';
 const copy = {
   en: {
+    cancelHint:'Cancellation is available only for eligible unpaid pending orders. The latest order and payment status will be checked.', cancel:'Cancel unpaid order', cancelConfirm:'Cancel this unpaid pending order and release its reserved stock? This cannot be undone. No refund or payment will be processed.', cancelling:'Cancelling and checking order…', cancelled:'Order cancellation confirmed. Reserved stock has been released.', reconcile:'Cancellation is unavailable or unconfirmed. Reload the order to check its status before trying again.',
     orders: 'Your orders', ordersIntro: 'View saved order details and seller-provided tracking. No payment or delivery action is performed here.',
     loading: 'Loading…', empty: 'No orders yet.', signin: 'Sign in to view your orders.', notfound: 'Order not found for this account.', error: 'Orders are temporarily unavailable. Please retry.',
     retry: 'Retry', more: 'Load more', back: 'All orders', view: 'View order', date: 'Placed', total: 'Order total', subtotal: 'Items subtotal', delivery: 'Delivery', tax: 'Tax',
@@ -10,6 +11,7 @@ const copy = {
     unknownTotal: 'Delivery, tax and final total are not calculated.', remove: 'Remove', increase: 'Increase quantity', decrease: 'Decrease quantity', account: 'Orders and tracking online', options: 'Choose options online', unpriced: 'Price unavailable',
   },
   hi: {
+    cancelHint:'केवल पात्र अवैतनिक लंबित ऑर्डर रद्द किए जा सकते हैं। ऑर्डर और भुगतान की नवीनतम स्थिति जाँची जाएगी।', cancel:'अवैतनिक ऑर्डर रद्द करें', cancelConfirm:'इस अवैतनिक लंबित ऑर्डर को रद्द करके आरक्षित स्टॉक उपलब्ध करें? यह कार्रवाई वापस नहीं ली जा सकती। कोई भुगतान या रिफंड नहीं होगा।', cancelling:'ऑर्डर रद्द करके जाँच रहे हैं…', cancelled:'ऑर्डर रद्द होने की पुष्टि हुई। आरक्षित स्टॉक उपलब्ध कर दिया गया है।', reconcile:'रद्द करने की पुष्टि नहीं हुई या सेवा उपलब्ध नहीं है। दोबारा कोशिश करने से पहले ऑर्डर की स्थिति फिर लोड करके देखें।',
     orders: 'आपके ऑर्डर', ordersIntro: 'सहेजे गए ऑर्डर और विक्रेता की ट्रैकिंग जानकारी देखें। यहाँ भुगतान या डिलीवरी की कोई कार्रवाई नहीं होती।',
     loading: 'लोड हो रहा है…', empty: 'अभी कोई ऑर्डर नहीं है।', signin: 'अपने ऑर्डर देखने के लिए लॉग इन करें।', notfound: 'इस खाते में यह ऑर्डर नहीं मिला।', error: 'ऑर्डर अभी उपलब्ध नहीं हैं। फिर कोशिश करें।',
     retry: 'फिर कोशिश करें', more: 'और देखें', back: 'सभी ऑर्डर', view: 'ऑर्डर देखें', date: 'ऑर्डर की तारीख', total: 'ऑर्डर का कुल मूल्य', subtotal: 'वस्तुओं का मूल्य', delivery: 'डिलीवरी', tax: 'कर',

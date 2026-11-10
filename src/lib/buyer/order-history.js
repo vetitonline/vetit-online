@@ -17,13 +17,13 @@ export function createBuyerOrderHistoryHandler({authenticate}){
         const items=await auth.supabase.from('order_items').select('id,listing_id,business_id,product_variant_id,title_snapshot,quantity,unit_price_minor,currency_code').eq('order_id',order.id).order('id').limit(101);
         const fulfilments=await auth.supabase.from('fulfilments').select('id,business_id,status,carrier,tracking_reference,shipped_at,delivered_at').eq('order_id',order.id).order('id').limit(101);
         if(items.error||fulfilments.error||!Array.isArray(items.data)||!Array.isArray(fulfilments.data))throw Error();
-        return json({state:'available',order,items:items.data.slice(0,100).map(row=>normalizeOrderItem(row,order.currency_code)),fulfilments:fulfilments.data.slice(0,100).map(normalizeOrderFulfilment),truncated:items.data.length>100||fulfilments.data.length>100});
+        return json({state:'available',profileId:auth.user.id,order,items:items.data.slice(0,100).map(row=>normalizeOrderItem(row,order.currency_code)),fulfilments:fulfilments.data.slice(0,100).map(normalizeOrderFulfilment),truncated:items.data.length>100||fulfilments.data.length>100});
       }
       if(input.cursor)query=query.or(`created_at.lt.${input.cursor.createdAt},and(created_at.eq.${input.cursor.createdAt},id.lt.${input.cursor.id})`);
       const result=await query.order('created_at',{ascending:false}).order('id',{ascending:false}).limit(input.limit+1);
       if(result.error||!Array.isArray(result.data))throw Error();
       const orders=result.data.slice(0,input.limit).map(normalizeOrderSummary);
-      return json({state:'available',orders,nextCursor:result.data.length>input.limit?encodeOrderCursor(orders.at(-1)):null});
+      return json({state:'available',profileId:auth.user.id,orders,nextCursor:result.data.length>input.limit?encodeOrderCursor(orders.at(-1)):null});
     }catch(error){
       if(error instanceof BuyerOrderError&&error.status===400)return json({state:'invalid_request',message:error.message},400);
       return json({state:'unavailable',message:'Order history is temporarily unavailable.'},503);
