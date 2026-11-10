@@ -68,7 +68,7 @@ const visibleProducts = filterSellerProducts(dashboard?.products ?? [],filters);
         </article>)}</div> : dashboard.products.length ? <p>No products match these filters. / कोई उत्पाद नहीं मिला। <a href="/seller#seller-catalogue">Clear filters</a></p> : <div class="seller-empty"><h3>No products yet</h3><p>Product drafts are visible only to your business until Vetit reviews and publishes them.</p><a href={`/seller/products/new?business=${dashboard.businesses[0].id}`}>Create your first product draft →</a></div>}
       </section> : null}
       <p class="seller-security-note">Vetit’s database policies check your signed-in account and active business membership on every seller operation. A seller profile never grants Vetit administrator access.</p>
-      <section id="seller-operations" class="seller-panel"><h2>Inventory and order operations</h2><p>Stock adjustments and fulfilment updates require the reviewed commerce backend and an active operational role.</p><button class="button button-secondary small-button" disabled type="button">Inventory unavailable</button> <a class="button button-secondary small-button" href="/seller/orders">Manage orders and shipments</a></section>
+      <section id="seller-operations" class="seller-panel"><h2>Inventory and order operations</h2><p>Stock adjustments and fulfilment updates require the reviewed commerce backend and an active operational role.</p><a class="button button-secondary small-button" href="/seller/inventory">Manage product inventory</a> <a class="button button-secondary small-button" href="/seller/orders">Manage orders and shipments</a></section>
     </>}
   </main>
 </div><script src="../../../script.js"></script></body></html>

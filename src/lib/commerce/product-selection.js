@@ -1,4 +1,5 @@
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { readProductStock } from './product-stock.js';
 export function selectionKey(listingId, variantId) {
   return `${listingId.toLowerCase()}:${variantId?.toLowerCase() ?? ''}`;
 }
@@ -20,6 +21,7 @@ export async function loadProductOptions(client, products, now = new Date().toIS
   ]);
   for (const result of [variants, prices]) if (result.error || !Array.isArray(result.data) || result.count !== result.data.length) throw Error('Product options are unavailable.');
   if (variants.data.length > 1000 || prices.data.length > 2000) throw Error('Product options exceed the supported range.');
+  const stock=await readProductStock(client,variants.data.map(row=>row.id));
   const current = new Map();
   for (const price of prices.data) {
     const key = selectionKey(price.listing_id, price.product_variant_id);
@@ -29,7 +31,8 @@ export async function loadProductOptions(client, products, now = new Date().toIS
     const options = [];
     const add = (variantId, attributes, label) => {
       const amount = current.get(selectionKey(product.id, variantId));
-      if (Number.isSafeInteger(amount) && amount > 0) options.push({ variantId, attributes, label, priceMinor: amount, stockQuantity: null });
+      if(variantId&&stock&&!stock.has(variantId))return;
+      if (Number.isSafeInteger(amount) && amount > 0) options.push({ variantId, attributes, label, priceMinor: amount, stockQuantity: variantId?stock?.get(variantId)??null:null });
     };
     add(null, {}, 'Standard product');
     for (const variant of variants.data.filter(value => value.listing_id === product.id)) {

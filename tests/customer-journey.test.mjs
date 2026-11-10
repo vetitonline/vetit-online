@@ -24,7 +24,7 @@ test('option selection enforces option identity, current positive price, quantit
 test('option loader uses eligible parent IDs, active variants and current INR prices without opening private inventory',async()=>{
   const calls=[];
   const results=[{data:[{id:variant,listing_id:id,option_attributes:{size:'M',colour:'Blue'}},{id:other,listing_id:id,option_attributes:{unsupported:{nested:'value'}}}],count:2},{data:[{listing_id:id,product_variant_id:null,amount_minor:10000},{listing_id:id,product_variant_id:variant,amount_minor:12500},{listing_id:id,product_variant_id:variant,amount_minor:99999}],count:3}];
-  const client={from(table){const call=[table];calls.push(call);const result=results.shift();const q={then:resolve=>Promise.resolve(result).then(resolve)};for(const method of ['select','in','eq','order','limit','lte','or'])q[method]=(...args)=>{call.push([method,...args]);return q;};return q;}};
+  const client={rpc:async()=>({data:null,error:{code:'PGRST202'}}),from(table){const call=[table];calls.push(call);const result=results.shift();const q={then:resolve=>Promise.resolve(result).then(resolve)};for(const method of ['select','in','eq','order','limit','lte','or'])q[method]=(...args)=>{call.push([method,...args]);return q;};return q;}};
   const [result]=await loadProductOptions(client,[product],'2026-11-06T12:00:00Z');
   assert.equal(result.options.length,2);assert.equal(result.options[1].priceMinor,12500);assert.deepEqual(result.options[1].attributes,{size:'M',colour:'Blue'});assert.equal(result.options[1].stockQuantity,null);
   assert.deepEqual(calls.map(call=>call[0]),['product_variants','listing_prices']);assert.ok(JSON.stringify(calls).includes('active_status'));assert.ok(JSON.stringify(calls).includes('valid_from'));
@@ -121,4 +121,24 @@ test('returns enforce an explicit window and operational roles and never execute
   assert.equal(transitionReturn(base),'requested');assert.throws(()=>transitionReturn({...base,returnWindowDays:0}));assert.throws(()=>transitionReturn({...base,now:now+10*86400000}));
   assert.equal(transitionReturn({...base,state:'requested',action:'approve',role:'fulfillment_manager'}),'approved');assert.throws(()=>transitionReturn({...base,state:'requested',action:'approve',role:'catalog_manager'}));
   assert.equal(transitionReturn({...base,state:'received',action:'review_refund',role:'owner'}),'refund_pending');assert.throws(()=>transitionReturn({...base,state:'refund_pending',action:'refund',role:'owner'}));
+});
+
+test('public availability flows through real option loading into variant selection and checkout validation',async()=>{
+  const makeClient=stockRows=>{
+    const results=[{data:[{id:variant,listing_id:id,option_attributes:{size:'M'}}],count:1},{data:[{listing_id:id,product_variant_id:variant,amount_minor:12500}],count:1}];
+    return{rpc:async()=>({data:stockRows}),from(){const result=results.shift(),query={then:resolve=>Promise.resolve(result).then(resolve)};for(const name of ['select','in','eq','order','limit','lte','or'])query[name]=()=>query;return query;}};
+  };
+  const [limited]=await loadProductOptions(makeClient([{variant_id:variant,max_quantity:2}]),[product]);
+  assert.equal(limited.options[0].stockQuantity,2);
+  assert.equal(selectProductOption(limited.options,variant,2).quantity,2);
+  assert.throws(()=>selectProductOption(limited.options,variant,3),/stock/);
+  assert.throws(()=>calculateCheckoutQuote([{listingId:id,productVariantId:variant,quantity:3}],[limited]),error=>error.code==='stock_unavailable');
+  const [withdrawn]=await loadProductOptions(makeClient([]),[product]);assert.equal(withdrawn.options.length,0);
+  const [soldOut]=await loadProductOptions(makeClient([{variant_id:variant,max_quantity:0}]),[product]);assert.throws(()=>selectProductOption(soldOut.options,variant,1),/stock/);
+});
+
+test('checkout review provides an actionable stock conflict without trusting backend error messages',async()=>{
+  const handler=createCheckoutHandler({authenticate:async()=>({state:'authenticated',user:{id:owner}}),dependencies:async()=>({...deps,loadProducts:async()=>[{...product,options:[{...option,stockQuantity:1}]}]})});
+  await assert.rejects(requestCheckoutReview(input,{baseUrl:'https://test.invalid',fetchImpl:async(url,options)=>handler({request:new Request(url,{...options,headers:{...options.headers,origin:'https://test.invalid'}})})}),/current stock.*Update your cart/);
+  await assert.rejects(requestCheckoutReview(input,{baseUrl:'https://test.invalid',fetchImpl:async()=>Response.json({message:'Private backend diagnostic',code:'arbitrary'},{status:400})}),error=>!error.message.includes('Private backend diagnostic')&&error.message.includes('unavailable'));
 });

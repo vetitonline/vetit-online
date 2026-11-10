@@ -20,7 +20,7 @@ export function createCheckoutHandler({ authenticate, dependencies, createOrder 
       return json(result,createOrder&&result.state==='created'?201:200);
     } catch(error) {
       const status = error instanceof CheckoutError ? error.status : error instanceof CheckoutQuoteError || error instanceof BuyerInputError ? 400 : 503;
-      return json({state:status===503?'unavailable':'invalid_request',message:status===503?'Checkout is unavailable. No payment has been taken. Reconcile any existing order before retrying.':error.message},status);
+      return json({state:status===503?'unavailable':'invalid_request',...(error instanceof CheckoutQuoteError&&error.code==='stock_unavailable'?{code:'stock_unavailable'}:{}),message:status===503?'Checkout is unavailable. No payment has been taken. Reconcile any existing order before retrying.':error.message},status);
     }
   };
 }

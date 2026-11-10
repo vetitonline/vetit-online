@@ -1,0 +1,4 @@
+import { resolveIndianLocale } from '../i18n/locales.js';
+const translations={en:{title:'Product inventory',loading:'Loading seller inventory…',saving:'Saving and checking inventory…',ready:'Default-location stock loaded.',empty:'No product options are visible to your active inventory role.',onHand:'On hand',reserved:'Reserved',available:'Available to order',unknown:'Not configured',save:'Save on-hand units',stockUnknown:'Stock is not configured. Enter an initial on-hand count.',filter:'Filter by product title or SKU',all:'All businesses'}};
+/** Add reviewed dictionaries here. Unsupported locales keep English copy and language. */
+export function inventoryCopy(language='en'){const locale=resolveIndianLocale(language,Object.keys(translations));return{language:locale.language,...translations[locale.language]};}

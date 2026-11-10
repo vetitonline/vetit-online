@@ -336,6 +336,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
     <Pressable onPress={() => openWeb('/account')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Manage your profile online</Text></Pressable>
     <Pressable onPress={() => openWeb('/account/cart')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Manage saved account cart online</Text></Pressable>
     <Pressable onPress={() => openWeb('/account/addresses')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Manage delivery addresses online</Text></Pressable>
+    <Pressable onPress={() => openWeb('/seller/inventory')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Manage seller inventory online</Text></Pressable>
     <Pressable onPress={() => openWeb('/seller')} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{language === 'hi' ? 'विक्रेता स्थिति और समीक्षा ऑनलाइन' : 'Seller status and review online'}</Text></Pressable>
     <Pressable onPress={() => openWeb('/appointments')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Appointment history and notifications online</Text></Pressable>
     <Pressable onPress={() => openWeb(`/orders?lang=${language}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>{copy.account}</Text></Pressable>

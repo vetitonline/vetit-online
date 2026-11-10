@@ -7,7 +7,13 @@ export async function requestCheckoutReview(input, { baseUrl=globalThis.location
   if (accessToken !== undefined && (typeof accessToken !== 'string' || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(accessToken) || accessToken.length>8192)) throw Error('Sign-in token is invalid.');
   if(profileId!==undefined&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profileId))throw Error('Account identity is invalid.');
   const response = await fetchImpl(new URL('/api/checkout/review',origin),{method:'POST',credentials:accessToken?'omit':'same-origin',redirect:'error',cache:'no-store',signal,headers:{'content-type':'application/json',accept:'application/json',...(accessToken?{authorization:`Bearer ${accessToken}`}:{ }),...(profileId?{'x-vetit-profile-id':profileId}:{})},body:JSON.stringify(payload)});
-  if (!response.ok) throw Object.assign(Error(response.status===401?'Sign in to review checkout.':response.status===409?'Your account changed. Reload your saved addresses and cart.':'Checkout review is unavailable. No order or payment has been placed.'),{status:response.status});
+  if (!response.ok) {
+    // Only a stable, reviewed code may replace the generic error; never display
+    // arbitrary API/database messages in a customer checkout.
+    let stockUnavailable=false;
+    if(response.status===400){try{stockUnavailable=(await response.json()).code==='stock_unavailable';}catch{}}
+    throw Object.assign(Error(response.status===401?'Sign in to review checkout.':response.status===409?'Your account changed. Reload your saved addresses and cart.':stockUnavailable?'Selected quantity exceeds current stock. Update your cart and review checkout again.':'Checkout review is unavailable. No order or payment has been placed.'),{status:response.status});
+  }
   const body = await response.json();
   if(body?.apiVersion!==1 || body.state!=='review_only' || body.checkoutEnabled!==false || body.payment?.state!=='disabled' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.profileId) || !Array.isArray(body.blockers) || !body.blockers.every(value=>typeof value==='string')) throw Error('Checkout response is invalid.');
   const summary = await requestCheckoutQuote(payload.lines,{baseUrl:origin.origin,signal,fetchImpl:async()=>Response.json({...body.summary,apiVersion:1})});

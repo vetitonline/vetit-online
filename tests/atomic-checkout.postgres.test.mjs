@@ -39,8 +39,8 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
         insert into public.product_variants(id,listing_id,seller_sku,option_attributes) values('${p.variant}','${p.id}','SYNTHETIC-${index}','{"size":"M"}');
         insert into public.listing_prices(listing_id,product_variant_id,market_code,currency_code,amount_minor) values('${p.id}','${p.variant}','IN','INR',10000);
         insert into public.listing_markets values('${p.id}','IN','available','approved');
-        insert into public.inventory_levels(id,business_id,product_variant_id,quantity_on_hand) values('${p.inventory}','${business}','${p.variant}',3);`).join('\n')}`);
-    for(const path of ['supabase/test-project/20261009010000_business_private_fields.sql','supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql','supabase/migrations/20261008210707_vetit_seller_security_hardening.sql','supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql','supabase/test-project/20261106160000_atomic_checkout.proposal.sql'])await sql(await readFile(new URL('../'+path,import.meta.url),'utf8'));
+        ${index===29?'':`insert into public.inventory_levels(id,business_id,product_variant_id,quantity_on_hand) values('${p.inventory}','${business}','${p.variant}',3);`}`).join('\n')}`);
+    for(const path of ['supabase/test-project/20261009010000_business_private_fields.sql','supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql','supabase/migrations/20261008210707_vetit_seller_security_hardening.sql','supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql','supabase/test-project/20261106160000_atomic_checkout.proposal.sql','supabase/test-project/20261110090000_seller_inventory.proposal.sql'])await sql(await readFile(new URL('../'+path,import.meta.url),'utf8'));
 
     await t.test('creates immutable snapshots, per-seller fulfilments and reservations in one transaction',async()=>{
       const input=request([0,1],2),quote=await issue(input),order=await place(quote,input);
@@ -240,6 +240,63 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       assert.equal(await actor(alice,`select label from public.addresses where id='${work}'`),'Updated work');
       await actor(alice,`delete from public.addresses where id='${home}'`);
       assert.equal(await snapshots(),before,'Address-book edits/removal cannot rewrite placed-order delivery snapshots');
+    });
+    await t.test('inventory workspace is scoped to operational seller roles and never grants private tables',async()=>{
+      const inventory=JSON.parse(await actor(seller,'select public.get_my_seller_inventory()'));
+      assert.deepEqual(inventory.businesses,[{id:business,name:'Synthetic Seller'}]);
+      assert.equal(inventory.variants.length,30);
+      for(const profile of [alice,bob,catalog]){
+        const denied=JSON.parse(await actor(profile,'select public.get_my_seller_inventory()'));
+        assert.deepEqual(denied,{businesses:[],variants:[]});
+        await assert.rejects(actor(profile,`select public.set_seller_inventory_checked('${business}','${products[25].variant}',5,'${products[25].inventory}',now())`),/access denied/i);
+      }
+      await assert.rejects(actor(null,'select public.get_my_seller_inventory()','anon'),/permission denied/);
+      await assert.rejects(actor(alice,'select * from public.inventory_levels'),/permission denied/);
+    });
+    await t.test('checked stock changes preserve reservations and reject stale concurrent writes',async()=>{
+      const input=request([25],2);await place(await issue(input),input);
+      const stamp=await sql(`select updated_at from public.inventory_levels where id='${products[25].inventory}'`);
+      const change=qty=>actor(seller,`select public.set_seller_inventory_checked('${business}','${products[25].variant}',${qty},'${products[25].inventory}',${literal(stamp)}::timestamptz)`);
+      await assert.rejects(change(1),/reserved|reservation/i);
+      assert.equal(await sql(`select quantity_on_hand from public.inventory_levels where id='${products[25].inventory}'`),'3');
+      const writes=await Promise.allSettled([change(5),change(6)]);
+      assert.equal(writes.filter(r=>r.status==='fulfilled').length,1);
+      assert.match(writes.find(r=>r.status==='rejected').reason.message,/changed|reload|stale/i);
+      assert.equal(await sql(`select quantity_reserved from public.inventory_levels where id='${products[25].inventory}'`),'2');
+      const publicStock=JSON.parse(await actor(null,`select jsonb_agg(s) from public.get_product_stock(array['${products[25].variant}'::uuid]) s`,'anon'));
+      const count=Number(await sql(`select quantity_on_hand-quantity_reserved from public.inventory_levels where id='${products[25].inventory}'`));
+      assert.deepEqual(publicStock,[{variant_id:products[25].variant,max_quantity:count}]);
+    });
+    await t.test('seller stock reductions racing checkout reservations cannot oversell or lose reservations',async()=>{
+      const input=request([27],2),quote=await issue(input);
+      const stamp=await sql(`select updated_at from public.inventory_levels where id='${products[27].inventory}'`);
+      const writes=await Promise.allSettled([
+        actor(seller,`select public.set_seller_inventory_checked('${business}','${products[27].variant}',1,'${products[27].inventory}',${literal(stamp)}::timestamptz)`),
+        place(quote,input)
+      ]);
+      assert.equal(writes.filter(r=>r.status==='fulfilled').length,1);
+      assert.match(writes.find(r=>r.status==='rejected').reason.message,/reserved|Insufficient inventory|Stock changed/i);
+      assert.equal(await sql(`select quantity_reserved<=quantity_on_hand from public.inventory_levels where id='${products[27].inventory}'`),'t');
+    });
+    await t.test('unconfigured stock stays unknown until exactly one concurrent initial stock write succeeds',async()=>{
+      const inventory=JSON.parse(await actor(seller,'select public.get_my_seller_inventory()'));
+      const row=inventory.variants.find(v=>v.variantId===products[29].variant);
+      assert.equal(row.inventoryId,null);assert.equal(row.quantityOnHand,null);assert.equal(row.quantityReserved,null);
+      const read=()=>actor(null,`select max_quantity is null from public.get_product_stock(array['${products[29].variant}'::uuid])`,'anon');
+      assert.equal(await read(),'t');
+      const change=qty=>actor(seller,`select public.set_seller_inventory_checked('${business}','${products[29].variant}',${qty},null,null)`);
+      const writes=await Promise.allSettled([change(4),change(5)]);assert.equal(writes.filter(r=>r.status==='fulfilled').length,1);
+      assert.equal(await read(),'f');
+      assert.equal(await sql(`select count(*) from public.inventory_levels where product_variant_id='${products[29].variant}'`),'1');
+    });
+    await t.test('public stock exposes only capped eligible availability and no private inventory columns',async()=>{
+      await actor(seller,`select public.set_seller_inventory('${business}','${products[26].variant}',150,null)`);
+      const read=()=>actor(null,`select coalesce(jsonb_agg(s),'[]') from public.get_product_stock(array['${products[26].variant}'::uuid,'${randomUUID()}'::uuid]) s`,'anon').then(JSON.parse);
+      assert.deepEqual(await read(),[{variant_id:products[26].variant,max_quantity:99}]);
+      await sql(`update public.categories set moderation_status='archived' where id='${category}'`);
+      assert.deepEqual(await read(),[]);
+      await sql(`update public.categories set moderation_status='active' where id='${category}'`);
+      assert.equal((await read()).length,1);
     });
   }finally{await db.stop();}
 });

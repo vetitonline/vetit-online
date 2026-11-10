@@ -10,6 +10,8 @@
     "check": "astro check",
     "test:account": "node --test tests/account-profile.test.mjs tests/account-page.test.mjs",
     "test:addresses": "node --test tests/address-book.test.mjs",
+    "test:inventory": "node --test tests/seller-inventory.test.mjs",
+    "test:inventory-browser": "node scripts/run-inventory-browser.mjs",
     "test:addresses-browser": "node scripts/run-address-browser.mjs",
     "test:saved-cart": "node --test tests/saved-cart.test.mjs tests/saved-cart-page.test.mjs",
     "test:journey": "node --test tests/customer-journey.test.mjs tests/journey-browser-cart.test.mjs tests/journey-forms.test.mjs tests/seller-orders-journey.test.mjs",

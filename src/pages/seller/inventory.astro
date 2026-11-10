@@ -1,0 +1,12 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Product inventory | Vetit Online</title></head><body><div class="page-shell"><SiteHeader sellerMode/><main class="product-showcase stock-page">
+<h1 id="inventory-title">Product inventory</h1><p>Manage default-location stock for active product options. Reserved units belong to existing orders and cannot be removed by lowering on-hand stock.</p>
+<nav><a href="/seller">Seller dashboard</a> · <a href="/seller/orders">Orders and shipments</a> · <a href="/products">Customer catalogue</a></nav>
+<p id="inventory-status" role="status" aria-live="polite">Loading seller inventory…</p><a id="inventory-signin" href="/login?next=%2Fseller%2Finventory" hidden>Sign in</a>
+<div class="stock-filters"><label>Business<select id="inventory-business"><option value="">All businesses</option></select></label><label>Product or SKU<input id="inventory-search" type="search" maxlength="160"/></label><button id="inventory-reload" class="button button-secondary" type="button">Reload inventory</button></div>
+<div id="inventory-content"></div><p>Saving stock does not publish a product or enable payments. Customer availability is advisory; checkout reserves stock in its database transaction.</p>
+<noscript>Enable JavaScript to manage product stock.</noscript>
+</main></div><script src="../../lib/seller/inventory-page.ts"></script><style>[hidden]{display:none!important}.stock-page{max-width:1100px}.stock-filters{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}.stock-filters label,.stock-page form label{display:flex;flex-direction:column;gap:.4rem}.stock-filters input,.stock-filters select,.stock-page form input{padding:.7rem;max-width:100%;min-width:0}.stock-page article{margin:1rem 0;overflow-wrap:anywhere}.stock-page form{display:flex;gap:1rem;flex-wrap:wrap;align-items:end}.stock-page dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem}.stock-page dd{margin:0;font-weight:700}</style></body></html>

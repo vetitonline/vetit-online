@@ -37,10 +37,10 @@ if (product) {
           <p class="product-detail-seller">Sold by {product.sellerName}</p>
           <p class="product-detail-price">{formatProductPrice(product)}</p>
           <label for="product-option">Size, colour or product option</label>
-          <select id="product-option"><option value="">Choose an option</option>{options.map(option => <option value={option.variantId ?? 'base'}>{option.label} · {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(option.priceMinor/100)}</option>)}</select>
+          <select id="product-option"><option value="">Choose an option</option>{options.map(option => <option value={option.variantId ?? 'base'} disabled={option.stockQuantity===0}>{option.label} · {new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(option.priceMinor/100)}{option.stockQuantity===0?' · Out of stock':''}</option>)}</select>
           <label for="product-quantity">Quantity</label><input id="product-quantity" type="number" min="1" max="99" step="1" value="1"/>
           <p id="product-selection-status" role="status">Choose a product option and quantity. Stock availability is not yet confirmed.</p>
-          <p class="product-detail-availability">Availability: Active published marketplace listing. Stock quantity is not provided.</p>
+          <p class="product-detail-availability">Choose an option to check current availability. Stock is reserved only when an order is placed.</p>
           <div class="product-description"><h2>Product details</h2><p>{product.description.trim() || 'The seller has not provided a product description.'}</p></div>
           <div id="product-selection" class="product-detail-actions" data-options={JSON.stringify(options)} data-cart-product data-product-id={product.id} data-product-title={product.title} data-product-category={product.category} data-product-seller={product.sellerName} data-product-image={product.imageUrl ?? ''} data-product-price-paise="">
             <button class="button button-primary" type="button" data-add-to-cart disabled>Add selected option to cart</button>
@@ -79,7 +79,7 @@ if (product) {
         host!.dataset.productStockQuantity = selected.stockQuantity === null ? '' : String(selected.stockQuantity);
         button.disabled = false; saved.setAttribute('aria-disabled','false');
         saved.href = `/account/cart?listingId=${encodeURIComponent(host!.dataset.productId!)}&${new URLSearchParams({productVariantId:selected.variantId ?? '',quantity:String(selected.quantity)})}`;
-        status.textContent = `${selected.label} · ${new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(selected.priceMinor*selected.quantity/100)} for ${selected.quantity}. ${selected.stockQuantity === null ? 'Stock not confirmed; no reservation is made.' : `${selected.stockQuantity} available.`}`;
+        status.textContent = `${selected.label} · ${new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(selected.priceMinor*selected.quantity/100)} for ${selected.quantity}. ${selected.stockQuantity === null ? 'Stock not confirmed; no reservation is made.' : `Up to ${selected.stockQuantity} available now. Stock is rechecked when ordering.`}`;
       } catch (error) { status.textContent = error instanceof Error ? error.message : 'Product selection is unavailable.'; }
     }
     choice.addEventListener('change', update); quantity.addEventListener('input', update);

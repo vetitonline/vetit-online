@@ -1,0 +1,1 @@
+export function inventoryCopy(language?:string):{language:string;title:string;loading:string;saving:string;ready:string;empty:string;onHand:string;reserved:string;available:string;unknown:string;save:string;stockUnknown:string;filter:string;all:string};
