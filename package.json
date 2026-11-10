@@ -18,6 +18,7 @@
     "test:order-workspaces-browser": "node scripts/run-order-workspaces-browser.mjs",
     "test:seller-pagination": "node --test tests/seller-order-pagination.test.mjs",
     "test:seller-pagination-browser": "node scripts/run-seller-pagination-browser.mjs",
+    "test:checkout-lifecycle": "node --test tests/checkout-lifecycle.test.mjs",
     "test:inventory": "node --test tests/seller-inventory.test.mjs",
     "test:inventory-browser": "node scripts/run-inventory-browser.mjs",
     "test:addresses-browser": "node scripts/run-address-browser.mjs",

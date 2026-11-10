@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {runCheckoutLifecycleCases} from './checkout-lifecycle.postgres-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
@@ -43,7 +44,7 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
         insert into public.listing_prices(listing_id,product_variant_id,market_code,currency_code,amount_minor) values('${p.id}','${p.variant}','IN','INR',10000);
         insert into public.listing_markets values('${p.id}','IN','available','approved');
         ${index===29?'':`insert into public.inventory_levels(id,business_id,product_variant_id,quantity_on_hand) values('${p.inventory}','${business}','${p.variant}',3);`}`).join('\n')}`);
-    for(const path of ['supabase/test-project/20261009010000_business_private_fields.sql','supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql','supabase/migrations/20261008210707_vetit_seller_security_hardening.sql','supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql','supabase/test-project/20261106160000_atomic_checkout.proposal.sql','supabase/test-project/20261110090000_seller_inventory.proposal.sql'])await sql(await readFile(new URL('../'+path,import.meta.url),'utf8'));
+    for(const path of ['supabase/test-project/20261009010000_business_private_fields.sql','supabase/migrations/20261008092024_vetit_seller_backend_foundation.sql','supabase/migrations/20261008210707_vetit_seller_security_hardening.sql','supabase/test-project/20261009100000_vetit_buyer_cart_inventory_fulfilment.sql','supabase/test-project/20261106160000_atomic_checkout.proposal.sql','supabase/test-project/20261110090000_seller_inventory.proposal.sql','supabase/test-project/20261110130000_checkout_lifecycle.proposal.sql'])await sql(await readFile(new URL('../'+path,import.meta.url),'utf8'));
 
     await t.test('creates immutable snapshots, per-seller fulfilments and reservations in one transaction',async()=>{
       const input=request([0,1],2),quote=await issue(input),order=await place(quote,input);
@@ -348,5 +349,6 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       const rows=snapshot.items.filter(row=>row.orderId===target);assert.equal(rows.length,251);assert.equal(new Set(rows.map(row=>row.id)).size,251);assert.ok(pages>=6);
       const denied=await requestSellerOrderPage({baseUrl:'https://vetit.invalid',profileId:bob,fetchImpl:(url,options)=>handler(bob)({request:new Request(url,options)})});assert.deepEqual(denied.items,[]);
     });
+    await runCheckoutLifecycleCases(t,{sql,actor,issue,place,request,products,alice,bob,seller,business});
   }finally{await db.stop();}
 });
