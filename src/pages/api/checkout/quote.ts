@@ -1,3 +1,4 @@
+import {matchesExpectedAccount} from '../../../lib/api/request-security.js';
 import type { APIRoute } from 'astro';
 import type { QuoteRequestLine } from '../../../lib/commerce/checkout-quote.js';
 import { calculateCheckoutQuote, CheckoutQuoteError, normalizeQuoteLines } from '../../../lib/commerce/checkout-quote.js';
@@ -73,6 +74,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (auth.state === 'unavailable') return json({ state: 'unavailable', message: 'Marketplace quoting is temporarily unavailable.' }, 503);
     if (auth.state !== 'authenticated') return json({ state: 'unauthorized', message: 'Sign in to request a cart quote.' }, 401);
 
+    if(request.headers.has('x-vetit-profile-id')&&!matchesExpectedAccount(request,auth.user.id))return json({state:'session_changed'},409);
     const catalogue = await getMarketplaceProducts(request, cookies, lines.length, {
       marketCode: 'IN',
       listingIds: lines.map((line) => line.listingId),
@@ -82,7 +84,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     }
     const products = await loadProductOptions(auth.supabase, catalogue.products);
     const quote = calculateCheckoutQuote(lines, products);
-    return json({ ...quote, apiVersion: 1 }, 200);
+    const tracked=lines.filter(line=>products.find(p=>p.id===line.listingId)?.options.find(o=>(o.variantId??null)===(line.productVariantId??null))?.stockQuantity!=null).length;
+    const stockState=tracked===lines.length?'known':tracked?'partial':'unknown';
+    return json({ ...quote, apiVersion: 1, profileId:auth.user.id, stockState }, 200);
   } catch (error) {
     if (error instanceof CheckoutQuoteError) {
       const status = error.code === 'listing_unavailable' ? 409 : 422;

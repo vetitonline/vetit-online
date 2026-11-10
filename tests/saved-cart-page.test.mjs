@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import { createSavedCartWorkspace } from '../src/lib/buyer/saved-cart-workspace.js';
+import {createCartPriceReview} from '../src/lib/buyer/cart-price-review.js';
 import { cartId } from '../src/lib/buyer/saved-cart-contract.js';
 import { selectProductOption } from '../src/lib/commerce/product-selection.js';
 
@@ -41,6 +42,7 @@ async function mount({ initial = saved([item]), candidate = product, query = '',
     return stored;
   });
   const modules = {
+    '../../lib/buyer/cart-price-review.js':{createCartPriceReview},
     '../../lib/buyer/saved-cart-workspace.js': { createSavedCartWorkspace: options => createSavedCartWorkspace({ ...options, read: request }) },
     '../../lib/buyer/saved-cart-contract.js': { cartId },
     '../../lib/marketplace/catalog-client.js': { fetchCatalog: async () => ({ products: candidate ? [candidate] : [] }) },

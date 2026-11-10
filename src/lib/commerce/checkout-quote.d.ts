@@ -19,7 +19,7 @@ export type CheckoutQuote = {
   totalMinor: null;
   checkoutEnabled: false;
 };
-export type CheckoutQuoteResponse = CheckoutQuote & { apiVersion: 1 };
+export type CheckoutQuoteResponse = CheckoutQuote & { apiVersion: 1;stockState?:'known'|'partial'|'unknown' };
 export class CheckoutQuoteError extends Error { code: string; }
 export const MAX_QUOTE_LINES: number;
 export const MAX_LINE_QUANTITY: number;

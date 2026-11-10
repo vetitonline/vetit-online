@@ -21,10 +21,15 @@ import SiteHeader from '../../components/SiteHeader.astro';
   </section>
   <div id="saved-items" aria-live="polite"></div>
   <button id="saved-reload" class="button button-secondary" type="button">Reload saved cart</button>
-  <p>No total is calculated here. Ordering and payment remain unavailable.</p>
+  <section class="seller-panel" aria-label="Current saved cart prices"><h2>Review current item prices</h2>
+    <button id="saved-review" class="button button-secondary" type="button" disabled>Check current prices and stock</button>
+    <p id="saved-review-status" role="status">Load your saved cart to review prices.</p><div id="saved-review-lines"></div><p id="saved-review-subtotal"></p>
+    <p>Delivery, tax and final total are not included. Reviewing does not reserve stock, place an order or take payment.</p>
+  </section>
   <noscript>Enable JavaScript to manage your saved cart.</noscript>
 </main></div>
 <script>
+  import {createCartPriceReview} from '../../lib/buyer/cart-price-review.js';
   import { createSavedCartWorkspace } from '../../lib/buyer/saved-cart-workspace.js';
   import type { SavedCartState } from '../../lib/buyer/saved-cart-workspace.js';
   import { cartId } from '../../lib/buyer/saved-cart-contract.js';
@@ -41,9 +46,19 @@ import SiteHeader from '../../components/SiteHeader.astro';
   let disposed = false;
   const candidateRequest = new AbortController();
   function text(parent: HTMLElement, value: string, tag = 'p') { const node = document.createElement(tag); node.textContent = value; parent.append(node); return node; }
+  const review=createCartPriceReview({render:result=>{
+    get<HTMLButtonElement>('review').disabled=!result.enabled;get('review-status').textContent=result.message;
+    const lines=get('review-lines');lines.replaceChildren();get('review-subtotal').textContent='';
+    if(result.quote){const money=(amount:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(amount/100);
+      for(const line of result.quote.lines)text(lines,`${line.title} · ${line.quantity} × ${money(line.unitAmountMinor)} = ${money(line.lineAmountMinor)}`);
+      get('review-subtotal').textContent=`Current items subtotal: ${money(result.quote.subtotalMinor)}`;
+    }
+  }});
+  get('review').addEventListener('click',()=>void review.review());
   function render(next: SavedCartState) {
     state = next;
     const ready = state.phase === 'ready';
+    review.setCart(ready?state.cart:null);
     const busy = state.phase === 'loading' || state.phase === 'saving';
     add.disabled = !ready || !selected; quantity.disabled = !ready; reload.disabled = busy;
     signin.hidden = state.phase !== 'signin';
@@ -114,7 +129,7 @@ import SiteHeader from '../../components/SiteHeader.astro';
     void controller.load();
   } catch { status.textContent = 'Saved account carts are not configured in this environment.'; reload.disabled = true; }
   void candidate();
-  window.addEventListener('pagehide', () => { disposed = true; candidateRequest.abort(); controller.dispose(); unsubscribe(); list.replaceChildren(); quantity.value = '1'; }, { once: true });
+  window.addEventListener('pagehide', () => { disposed = true; candidateRequest.abort(); controller.dispose(); review.dispose(); unsubscribe(); list.replaceChildren(); quantity.value = '1'; }, { once: true });
   window.addEventListener('pageshow', event => { if (event.persisted) window.location.reload(); });
 </script>
 <style>[hidden] {display:none!important;} .saved-cart-page {max-width:1000px;} nav, article, button {margin-bottom:1rem;} article {overflow-wrap:anywhere;}</style>
