@@ -23,7 +23,8 @@ test('isolated Chromium: saved-cart current prices/stock, grouped seller orders,
     try{const quote=calculateCheckoutQuote(normalizeQuoteLines(JSON.parse(request.postData)),[{id:id(4),title:'Current harness',category:'Accessories',sellerName:'Synthetic Seller',currencyCode:'INR',priceMinor:5000,priceIsFrom:false,options:[{variantId:id(5),priceMinor:5000,stockQuantity:3}]}]);response=Response.json({...quote,apiVersion:1,profileId:owner});}catch{response=Response.json({state:'quote_unavailable',code:'stock_unavailable'},{status:422});}
    }else if(url.pathname==='/api/seller/orders'){
     if(request.method==='POST'){assert.equal(new Headers(request.headers).get('x-vetit-profile-id'),owner);const change=JSON.parse(request.postData),row=shipments.find(s=>s.id===change.fulfilmentId);assert.equal(change.nextStatus,'shipped');assert.equal(change.carrier,'Synthetic New Carrier');row.status='shipped';row.carrier=change.carrier;row.tracking_reference=change.trackingReference;row.shipped_at='2026-11-10T13:00:00Z';response=Response.json({apiVersion:1,state:'updated',fulfilmentId:row.id});}
-    else response=Response.json({apiVersion:1,state:'available',profileId:owner,items,fulfilments:shipments});
+    else if(url.searchParams.has('fulfilmentId'))response=Response.json({apiVersion:1,state:'available',profileId:owner,scope:'a'.repeat(64),fulfilment:shipments.find(s=>s.id===url.searchParams.get('fulfilmentId'))});
+    else response=Response.json({apiVersion:1,state:'available',profileId:owner,items,fulfilments:shipments,pagination:{scope:'a'.repeat(64),limit:50,nextCursor:null}});
    }else response=Response.json({state:'unavailable'},{status:503});
    await browser.send('Fetch.fulfillRequest',{requestId,responseCode:response.status,responseHeaders:[...response.headers].map(([name,value])=>({name,value})),body:Buffer.from(await response.arrayBuffer()).toString('base64')});
   });

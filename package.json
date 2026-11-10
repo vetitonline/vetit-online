@@ -16,6 +16,8 @@
     "test:seller-account-browser": "node scripts/run-seller-account-browser.mjs",
     "test:order-workspaces": "node --test tests/marketplace-order-workspaces.test.mjs",
     "test:order-workspaces-browser": "node scripts/run-order-workspaces-browser.mjs",
+    "test:seller-pagination": "node --test tests/seller-order-pagination.test.mjs",
+    "test:seller-pagination-browser": "node scripts/run-seller-pagination-browser.mjs",
     "test:inventory": "node --test tests/seller-inventory.test.mjs",
     "test:inventory-browser": "node scripts/run-inventory-browser.mjs",
     "test:addresses-browser": "node scripts/run-address-browser.mjs",

@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { startCheckoutDatabase } from './checkout-postgres-runner.mjs';
 import { createPostgresOrderRepository,issuePostgresCheckoutQuote } from '../src/lib/commerce/postgres-order-repository.server.js';
+import {createSellerOrdersHandler} from '../src/lib/seller/orders.js';
+import {requestSellerOrderPage,mergeSellerOrderPages} from '../src/lib/seller/order-pages-client.js';
 import { createBuyerOrderCancelHandler } from '../src/lib/buyer/order-cancel-api.js';
 import { createCheckoutOrder } from '../src/lib/commerce/checkout-service.js';
 
@@ -322,6 +324,29 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       assert.equal((await cancel(alice,paid.id)).status,403);
       assert.equal(await sql(`select order_status from public.orders where id='${paid.id}'`),'pending');
       assert.equal(await sql(`select quantity_reserved from public.inventory_levels where id='${products[28].inventory}'`),'1');
+    });
+    await t.test('seller keyset API traverses 251 real PostgreSQL item rows under RLS with microsecond ties and UUID ordering',async()=>{
+      const target=randomUUID(),stamp='2026-11-10T10:00:00.123456+00:00';
+      await sql(`begin;insert into public.orders(id,customer_profile_id,market_code,currency_code,subtotal_minor,total_minor) values('${target}','${alice}','IN','INR',25100,25100);
+        insert into public.order_items(order_id,listing_id,business_id,product_variant_id,title_snapshot,quantity,unit_price_minor,currency_code,created_at)
+        select '${target}','${products[0].id}','${business}','${products[0].variant}','Pagination synthetic',1,100,'INR','${stamp}' from generate_series(1,251);commit;`);
+      const client=owner=>({from(table){
+        assert.ok(['business_memberships','businesses','order_items','fulfilments'].includes(table));
+        let columns='*',max=201,single=false;const conditions=[],ordering=[];
+        const column=value=>{assert.match(value,/^[a-z_]+$/);return value;};
+        const q={select:value=>{assert.match(value,/^[a-z_,]+$/);columns=value;return q;},eq:(key,value)=>{conditions.push(`${column(key)}=${literal(value)}`);return q;},in:(key,values)=>{conditions.push(`${column(key)} in (${values.map(literal).join(',')})`);return q;},is:(key,value)=>{assert.equal(value,null);conditions.push(`${column(key)} is null`);return q;},order:key=>{ordering.push(column(key)+' desc');return q;},limit:value=>{assert.ok(Number.isInteger(value)&&value<=201);max=value;return q;},maybeSingle:()=>{single=true;return q;},or:value=>{
+          const match=value.match(/^created_at\.lt\.(.+),and\(created_at\.eq\.(.+),id\.lt\.([a-f0-9-]+)\)$/);assert.ok(match);assert.equal(match[1],match[2]);conditions.push(`(created_at<${literal(match[1])}::timestamptz or (created_at=${literal(match[1])}::timestamptz and id<${literal(match[3])}::uuid))`);return q;
+        },async then(resolve,reject){try{
+          const where=conditions.length?' where '+conditions.join(' and '):'',order=ordering.length?' order by '+ordering.join(','):'';
+          const source=`select jsonb_build_object('data',(select coalesce(jsonb_agg(row_to_json(r)),'[]') from (select ${columns} from public.${table}${where}${order} limit ${max}) r),'count',(select count(*) from public.${table}${where}))`;
+          const result=JSON.parse(await actor(owner,source));if(single)result.data=result.data[0]??null;resolve(result);
+        }catch(error){reject(error);}}};return q;
+      }});
+      const handler=owner=>createSellerOrdersHandler({authenticate:async()=>({state:'authenticated',user:{id:owner},supabase:client(owner)}),rpc:()=>{throw Error('Read-only pagination must not call a mutation');}});
+      let snapshot,cursor,pages=0;
+      do{const page=await requestSellerOrderPage({baseUrl:'https://vetit.invalid',profileId:seller,cursor,fetchImpl:(url,options)=>handler(seller)({request:new Request(url,options)})});snapshot=mergeSellerOrderPages(snapshot,page);cursor=page.pagination.nextCursor;pages++;assert.ok(pages<10);}while(cursor);
+      const rows=snapshot.items.filter(row=>row.orderId===target);assert.equal(rows.length,251);assert.equal(new Set(rows.map(row=>row.id)).size,251);assert.ok(pages>=6);
+      const denied=await requestSellerOrderPage({baseUrl:'https://vetit.invalid',profileId:bob,fetchImpl:(url,options)=>handler(bob)({request:new Request(url,options)})});assert.deepEqual(denied.items,[]);
     });
   }finally{await db.stop();}
 });

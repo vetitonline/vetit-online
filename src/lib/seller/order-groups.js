@@ -1,6 +1,6 @@
 import {orderId,normalizeOrderItem,normalizeOrderFulfilment} from '../buyer/order-contract.js';
-export function normalizeSellerOrders(body){
- if(body?.apiVersion!==1||body.state!=='available'||!Array.isArray(body.items)||!Array.isArray(body.fulfilments)||body.items.length>200||body.fulfilments.length>200)throw Error('Seller order response is invalid.');
+export function normalizeSellerOrders(body,{maxRecords=200}={}){
+ if(body?.apiVersion!==1||body.state!=='available'||!Array.isArray(body.items)||!Array.isArray(body.fulfilments)||body.items.length>maxRecords||body.fulfilments.length>maxRecords)throw Error('Seller order response is invalid.');
  const items=body.items.map(row=>{if(!/^[A-Z]{3}$/.test(row.currency_code))throw Error('Invalid order currency.');return{...normalizeOrderItem(row,row.currency_code),orderId:orderId(row.orderId)};});
  const fulfilments=body.fulfilments.map(row=>({...normalizeOrderFulfilment(row),orderId:orderId(row.orderId)}));
  if(new Set(items.map(i=>i.id)).size!==items.length||new Set(fulfilments.map(i=>i.id)).size!==fulfilments.length)throw Error('Duplicate seller order records.');
@@ -8,7 +8,7 @@ export function normalizeSellerOrders(body){
 }
 /** Group strictly by order AND business. Subtotals cover only returned seller lines. */
 export function groupSellerOrders(input,{query='',status='all'}={}){
- const data=normalizeSellerOrders(input),groups=new Map();
+ const data=normalizeSellerOrders(input,{maxRecords:5000}),groups=new Map();
  const group=row=>{const key=row.orderId+':'+row.business_id;if(!groups.has(key))groups.set(key,{key,orderId:row.orderId,businessId:row.business_id,items:[],fulfilments:[],currencyCode:null,subtotalMinor:null});return groups.get(key);};
  for(const item of data.items)group(item).items.push(item);
  for(const shipment of data.fulfilments)group(shipment).fulfilments.push(shipment);
