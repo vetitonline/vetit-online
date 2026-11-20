@@ -7,6 +7,7 @@ import {createOrderWorkspace} from '../src/lib/buyer/order-workspace.js';
 import {requestBuyerOrders} from '../src/lib/buyer/orders-client.js';
 import {workspaceCopy,orderStatusLabel,formatWorkspaceMoney} from '../src/lib/marketplace/workspace-copy.js';
 import {requestCheckoutQuote,QuoteClientError} from '../src/lib/commerce/quote-client.js';
+import {createCheckoutCartReader,CheckoutCartError} from '../src/lib/commerce/checkout-cart.js';
 import {normalizeQuoteLines} from '../src/lib/commerce/checkout-quote.js';
 import {resolveIndianLocale} from '../src/lib/i18n/locales.js';
 const id='10000000-0000-4000-8000-000000000001';
@@ -60,7 +61,7 @@ test('actual order page distinguishes empty, sign-in, not-found and unavailable 
     assert.ok(page.elements.get('orders-status').textContent.includes(message));assert.equal(page.elements.get('orders-signin').hidden,!signin);assert.equal(page.elements.get('orders-content').textContent.includes('SYNTHETIC_PRIVATE'),false);
   }
 });
-function quoteDependencies(fetchImpl){return{requestCheckoutQuote:(lines,options)=>requestCheckoutQuote(lines,{...options,baseUrl:'http://localhost:4321',fetchImpl}),QuoteClientError,normalizeQuoteLines,formatWorkspaceMoney};}
+function quoteDependencies(fetchImpl){return{CheckoutCartError,createCheckoutCartReader,createSupabaseBrowserClient:()=>{throw Error('Unconfigured auth fixture');},requestCheckoutQuote:(lines,options)=>requestCheckoutQuote(lines,{...options,baseUrl:'http://localhost:4321',fetchImpl}),QuoteClientError,normalizeQuoteLines,formatWorkspaceMoney};}
 test('actual checkout page makes no request for an empty browser cart',async()=>{
   let calls=0;const page=await mount('src/pages/checkout.astro',quoteDependencies(async()=>{calls++;throw Error();}));
   await page.elements.get('quote-refresh').emit('click');assert.equal(calls,0);assert.match(page.elements.get('quote-status').textContent,/empty/);assert.equal(page.elements.get('quote-payment').disabled,true);

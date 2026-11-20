@@ -3,10 +3,10 @@ import '../../styles.css';
 import SiteHeader from '../components/SiteHeader.astro';
 ---
 <!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Price review | Vetit Online</title></head><body><div class="page-shell"><SiteHeader/>
-<main class="product-showcase checkout-review"><h1>Review current product prices / मौजूदा कीमतें देखें</h1>
-<p>This is a read-only price review of this browser’s cart. It does not reserve stock, calculate a final payable total, create an order or take payment.</p>
+<main class="product-showcase checkout-review"><h1>Review your cart and current prices / मौजूदा कीमतें देखें</h1>
+<p>Review the browser or saved account cart selected below against current server prices and availability. This is a read-only review. It does not reserve stock, calculate a final payable total, create an order or take payment.</p>
 <noscript>Price review needs JavaScript. / कीमतों की समीक्षा के लिए JavaScript सक्षम करें।</noscript>
-<p>यह केवल इस ब्राउज़र की कार्ट की कीमतों की समीक्षा है। इससे स्टॉक आरक्षित, ऑर्डर या भुगतान नहीं होता।</p>
+<p>यह चुनी गई कार्ट की कीमतों की समीक्षा है। इससे स्टॉक आरक्षित, ऑर्डर या भुगतान नहीं होता।</p>
 <p id="quote-status" role="status" aria-live="polite">Select “Check current prices” to request a quote.</p>
 <p><a href="/cart">Return to cart / कार्ट पर लौटें</a> · <a href="/orders">Your orders / आपके ऑर्डर</a></p>
 <a id="quote-signin" href="/login?next=%2Fcheckout" hidden>Sign in to review prices / लॉग इन करें</a>
@@ -45,27 +45,30 @@ import SiteHeader from '../components/SiteHeader.astro';
 </main></div>
 <script>
   import { requestCheckoutQuote, QuoteClientError } from '../lib/commerce/quote-client.js';
-  import { normalizeQuoteLines } from '../lib/commerce/checkout-quote.js';
+  import {createCheckoutCartReader,CheckoutCartError} from '../lib/commerce/checkout-cart.js';
+  import {createSupabaseBrowserClient} from '../lib/supabase/browser';
   import { formatWorkspaceMoney } from '../lib/marketplace/workspace-copy.js';
   const status = document.getElementById('quote-status')!;
   const lines = document.getElementById('quote-lines')!;
   const subtotal = document.getElementById('quote-subtotal')!;
   const signin = document.getElementById('quote-signin')!;
   const refresh = document.getElementById('quote-refresh') as HTMLButtonElement;
+  const carts=createCheckoutCartReader({readBrowser:()=>localStorage.getItem('vetit-cart-v1')});
+  const detailsForm=document.getElementById('checkout-details') as HTMLFormElement;
+  const sourceField=detailsForm?.elements?.namedItem('source') as HTMLSelectElement|null;
+  const cartSource=()=>sourceField?.value==='account'||!sourceField&&new URLSearchParams(location.search).get('source')==='account'?'account':'browser';
   let active: AbortController | undefined;
   const invalidate = () => { active?.abort(); active = undefined; lines.replaceChildren(); subtotal.textContent = ''; refresh.disabled = false; };
   refresh.addEventListener('click', async () => {
     invalidate(); signin.hidden = true;
-    let input;
-    try {
-      const saved = JSON.parse(localStorage.getItem('vetit-cart-v1') || '[]');
-      if (!Array.isArray(saved) || !saved.length) { status.textContent = 'Your browser cart is empty. / आपकी कार्ट खाली है।'; return; }
-      input = normalizeQuoteLines({lines:saved.map(item => ({listingId:item?.id,productVariantId:item?.productVariantId,quantity:item?.quantity}))});
-    } catch { status.textContent = 'The saved cart cannot be reviewed. Return to the cart and check its items. / कार्ट की वस्तुओं की जाँच करें।'; return; }
     const controller = new AbortController(); active = controller; refresh.disabled = true;
     status.textContent = 'Checking current prices… / कीमतें जाँची जा रही हैं…';
     try {
-      const quote = await requestCheckoutQuote(input,{signal:controller.signal});
+      const cart=await carts.capture(cartSource(),{signal:controller.signal});
+      if(controller.signal.aborted)return;
+      const quote = await requestCheckoutQuote(cart.lines,{signal:controller.signal,profileId:cart.profileId});
+      if(controller.signal.aborted)return;
+      await carts.assertUnchanged(cart,{signal:controller.signal});
       if (controller.signal.aborted) return;
       quote.lines.forEach(item => { const row = document.createElement('article'); row.className = 'seller-panel';
         const title = document.createElement('h2'); title.textContent = item.title;
@@ -76,10 +79,16 @@ import SiteHeader from '../components/SiteHeader.astro';
       status.textContent = 'Price review complete. Checkout remains unavailable. / कीमतों की समीक्षा पूरी हुई। चेकआउट उपलब्ध नहीं है।';
     } catch(error) {
       if (controller.signal.aborted) return;
-      status.textContent = error instanceof QuoteClientError ? error.message : 'Price review is unavailable. Please retry.';
-      signin.hidden = !(error instanceof QuoteClientError && error.status === 401);
+      const needsSignin=(error as {status?:number})?.status===401;
+      if(needsSignin||error instanceof CheckoutCartError&&error.code==='account_changed')detailsForm?.reset?.();
+      status.textContent = needsSignin?'Sign in to review the selected cart.':error instanceof QuoteClientError||error instanceof CheckoutCartError ? error.message : 'Price review is unavailable. Please retry.';
+      signin.hidden = !needsSignin;
+      if(needsSignin)signin.setAttribute('href',`/login?next=${encodeURIComponent(location.pathname+location.search)}`);
     } finally { if (active === controller) refresh.disabled = false; }
   });
+  const sourceChanged=()=>{invalidate();status.textContent='Cart source changed. Check current prices again.';};
+  sourceField?.addEventListener('change',sourceChanged);detailsForm?.addEventListener('reset',sourceChanged);
+  let unsubscribe=()=>{};try{const {data:{subscription}}=createSupabaseBrowserClient().auth.onAuthStateChange(event=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT'){invalidate();status.textContent='Your account changed. Check current prices again.';}});unsubscribe=()=>subscription.unsubscribe();}catch{}
   window.addEventListener('storage', event => { if (event.key === 'vetit-cart-v1' || event.key === null) { invalidate(); status.textContent = 'The cart changed. Check current prices again. / कार्ट बदल गई है। कीमतें फिर जाँचें।'; } });
-  window.addEventListener('pagehide', invalidate, {once:true});
+  window.addEventListener('pagehide', ()=>{invalidate();unsubscribe();}, {once:true});
 </script><script src="../lib/commerce/checkout-page.ts"></script><style>[hidden] {display:none!important;} .checkout-review {max-width:1000px;} button {margin:12px 12px 12px 0;} article {overflow-wrap:anywhere;} .checkout-details {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:1rem;} .checkout-details label {display:flex;flex-direction:column;gap:.5rem;} .checkout-details input,.checkout-details select {padding:.8rem;min-width:0;}</style></body></html>

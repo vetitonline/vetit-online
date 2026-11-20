@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 import { selectProductOption } from '../src/lib/commerce/product-selection.js';
+import {createCheckoutCartReader} from '../src/lib/commerce/checkout-cart.js';
 import { normalizeQuoteLines } from '../src/lib/commerce/checkout-quote.js';
 import { createCheckoutAddressPicker } from '../src/lib/commerce/checkout-address-picker.js';
 const id='10000000-0000-4000-8000-000000000001',variant='10000000-0000-4000-8000-000000000002';
@@ -28,21 +29,22 @@ test('actual product form updates variant, quantity, price and saved-cart handof
   assert.equal(new URL(nodes.get('product-save-option').href,'https://test.invalid').searchParams.get('productVariantId'),variant);
   qty.value='4';qty.events.input();assert.equal(button.disabled,true);assert.equal(nodes.get('product-save-option').href,undefined);assert.match(nodes.get('product-selection-status').textContent,/stock/);
 });
-async function checkout({source='browser',read,review}={}){
+async function checkout({source='browser',read,review,readBrowser}={}){
   const nodes=new Map(['checkout-details','checkout-details-status','checkout-details-summary'].map(name=>[name,new Node()]));
   const form=nodes.get('checkout-details'),button=new Node();form.querySelector=()=>button;
   let fields={source,email:'customer@example.in',recipientName:'Asha',phone:'9876543210',addressLine1:'1 Test Road',addressLine2:'',city:'Mumbai',stateRegion:'Maharashtra',postalCode:'400001'};
   form.reset=()=>{fields={};};
   const calls=[],events={};let auth;
   const modules={
+    './checkout-cart.js':{createCheckoutCartReader},
     './checkout-review-client.js':{requestCheckoutReview:review??(async input=>{calls.push(input);return{profileId:id,summary:{lines:[{title:'<b>Harness</b>',productVariantId:variant,quantity:2,unitAmountMinor:12500,lineAmountMinor:25000}],subtotalMinor:25000},shipping:null,taxMinor:null,totalMinor:null,blockers:['Shipping service is not configured.']};})},
-    '../buyer/saved-cart-client.js':{requestSavedCart:read??(async()=>({profileId:id,items:[{listing_id:id,product_variant_id:variant,quantity:2}]}))},
+    '../buyer/saved-cart-client.js':{requestSavedCart:read??(async()=>({apiVersion:1,state:'available',profileId:id,marketCode:'IN',cart:{id,market_code:'IN',currency_code:'INR',status:'active'},items:[{id:variant,listing_id:id,product_variant_id:variant,quantity:2,title:'Harness'}]}))},
     './checkout-quote.js':{normalizeQuoteLines},
     './checkout-address-picker.js':{createCheckoutAddressPicker},
     '../supabase/browser':{createSupabaseBrowserClient:()=>({auth:{onAuthStateChange(fn){auth=fn;return{data:{subscription:{unsubscribe(){}}}};}}})},
   };
-  new Function('require','exports','document','window','FormData','localStorage',compile(fs.readFileSync(new URL('../src/lib/commerce/checkout-page.ts',import.meta.url),'utf8')))(name=>{assert.ok(name in modules);return modules[name];},{},{getElementById:name=>nodes.get(name),createElement:()=>new Node()},{addEventListener(name,fn){events[name]=fn;}},class{get(name){return fields[name]??null;}},{getItem:()=>JSON.stringify([{id,productVariantId:variant,quantity:2}])});
-  return{form,button,status:nodes.get('checkout-details-status'),summary:nodes.get('checkout-details-summary'),calls,emit:event=>auth(event),events};
+  new Function('require','exports','document','window','FormData','localStorage',compile(fs.readFileSync(new URL('../src/lib/commerce/checkout-page.ts',import.meta.url),'utf8')))(name=>{assert.ok(name in modules);return modules[name];},{},{getElementById:name=>nodes.get(name),createElement:()=>new Node()},{addEventListener(name,fn){events[name]=fn;}},class{get(name){return fields[name]??null;}},{getItem:readBrowser??(()=>JSON.stringify([{id,productVariantId:variant,quantity:2}]))});
+  return{fields:()=>fields,form,button,status:nodes.get('checkout-details-status'),summary:nodes.get('checkout-details-summary'),calls,emit:event=>auth(event),events};
 }
 test('actual checkout form carries variant lines from browser and saved carts and renders unknown fees honestly',async()=>{
   for(const source of ['browser','account']){
@@ -54,11 +56,28 @@ test('actual checkout form carries variant lines from browser and saved carts an
 });
 test('checkout account changes and field edits suppress pending results and clear private form state',async()=>{
   let finish;const ui=await checkout({review:()=>new Promise(resolve=>{finish=resolve;})});
-  const pending=ui.form.events.submit({preventDefault(){}});ui.emit('SIGNED_OUT');finish({});await pending;
+  const pending=ui.form.events.submit({preventDefault(){}});for(let i=0;i<10&&!finish;i++)await Promise.resolve();ui.emit('SIGNED_OUT');finish({});await pending;
   assert.equal(ui.summary.children.length,0);assert.match(ui.status.textContent,/account changed/);
   ui.form.events.input();assert.match(ui.status.textContent,/Details changed/);
 });
 test('checkout refuses saved-cart readback from a different customer identity',async()=>{
-  const ui=await checkout({source:'account',read:async()=>({profileId:variant,items:[{listing_id:id,quantity:1,product_variant_id:null}]})});
+  const ui=await checkout({source:'account',read:async()=>({apiVersion:1,state:'available',profileId:variant,marketCode:'IN',cart:{id,market_code:'IN',currency_code:'INR',status:'active'},items:[{id,listing_id:id,quantity:1,product_variant_id:null,title:'Harness'}]})});
   await ui.form.events.submit({preventDefault(){}});assert.match(ui.status.textContent,/account changed/);assert.equal(ui.summary.children.length,0);
+});
+test('delivery review refuses a cart changed in the same tab without discarding typed customer details',async()=>{
+ let quantity=2;
+ const ui=await checkout({readBrowser:()=>JSON.stringify([{id,productVariantId:variant,quantity}]),review:async()=>{quantity=3;return{profileId:id};}});
+ await ui.form.events.submit({preventDefault(){}});assert.equal(ui.summary.children.length,0);assert.match(ui.status.textContent,/cart changed during review/);assert.equal(ui.fields().email,'customer@example.in');assert.equal(ui.button.disabled,false);
+});
+test('delivery review refuses an account cart changed on another device while pricing is checked',async()=>{
+ let reads=0;const ui=await checkout({source:'account',read:async()=>({apiVersion:1,state:'available',profileId:id,marketCode:'IN',cart:{id,market_code:'IN',currency_code:'INR',status:'active'},items:[{id:variant,listing_id:id,product_variant_id:variant,quantity:++reads===1?2:3,title:'Harness'}]})});
+ await ui.form.events.submit({preventDefault(){}});assert.equal(reads,2);assert.match(ui.status.textContent,/cart changed during review/);assert.equal(ui.summary.children.length,0);assert.equal(ui.fields().postalCode,'400001');
+});
+test('blocked browser storage prevents delivery review and allows an explicit switch to the saved account cart',async()=>{
+ const ui=await checkout({readBrowser:()=>{throw Error('PRIVATE storage exception');}});await ui.form.events.submit({preventDefault(){}});
+ assert.equal(ui.calls.length,0);assert.match(ui.status.textContent,/Browser storage is unavailable/);assert.equal(ui.fields().email,'customer@example.in');assert.doesNotMatch(ui.status.textContent,/PRIVATE/);
+ ui.fields().source='account';await ui.form.events.submit({preventDefault(){}});assert.equal(ui.calls.length,1);assert.match(ui.status.textContent,/Review complete/);
+});
+test('a select change alone invalidates a completed delivery summary',async()=>{
+ const ui=await checkout();await ui.form.events.submit({preventDefault(){}});assert.ok(ui.summary.children.length);ui.form.events.change();assert.equal(ui.summary.children.length,0);assert.match(ui.status.textContent,/Details changed/);
 });
