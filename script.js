@@ -215,13 +215,19 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (action === "decrease") {
       item.quantity -= 1;
     } else if (action === "increase") {
-      item.quantity = Math.min(item.quantity + 1, 99);
+      if (item.quantity >= 99) {
+        say("A saved option supports at most 99 units.");
+        return;
+      }
+      item.quantity += 1;
     }
 
-    writeCart();
+    const persisted = writeCart();
     updateCartBadges();
     renderCartPage();
-    say(action === "remove" ? `${item.title} removed from your cart.` : "Cart quantity updated.");
+    say(persisted
+      ? (action === "remove" ? `${item.title} removed from your cart.` : "Cart quantity updated.")
+      : "Cart updated for this page, but browser storage is unavailable.");
   });
 
   document.querySelector("[data-cart-clear]")?.addEventListener("click", function () {
