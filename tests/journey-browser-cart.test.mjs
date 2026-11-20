@@ -10,12 +10,12 @@ class Node {
   setAttribute(){}
   addEventListener(name,callback){this.events[name]=callback;}
 }
-function mount(initial=[]){
+function mount(initial=[], { storageFails = false } = {}){
   let stored=JSON.stringify(initial);const list=new Node(),status=new Node(),card=new Node(),button=new Node();
   card.dataset={productId:id,productTitle:'Harness',productPricePaise:'12500',productCategory:'Accessories',productSeller:'Seller',productImage:''};button.closest=()=>card;
   const nodes={'[data-cart-items]':list,'[data-cart-status]':status,'[data-cart-empty]':new Node(),'[data-cart-summary]':new Node(),'[data-cart-subtotal]':new Node()};
   const document={addEventListener(_name,fn){fn();},querySelector:name=>nodes[name]??null,querySelectorAll:name=>name==='[data-add-to-cart]'?[button]:[],createElement:()=>new Node()};
-  vm.runInNewContext(fs.readFileSync(new URL('../script.js',import.meta.url),'utf8'),{document,window:{localStorage:{getItem:()=>stored,setItem:(_key,value)=>{stored=value;}},location:{href:'https://test.invalid/products/harness'}},URL,Intl});
+  vm.runInNewContext(fs.readFileSync(new URL('../script.js',import.meta.url),'utf8'),{document,window:{localStorage:{getItem:()=>stored,setItem:(_key,value)=>{if(storageFails) throw Error('Storage blocked'); stored=value;}},location:{href:'https://test.invalid/products/harness'}},URL,Intl});
   return{card,list,status,read:()=>JSON.parse(stored),add:()=>button.events.click(),action(index,action){const row=list.children[index];const target={dataset:{cartAction:action},closest:()=>row};list.events.click({target:{closest:()=>target}});}};
 }
 test('actual browser-cart handler keeps sizes/colours separate and preserves legacy base items',()=>{
@@ -31,4 +31,17 @@ test('browser cart refuses invalid quantities, unknown prices and aggregate opti
   ui.card.dataset.productQuantity='1';ui.add();assert.equal(ui.read()[0].quantity,99);assert.match(ui.status.textContent,/99/);
   ui.card.dataset.productVariantId=other;ui.card.dataset.productQuantity='0';ui.add();assert.equal(ui.read().length,1);
   ui.card.dataset.productQuantity='1';ui.card.dataset.productPricePaise='';ui.add();assert.equal(ui.read().length,1);
+});
+
+test('quantity increase at 99 gives clear feedback without changing the cart',()=>{
+  const ui=mount([{id,title:'Harness',quantity:99,pricePaise:12500}]);
+  ui.action(0,'increase');
+  assert.equal(ui.read()[0].quantity,99);
+  assert.match(ui.status.textContent,/at most 99 units/);
+});
+test('cart edit warns when browser storage cannot persist the change',()=>{
+  const ui=mount([{id,title:'Harness',quantity:2,pricePaise:12500}],{storageFails:true});
+  ui.action(0,'decrease');
+  assert.equal(ui.read()[0].quantity,2);
+  assert.match(ui.status.textContent,/browser storage is unavailable/);
 });
