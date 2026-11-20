@@ -1,0 +1,22 @@
+name: Browser cart regression tests
+
+on:
+  push:
+    branches:
+      - codex/marketplace-accounts-2026-11-06
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test browser cart
+        run: node --test tests/journey-browser-cart.test.mjs
