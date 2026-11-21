@@ -1,0 +1,11 @@
+# Sandbox checkout maintenance
+
+`createCheckoutMaintenanceJob` in `src/lib/commerce/checkout-maintenance.server.js` adapts the existing sandbox lifecycle worker for a future trusted scheduler. It does not register a job, expose an endpoint, read credentials or enable hosted order creation.
+
+A trusted server composition creates one lifecycle worker with its explicitly approved reservation policy, then one maintenance job with `approved: true`, that worker, `batchLimit` (1–100; default 25), and `intervalMs` (1 second–24 hours; default 60 seconds). Retain the job instance and call `await job.run()` on each scheduler tick. The minimum interval and overlap guard apply within that instance; independent workers and process restarts rely on the existing PostgreSQL locks, idempotency and fair candidate rotation. No distributed scheduler lock is claimed.
+
+Each due tick invokes exactly one `expireDue` batch. That existing worker verifies provider status before attempting expiry, while SQL independently protects unresolved/authorized/review payments. A pending unbound payment attempt remains blocked. An unknown operation is never retried within the tick. Later ticks reconcile through the database again; provider outages never establish payment failure or permission to release stock.
+
+Results contain only scanned counts and aggregate expiry outcomes; IDs and provider evidence are excluded. `partial` indicates unavailable per-order expiry results. `completed` means the batch completed, including any explicitly counted blocked payments; it does not mean all stock was released. A thrown sanitized 503 means the overall result is unconfirmed. Operational monitoring should alert on errors, unavailable counts and persistent blocked payments. Stop calling the job to disable scheduling; there is no internal timer to stop. A worker call that never settles retains the overlap guard, requiring operator investigation rather than an unsafe concurrent retry.
+
+This milestone uses fixtures and the existing disposable, network-isolated PostgreSQL suite only. No SQL, production configuration or hosted database was changed. Production scheduling still needs explicit deployment approval, approved provider/policy configuration, monitoring, manual payment review/refund operations and hosted acceptance validation. The default checkout runtime remains disabled.

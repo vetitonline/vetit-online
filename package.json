@@ -18,7 +18,7 @@
     "test:order-workspaces-browser": "node scripts/run-order-workspaces-browser.mjs",
     "test:seller-pagination": "node --test tests/seller-order-pagination.test.mjs",
     "test:seller-pagination-browser": "node scripts/run-seller-pagination-browser.mjs",
-    "test:checkout-lifecycle": "node --test tests/checkout-lifecycle.test.mjs",
+    "test:checkout-lifecycle": "node --test tests/checkout-lifecycle.test.mjs tests/checkout-maintenance.test.mjs",
     "test:checkout-cart": "node --test tests/journey-browser-cart.test.mjs tests/checkout-cart.test.mjs tests/journey-forms.test.mjs",
     "test:checkout-cart-browser": "node scripts/run-checkout-cart-browser.mjs",
     "test:inventory": "node --test tests/seller-inventory.test.mjs",
