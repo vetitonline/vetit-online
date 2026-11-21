@@ -57,7 +57,7 @@ export function createProviderAppointmentActions({session,apiBaseUrl,testApiOrig
   const work=async()=>{
    const auth=await session.getSession();if(!current()||controller.signal.aborted||auth.userId!==operation.owner||owner!==operation.owner)throw Object.assign(Error('Session changed.'),{status:401});
    sent=true;
-   const result=await send(operation.command,{baseUrl,accessToken:auth.accessToken,signal:controller.signal});
+   const result=await send(operation.command,{baseUrl,accessToken:auth.accessToken,profileId:operation.owner,signal:controller.signal});
    if(!result||result.bookingId!==operation.command.bookingId||result.status!==target[operation.command.action])throw Error('Unconfirmed response.');
    const latest=await session.getSession();if(!current()||controller.signal.aborted||latest.userId!==operation.owner||owner!==operation.owner)throw Object.assign(Error('Session changed.'),{status:401});
   };

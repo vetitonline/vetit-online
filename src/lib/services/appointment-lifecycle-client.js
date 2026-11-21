@@ -13,8 +13,11 @@ async function request(url, options, fetchImpl) {
   let response;
   try { response = await fetchImpl(url.toString(), options); } catch { throw new AppointmentLifecycleError('Appointment service could not be reached.', 0); }
   if (!response.ok) {
+    let sessionChanged=false;
+    if(response.status===409){try{sessionChanged=(await response.json()).state==='session_changed';}catch{}}
     const message = response.status === 401 ? 'Sign in to manage appointments.'
       : response.status === 403 ? 'This appointment action is not permitted.'
+      : sessionChanged ? 'Your account changed. Refresh appointments before continuing.'
       : response.status === 409 ? 'The appointment changed or the slot was taken. Refresh and try again.'
       : response.status === 422 ? 'This action is outside the appointment policy or schedule.'
       : 'Appointment management is currently unavailable.';
@@ -39,6 +42,7 @@ export function getAppointmentDashboard({ baseUrl, businessId, accessToken, sign
     if (!lists.every(key => Array.isArray(data[key]) && data[key].every(value => value !== null && typeof value === 'object' && !Array.isArray(value))) || typeof data.truncated !== 'boolean') {
       throw new AppointmentLifecycleError('Appointment dashboard returned an unsupported response.');
     }
+    if(data.profileId!==undefined)data.profileId=appointmentId(data.profileId);
     return data;
   });
 }
@@ -52,7 +56,7 @@ export function getAppointmentPolicy(serviceListingId, { baseUrl, signal, fetchI
     return { ...data, policy: normalizeAppointmentPolicy(data.policy) };
   });
 }
-export function sendAppointmentCommand(input, { baseUrl, accessToken, signal, fetchImpl = fetch } = {}) {
+export function sendAppointmentCommand(input, { baseUrl, accessToken, profileId, signal, fetchImpl = fetch } = {}) {
   const command = normalizeAppointmentCommand(input);
-  return request(endpoint(baseUrl), { method: 'POST', headers: { ...headers(accessToken), 'content-type': 'application/json' }, credentials: accessToken ? 'omit' : 'same-origin', redirect: 'error', cache:'no-store', body: JSON.stringify(command), signal }, fetchImpl);
+  return request(endpoint(baseUrl), { method: 'POST', headers: { ...headers(accessToken), 'content-type': 'application/json',...(profileId!==undefined?{'x-vetit-profile-id':appointmentId(profileId)}:{}) }, credentials: accessToken ? 'omit' : 'same-origin', redirect: 'error', cache:'no-store', body: JSON.stringify(command), signal }, fetchImpl);
 }

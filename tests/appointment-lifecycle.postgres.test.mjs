@@ -1,4 +1,4 @@
-/** Opt-in REAL two-session PostgreSQL tests. NOT run in the current task.
+/** Opt-in real two-session PostgreSQL tests. The isolated Docker wrapper enables them.
  * Requires an explicitly approved, empty local database named vetit_disposable_*.
  * Creates test schema only there; no remote/Supabase host or automatic cleanup.
  */

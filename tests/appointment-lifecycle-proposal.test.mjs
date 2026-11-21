@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { INITIAL_APPOINTMENT_POLICY } from '../src/lib/services/appointment-lifecycle.js';
 const sql = await readFile(new URL('../supabase/test-project/appointment-lifecycle.proposal.sql',import.meta.url),'utf8');
 const api = await readFile(new URL('../src/pages/api/appointments.ts',import.meta.url),'utf8');
+const commandApi = await readFile(new URL('../src/lib/services/appointment-command-api.js',import.meta.url),'utf8');
 
 test('lifecycle remains a separate transaction proposal without destructive data/schema operations',()=>{
   assert.match(sql,/^-- REVIEW PROPOSAL ONLY/); assert.equal((sql.match(/^commit;/gm)||[]).length,1);
@@ -65,9 +66,10 @@ test('existing-service seeds and new-service initialization use the same approve
   assert.match(sql,/charge_status text not null default 'not_collected'/);
 });
 test('HTTP mutations retain authentication, origin checks, bounded bodies and uncached responses',()=>{
-  assert.match(api,/if \(!isSameOriginMutation\(request\)\)/); assert.match(api,/authenticateApiRequest/);
-  assert.match(api,/readJsonBody\(request, 8192\)/); assert.match(api,/'Cache-Control': 'no-store'/);
-  assert.doesNotMatch(api,/service_role|SUPABASE_SERVICE_ROLE/);
+  assert.match(api,/createAppointmentCommandHandler/); assert.match(api,/authenticateApiRequest/);
+  assert.match(commandApi,/isSameOriginMutation\(request\)/); assert.match(commandApi,/matchesExpectedAccount\(request,auth.user.id\)/);
+  assert.match(commandApi,/readJsonBody\(request,8192\)/); assert.match(api,/'Cache-Control': 'no-store'/);
+  assert.doesNotMatch(api+commandApi,/service_role|SUPABASE_SERVICE_ROLE/);
 });
 
 test('provider cancellation intent requires manager authorisation even for an owned booking',async()=>{
