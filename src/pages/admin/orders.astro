@@ -1,0 +1,27 @@
+---
+import '../../../styles.css';
+import SiteHeader from '../../components/SiteHeader.astro';
+import {authenticateApiRequest} from '../../lib/supabase/api-auth';
+import {createAdminOrdersHandler} from '../../lib/admin/orders.js';
+import type {OrderSummary} from '../../lib/buyer/order-contract.js';
+export const prerender=false;
+const response=await createAdminOrdersHandler({authenticate:authenticateApiRequest})(Astro);
+Astro.response.status=response.status;
+Astro.response.headers.set('Cache-Control','private, no-store');
+Astro.response.headers.set('Vary','Cookie, Authorization');
+const data=await response.json() as {state:string;orders?:OrderSummary[];nextCursor?:string|null};
+const money=(amount:number,currency:string)=>new Intl.NumberFormat('en-IN',{style:'currency',currency}).format(amount/100);
+const next=new URLSearchParams({limit:Astro.url.searchParams.get('limit')??'20',...(data.nextCursor?{cursor:data.nextCursor}:{})});
+---
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Order overview | Vetit Admin</title></head>
+<body><div class="page-shell"><SiteHeader adminMode/><main class="product-showcase">
+<h1>Order overview</h1><p>Read-only order status and totals. Customer contact details, delivery addresses and payment evidence are excluded.</p>
+<nav aria-label="Admin order navigation"><a href="/admin">Administration</a> · <a href="/admin/orders">Refresh latest orders</a></nav>
+{data.state==='available'?<>
+  {!data.orders?.length&&<p>No orders on this page.</p>}
+  {data.orders?.map(order=><article class="seller-panel"><h2>Order {order.id}</h2><p>Status: {order.order_status} · Market: {order.market_code}</p><p>Placed: {order.created_at}</p><p>Items: {money(order.subtotal_minor,order.currency_code)} · Delivery: {money(order.delivery_minor,order.currency_code)} · Tax: {money(order.tax_minor,order.currency_code)}</p><p>Total: {money(order.total_minor,order.currency_code)}</p></article>)}
+  {data.nextCursor&&<a class="button button-secondary" href={`/admin/orders?${next}`}>Older orders</a>}
+</>:<p role="status">{data.state==='unauthorized'?'Sign in with an administrator account.':data.state==='forbidden'?'Administrator access required.':data.state==='invalid_request'?'Invalid order page. Return to the latest orders.':'Order overview is unavailable. Approved backend integration is required.'}</p>}
+{data.state==='unauthorized'&&<a href="/admin/login?next=%2Fadmin%2Forders">Sign in</a>}
+</main></div></body></html>
+<style>article {margin-block:16px;overflow-wrap:anywhere;}</style>

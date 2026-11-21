@@ -36,7 +36,7 @@ const groups = roots.map(root => ({root,children:taxonomy?.categories.filter(cat
         {taxonomy?.state === 'error' && <p class="product-empty-state">The current category overview is temporarily unavailable.</p>}
       </section>
       <p class="admin-notice">Category imagery controls and taxonomy editing tools are not enabled. <a href="/admin/cases">Open moderation cases / समीक्षा मामले</a> or <a href="/admin/review">the listing overview / लिस्टिंग सूची</a>. Decisions require the durable Test candidate, current reviewer permission and trusted screening evidence.</p>
-      <section class="seller-panel"><h2>Seller and listing review controls</h2><p>Open a moderation case to inspect reason codes and history, request corrections, escalate or make an audited decision. Missing policy, screening or credentials blocks approval. Automatic publication is disabled.</p><a href="/admin/cases">Review cases / मामलों की समीक्षा करें</a></section>
+      <section class="seller-panel"><h2>Seller and listing review controls</h2><p><a href="/admin/orders">Read-only order overview</a></p><p>Open a moderation case to inspect reason codes and history, request corrections, escalate or make an audited decision. Missing policy, screening or credentials blocks approval. Automatic publication is disabled.</p><a href="/admin/cases">Review cases / मामलों की समीक्षा करें</a></section>
     </> : <section class="admin-entry-card"><span class="section-label dark-label"><span></span>Access denied</span><h1>Admin access required</h1><p>This account is signed in but does not have the trusted Vetit administrator claim.</p><a href="/">Return to Vetit Online</a></section>}
   </main>
 </div></body></html>
