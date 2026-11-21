@@ -5,9 +5,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const status = document.querySelector("[data-cart-status]");
   const lineKey = (item) => `${item.id.toLowerCase()}:${item.productVariantId?.toLowerCase() || ''}`;
 
+  let storageSnapshot;
   function readCart() {
     try {
-      const stored = JSON.parse(window.localStorage.getItem(cartStorageKey) || "[]");
+      storageSnapshot = window.localStorage.getItem(cartStorageKey);
+      const stored = JSON.parse(storageSnapshot || "[]");
       if (!Array.isArray(stored)) return [];
 
       return stored.filter((item) =>
@@ -47,12 +49,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function writeCart() {
     try {
-      window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+      const serialized = JSON.stringify(cart);
+      window.localStorage.setItem(cartStorageKey, serialized);
+      storageSnapshot = serialized;
       return true;
     } catch {
       return false;
     }
   }
+
+  // Refuse a stale edit rather than overwriting a newer persisted basket.
+  // Storage is synchronous, but this is not a cross-tab transaction/stock lock.
+  function canEditCart() {
+    try {
+      if (window.localStorage.getItem(cartStorageKey) !== storageSnapshot) {
+        cart = readCart();
+        updateCartBadges();
+        renderCartPage();
+        say("Your cart changed in another page. Review the updated items before trying again.");
+        return false;
+      }
+    } catch {
+      // Preserve the existing page-only behavior when storage is inaccessible.
+    }
+    return true;
+  }
+
+  window.addEventListener?.("storage", (event) => {
+    if ((event.key !== cartStorageKey && event.key !== null) || event.storageArea !== window.localStorage) return;
+    cart = readCart();
+    updateCartBadges();
+    renderCartPage();
+    say("Your cart was updated in another page. Review the current items before checkout.");
+  });
 
   function say(message) {
     if (status) status.textContent = message;
@@ -174,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const productVariantId = card.dataset.productVariantId || null;
       const quantity = Number(card.dataset.productQuantity || 1);
       if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99 || !Number.isSafeInteger(price) || price <= 0) { say('Choose an available option, price and quantity.'); return; }
+      if (!canEditCart()) return;
       const existing = cart.find((item) => lineKey(item) === lineKey({id,productVariantId}));
       const stock = card.dataset.productStockQuantity;
       if (stock !== undefined && stock !== '' && (!Number.isSafeInteger(Number(stock)) || (existing?.quantity || 0) + quantity > Number(stock))) { say('The requested quantity exceeds the latest available stock.'); return; }
@@ -207,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const row = button?.closest("[data-product-id]");
     if (!button || !row) return;
 
+    if (!canEditCart()) return;
     const item = cart.find((entry) => lineKey(entry) === row.dataset.cartKey);
     if (!item) return;
     const action = button.dataset.cartAction;
@@ -231,11 +262,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.querySelector("[data-cart-clear]")?.addEventListener("click", function () {
+    if (!canEditCart()) return;
     cart = [];
-    writeCart();
+    const persisted = writeCart();
     updateCartBadges();
     renderCartPage();
-    say("Your cart has been cleared.");
+    say(persisted ? "Your cart has been cleared." : "Cart cleared for this page, but browser storage is unavailable.");
   });
 
   const searchForm = document.querySelector(".marketplace-search");
