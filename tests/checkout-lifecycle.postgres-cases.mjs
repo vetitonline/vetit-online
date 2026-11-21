@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import {createSandboxChargeProviders} from '../src/lib/commerce/sandbox-charges.server.js';
+import {createPostgresOrderRepository} from '../src/lib/commerce/postgres-order-repository.server.js';
+import {createCheckoutOrder} from '../src/lib/commerce/checkout-service.js';
 import {randomUUID} from 'node:crypto';
 import {createCheckoutLifecycleWorker} from '../src/lib/commerce/checkout-lifecycle.server.js';
 import {createCheckoutRateIssuer} from '../src/lib/commerce/checkout-rates.server.js';
@@ -128,4 +131,23 @@ export async function runCheckoutLifecycleCases(t,{sql,actor,issue,place,request
   await assert.rejects(call('issue_checkout_rated_quote',{p_customer_id:alice,p_request:input,p_expected_items:[{...basis.items[0],businessId:bob}],p_delivery_minor:500,p_tax_minor:100,p_shipping_reference:'ship',p_tax_reference:'tax',p_valid_until:validUntil,p_ttl_seconds:300,p_reservation_ttl_seconds:60}),/basis changed/);
   assert.equal(await sql(`select count(*) from vetit_checkout.quotes`),before);
  });
+ await t.test('configured sandbox checkout creates one stock-backed order and reconciles verified payment end to end',async()=>{
+  const input=request([26],1);
+  const charges=createSandboxChargeProviders({approved:true,policy:{reference:'isolated-india-v1',postalPrefixes:['400'],deliveryPerSellerMinor:500,taxBasisPoints:1000,taxShipping:false,quoteTtlSeconds:300}});
+  const issuer=createCheckoutRateIssuer({approved:true,client,...charges,reservationTtlSeconds:60});
+  const quote=await issuer.issue(input,alice);assert.equal(quote.deliveryMinor,500);assert.equal(quote.taxMinor,1000);assert.equal(quote.totalMinor,11500);
+  const customerClient={rpc:async(name,args)=>{try{return{data:JSON.parse(await actor(alice,`select public.${name}(${Object.values(args).map(v=>typeof v==='number'?String(v):typeof v==='object'?literal(JSON.stringify(v))+'::jsonb':literal(v)).join(',')})`)||'null')};}catch(error){return{error:{code:'XX000'}};}}};
+  const repository=createPostgresOrderRepository(customerClient,{approved:true,quoteId:quote.id});
+  let creates=0;const records=new Map();
+  const provider={mode:'sandbox',name:'synthetic',create:async command=>{creates++;records.set(command.orderId,command);return{reference:'SANDBOX-'+command.attemptId};},getVerifiedStatus:async command=>({...command,verified:true,mode:'sandbox',eventId:'CAPTURE-'+command.attemptId,status:'captured',amountMinor:records.get(command.orderId).amountMinor,currencyCode:'INR',observedAt:new Date().toISOString()})};
+  const worker=createCheckoutLifecycleWorker({approved:true,client,provider,reservationTtlSeconds:60});
+  const deps={repository,payments:worker.payments,shipping:{quote:async()=>({id:quote.id,currencyCode:'INR',amountMinor:quote.deliveryMinor,expiresAt:quote.expiresAt})},taxes:{quote:async()=>({currencyCode:'INR',amountMinor:quote.taxMinor})},loadProducts:async()=>{const basis=await call('get_checkout_rate_basis',{p_request:input});return basis.items.map(item=>({id:item.listingId,title:item.title,currencyCode:'INR',options:[{variantId:item.productVariantId,priceMinor:item.unitPriceMinor,stockQuantity:null}]}));}};
+  const command={...input,idempotencyKey:randomUUID(),expectedTotalMinor:quote.totalMinor};
+  const result=await createCheckoutOrder(command,alice,deps);assert.equal(result.state,'created');assert.equal(result.payment.state,'sandbox');assert.equal(result.order.total_minor,11500);
+  const replay=await createCheckoutOrder(command,alice,deps);assert.equal(replay.state,'existing');assert.equal(replay.order.id,result.order.id);assert.equal(creates,1);
+  assert.equal((await worker.reconcile(result.order.id)).outcome,'applied');assert.equal((await get(result.order)).orderStatus,'confirmed');
+  assert.equal(await actor(alice,`select total_minor from public.orders where id='${result.order.id}'`),'11500');
+  assert.equal(await actor(bob,`select count(*) from public.orders where id='${result.order.id}'`),'0');
+ });
+
 }
