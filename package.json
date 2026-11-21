@@ -14,7 +14,7 @@
     "test:order-cancellation-browser": "node scripts/run-cancellation-browser.mjs",
     "test:seller-account-isolation": "node --test tests/seller-account-isolation.test.mjs tests/seller-submission-boundaries.test.mjs tests/seller-catalogue.test.mjs tests/native-seller-catalogue.test.mjs tests/seller-image-management.test.mjs tests/seller-draft-recovery.test.mjs",
     "test:seller-account-browser": "node scripts/run-seller-account-browser.mjs",
-    "test:order-workspaces": "node --test tests/marketplace-order-workspaces.test.mjs",
+    "test:order-workspaces": "node --test tests/marketplace-order-workspaces.test.mjs tests/order-refresh.test.mjs",
     "test:order-workspaces-browser": "node scripts/run-order-workspaces-browser.mjs",
     "test:seller-pagination": "node --test tests/seller-order-pagination.test.mjs",
     "test:seller-pagination-browser": "node scripts/run-seller-pagination-browser.mjs",

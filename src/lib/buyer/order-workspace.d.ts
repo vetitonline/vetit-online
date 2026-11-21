@@ -9,4 +9,4 @@ export function createOrderWorkspace(options: {
   read?: (options: {orderId?: string; limit?: number; cursor?: string; signal?: AbortSignal}) => Promise<OrderHistory | OrderDetail>;
   cancel?:typeof requestBuyerOrderCancellation;
   render: (state: OrderWorkspaceState) => void;
-}): {load(options?: {orderId?: string; more?: boolean}): Promise<void>; cancel():Promise<void>;clear():void; dispose(): void};
+}): {load(options?: {orderId?: string; more?: boolean}): Promise<void>; refresh():Promise<void>; cancel():Promise<void>;clear():void; dispose(): void};

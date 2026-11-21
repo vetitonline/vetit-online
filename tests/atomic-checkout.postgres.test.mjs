@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {createBuyerOrderHistoryHandler} from '../src/lib/buyer/order-history.js';
 import {runCheckoutLifecycleCases} from './checkout-lifecycle.postgres-cases.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -348,6 +349,27 @@ test('atomic checkout on isolated PostgreSQL 17, canonical baseline and seller/c
       do{const page=await requestSellerOrderPage({baseUrl:'https://vetit.invalid',profileId:seller,cursor,fetchImpl:(url,options)=>handler(seller)({request:new Request(url,options)})});snapshot=mergeSellerOrderPages(snapshot,page);cursor=page.pagination.nextCursor;pages++;assert.ok(pages<10);}while(cursor);
       const rows=snapshot.items.filter(row=>row.orderId===target);assert.equal(rows.length,251);assert.equal(new Set(rows.map(row=>row.id)).size,251);assert.ok(pages>=6);
       const denied=await requestSellerOrderPage({baseUrl:'https://vetit.invalid',profileId:bob,fetchImpl:(url,options)=>handler(bob)({request:new Request(url,options)})});assert.deepEqual(denied.items,[]);
+    });
+    await t.test('customer detail API reads persisted snapshots under RLS and hides foreign orders before child queries',async()=>{
+      const target=await sql(`select id from public.orders where customer_profile_id='${alice}' order by created_at,id limit 1`);
+      assert.ok(target); const tables=[];
+      const client=owner=>({from(table){
+        assert.ok(['orders','order_items','fulfilments'].includes(table));tables.push(table);
+        let columns='*',single=false,max=101;const conditions=[];
+        const q={select:value=>{assert.match(value,/^[a-z_,]+$/);columns=value;return q;},eq:(key,value)=>{assert.match(key,/^[a-z_]+$/);conditions.push(`${key}=${literal(value)}`);return q;},order:()=>q,limit:value=>{assert.ok(Number.isSafeInteger(value));max=value;return q;},maybeSingle:()=>{single=true;return q;},async then(resolve,reject){try{
+          const result=JSON.parse(await actor(owner,`select coalesce(jsonb_agg(row_to_json(r)),'[]') from (select ${columns} from public.${table} where ${conditions.join(' and ')} limit ${max}) r`));
+          resolve({data:single?(result[0]??null):result});
+        }catch(error){reject(error);}}};return q;
+      }});
+      const read=async owner=>{const url=new URL(`https://vetit.invalid/api/buyer/orders?orderId=${target}`);return createBuyerOrderHistoryHandler({authenticate:async()=>({state:'authenticated',user:{id:owner},supabase:client(owner)})})({request:new Request(url),url});};
+      const response=await read(alice);assert.equal(response.status,200);const body=await response.json();
+      assert.equal(body.order.id,target);assert.ok(body.items.length);assert.ok(body.fulfilments.length);assert.equal(body.profileId,alice);
+      assert.equal(body.items.reduce((sum,item)=>sum+item.quantity*item.unit_price_minor,0),body.order.subtotal_minor);
+      assert.equal(JSON.stringify(body).includes('delivery_address_snapshot'),false);
+      tables.length=0;assert.equal((await read(bob)).status,404);assert.deepEqual(tables,['orders']);
+      assert.equal(await actor(bob,`select count(*) from public.order_items where order_id='${target}'`),'0');
+      assert.equal(await actor(bob,`select count(*) from public.fulfilments where order_id='${target}'`),'0');
+      assert.ok(Number(await actor(seller,`select count(*) from public.order_items where order_id='${target}' and business_id='${business}'`))>0);
     });
     await runCheckoutLifecycleCases(t,{sql,actor,issue,place,request,products,alice,bob,seller,business});
   }finally{await db.stop();}

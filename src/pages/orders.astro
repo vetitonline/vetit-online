@@ -10,6 +10,7 @@ import SiteHeader from '../components/SiteHeader.astro';
   <p id="orders-status" role="status" aria-live="polite"></p>
   <nav aria-label="Order navigation"><a id="orders-back" href="/orders">All orders</a> · <a id="orders-shop" href="/products">Browse products</a></nav>
   <p><a id="orders-signin" href="/login?next=%2Forders" hidden>Sign in</a></p>
+  <button class="button button-secondary" id="orders-refresh" type="button" hidden>Refresh order status</button>
   <div id="orders-content"></div>
   <p>Shipment status and tracking are shown from your order records. Returns require a published seller policy and a supported return request service; refund processing is not active here.</p>
   <button class="button button-secondary" id="orders-retry" type="button" hidden>Retry</button>
@@ -35,6 +36,9 @@ import SiteHeader from '../components/SiteHeader.astro';
     get('title').textContent = copy.orders; get('intro').textContent = copy.ordersIntro;
     get('back').textContent = copy.back; get('back').setAttribute('href', `/orders?lang=${language.value}`); get('shop').textContent = copy.shop;
     get('status').textContent = state.phase==='saving'?copy.cancelling:state.notice?copy[state.notice]:['loading','empty','signin','notfound','error'].includes(state.phase) ? copy[state.phase as 'loading'|'empty'|'signin'|'notfound'|'error'] : '';
+    get<HTMLButtonElement>('refresh').hidden = !['ready','empty','loading','saving'].includes(state.phase);
+    get<HTMLButtonElement>('refresh').disabled = ['loading','saving'].includes(state.phase);
+    get('refresh').textContent = copy.refresh;
     get('signin').hidden = state.phase !== 'signin'; get('signin').textContent = copy.signin;
     get('signin').setAttribute('href', `/login?next=${encodeURIComponent(location.pathname + location.search)}`);
     get<HTMLButtonElement>('retry').hidden = !['error','signin'].includes(state.phase); get('retry').textContent = copy.retry;
@@ -71,6 +75,7 @@ import SiteHeader from '../components/SiteHeader.astro';
     if(truncated) paragraph(content,copy.partial);
   }
   const workspace = createOrderWorkspace({render});
+  get('refresh').addEventListener('click', () => void workspace.refresh());
   get('retry').addEventListener('click', () => void workspace.load({orderId:id, more: !id && Boolean(snapshot.nextCursor)}));
   get('more').addEventListener('click', () => void workspace.load({more:true}));
   language.addEventListener('change', () => { const url = new URL(location.href); url.searchParams.set('lang',language.value); history.replaceState(null,'',url); render(snapshot); });

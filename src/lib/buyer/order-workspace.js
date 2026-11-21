@@ -54,5 +54,11 @@ export function createOrderWorkspace({ read = requestBuyerOrders, cancel = reque
       if(!disposed&&version===revision)publish({phase:error?.status===401?'signin':'error',mode:'detail',orders:[],detail:null,nextCursor:null,notice:'reconcile'});
     }finally{if(version===revision)saving=false;}
   }
-  return { load, clear, cancel:cancelOrder, dispose() { disposed = true; revision++; active?.abort(); profileId=null;state={phase:'idle',mode:'list',orders:[],detail:null,nextCursor:null}; } };
+  async function refresh(){
+    if(disposed||saving||state.phase==='loading')return;
+    const orderId=state.mode==='detail'?state.detail?.order.id:undefined;
+    if(state.mode==='detail'&&!orderId)return;
+    await load({orderId});
+  }
+  return { load, refresh, clear, cancel:cancelOrder, dispose() { disposed = true; revision++; active?.abort(); profileId=null;state={phase:'idle',mode:'list',orders:[],detail:null,nextCursor:null}; } };
 }
