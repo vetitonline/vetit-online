@@ -10,9 +10,17 @@ export async function requestCheckoutReview(input, { baseUrl=globalThis.location
   if (!response.ok) {
     // Only a stable, reviewed code may replace the generic error; never display
     // arbitrary API/database messages in a customer checkout.
-    let stockUnavailable=false;
-    if(response.status===400){try{stockUnavailable=(await response.json()).code==='stock_unavailable';}catch{}}
-    throw Object.assign(Error(response.status===401?'Sign in to review checkout.':response.status===409?'Your account changed. Reload your saved addresses and cart.':stockUnavailable?'Selected quantity exceeds current stock. Update your cart and review checkout again.':'Checkout review is unavailable. No order or payment has been placed.'),{status:response.status});
+    let code;
+    try { code = (await response.json()).code; } catch {}
+    const messages = {
+      stock_unavailable:'Selected quantity exceeds current stock. Update your cart and review checkout again.',
+      listing_unavailable:'A selected product is no longer available. Update your cart and review checkout again.',
+      price_unavailable:'A selected option no longer has an available price. Update your cart and review checkout again.',
+      shipping_unavailable:'Delivery charges are unavailable or expired. Review checkout again later.',
+      tax_unavailable:'Tax calculation is unavailable. Review checkout again later.',
+    };
+    const reviewedCode = typeof code === 'string' && Object.hasOwn(messages, code) && ([400,503].includes(response.status)) ? code : undefined;
+    throw Object.assign(Error(response.status===401?'Sign in to review checkout.':response.status===409?'Your account changed. Reload your saved addresses and cart.':reviewedCode?messages[reviewedCode]:'Checkout review is unavailable. No order or payment has been placed.'),{status:response.status,...(reviewedCode?{code:reviewedCode}:{})});
   }
   const body = await response.json();
   if(body?.apiVersion!==1 || body.state!=='review_only' || body.checkoutEnabled!==false || body.payment?.state!=='disabled' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.profileId) || !Array.isArray(body.blockers) || !body.blockers.every(value=>typeof value==='string')) throw Error('Checkout response is invalid.');

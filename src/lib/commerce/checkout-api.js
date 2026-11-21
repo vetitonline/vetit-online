@@ -7,12 +7,13 @@ export function createCheckoutHandler({ authenticate, dependencies, createOrder 
   const json = (body,status=200) => new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
   return async ({request,cookies}) => {
     try {
+      if (request.method !== 'POST') return json({state:'method_not_allowed',code:'method_not_allowed'},405);
       if (!isSameOriginMutation(request)) return json({state:'forbidden'},403);
       const auth = await authenticate(request,cookies);
       if (auth.state !== 'authenticated') return json({state:auth.state === 'unavailable'?'unavailable':'unauthorized'},auth.state === 'unavailable'?503:401);
       if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return json({state:'invalid_request'},415);
       if ((createOrder || request.headers.has('x-vetit-profile-id')) && request.headers.get('x-vetit-profile-id') !== auth.user.id) return json({state:'session_changed'},409);
-      if (createOrder && orderCreationEnabled !== true) return json({state:'unavailable',message:'Hosted order creation remains disabled pending explicit deployment approval.'},503);
+      if (createOrder && orderCreationEnabled !== true) return json({state:'unavailable',code:'order_creation_disabled',message:'Hosted order creation remains disabled pending explicit deployment approval.'},503);
       const body = await readJsonBody(request);
       if (!body.ok) return json({state:'invalid_request'},body.status);
       const services = await dependencies(auth,request,cookies);
@@ -20,7 +21,7 @@ export function createCheckoutHandler({ authenticate, dependencies, createOrder 
       return json(result,createOrder&&result.state==='created'?201:200);
     } catch(error) {
       const status = error instanceof CheckoutError ? error.status : error instanceof CheckoutQuoteError || error instanceof BuyerInputError ? 400 : 503;
-      return json({state:status===503?'unavailable':'invalid_request',...(error instanceof CheckoutQuoteError&&error.code==='stock_unavailable'?{code:'stock_unavailable'}:{}),message:status===503?'Checkout is unavailable. No payment has been taken. Reconcile any existing order before retrying.':error.message},status);
+      return json({state:status===503?'unavailable':'invalid_request',code:error instanceof CheckoutQuoteError || error instanceof CheckoutError ? error.code : status===503?'checkout_unavailable':'invalid_request',message:status===503?'Checkout is unavailable. No payment has been taken. Reconcile any existing order before retrying.':error.message},status);
     }
   };
 }

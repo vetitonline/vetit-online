@@ -2,7 +2,7 @@ import { normalizeQuoteLines, calculateCheckoutQuote } from './checkout-quote.js
 import { normalizeAddressInput } from '../buyer/validation.js';
 import { normalizeOrderSummary, orderId } from '../buyer/order-contract.js';
 
-export class CheckoutError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
+export class CheckoutError extends Error { constructor(message, status = 400, code = 'invalid_request') { super(message); this.status = status; this.code = code; } }
 export function normalizeDeliveryAddress(input) {
   const address = normalizeAddressInput(input);
   if (Object.values(address).some(value => typeof value === 'string' && /[\u0000-\u001f\u007f]/.test(value))) throw new CheckoutError('Delivery details contain unsupported characters.');
@@ -28,8 +28,8 @@ export async function reviewCheckout(input, { loadProducts, shipping, taxes, now
   const shippingQuote = shipping ? await shipping.quote({ lines:normalized.lines,products,address:normalized.deliveryAddress,currencyCode:'INR' }) : null;
   const taxQuote = taxes ? await taxes.quote({ lines:quote.lines,address:normalized.deliveryAddress,currencyCode:'INR' }) : null;
   const validMoney = amount => Number.isSafeInteger(amount) && amount >= 0;
-  if (shippingQuote && (typeof shippingQuote.id !== 'string' || !shippingQuote.id || shippingQuote.currencyCode !== 'INR' || !validMoney(shippingQuote.amountMinor) || !Number.isFinite(Date.parse(shippingQuote.expiresAt)) || Date.parse(shippingQuote.expiresAt) <= now())) throw new CheckoutError('Shipping quote is invalid or expired.', 503);
-  if (taxQuote && (taxQuote.currencyCode !== 'INR' || !validMoney(taxQuote.amountMinor))) throw new CheckoutError('Tax quote is unavailable.', 503);
+  if (shippingQuote && (typeof shippingQuote.id !== 'string' || !shippingQuote.id || shippingQuote.currencyCode !== 'INR' || !validMoney(shippingQuote.amountMinor) || !Number.isFinite(Date.parse(shippingQuote.expiresAt)) || Date.parse(shippingQuote.expiresAt) <= now())) throw new CheckoutError('Shipping quote is invalid or expired.', 503, 'shipping_unavailable');
+  if (taxQuote && (taxQuote.currencyCode !== 'INR' || !validMoney(taxQuote.amountMinor))) throw new CheckoutError('Tax quote is unavailable.', 503, 'tax_unavailable');
   const total = shippingQuote && taxQuote ? quote.subtotalMinor + shippingQuote.amountMinor + taxQuote.amountMinor : null;
   if (total !== null && !Number.isSafeInteger(total)) throw new CheckoutError('Checkout amount is outside the supported range.');
   return { apiVersion:1,state:'review_only',...normalized,summary:quote,shipping:shippingQuote,taxMinor:taxQuote?.amountMinor ?? null,totalMinor:total,currencyCode:'INR',checkoutEnabled:false,payment:{state:'disabled'}, blockers:[...(!shippingQuote?['Shipping service and charges are not configured.']:[]),...(!taxQuote?['Tax calculation is not configured.']:[]),'Order placement requires the approved transactional backend.'] };
@@ -42,10 +42,13 @@ export async function createCheckoutOrder(input, customerId, { repository, payme
   if (!repository || repository.atomic !== true) throw new CheckoutError('Order placement is unavailable until the transactional backend is approved.',503);
   if (payments && payments.mode !== 'sandbox') throw new CheckoutError('Live payments are disabled.',503);
   const key = orderId(input?.idempotencyKey), owner = orderId(customerId);
+  // Validate every client precondition before even a read/reconciliation RPC.
+  if (!Number.isSafeInteger(input?.expectedTotalMinor) || input.expectedTotalMinor < 0) throw new CheckoutError('Checkout total is invalid.',400,'invalid_total');
+  const normalized = normalizeCheckout(input);
   // Reconcile completed attempts before re-quoting an expired price/shipping offer.
   // The database lookup checks the same quote, canonical request, owner and total.
   if (repository.findExistingOrder) {
-    const existing = await repository.findExistingOrder({customerId:owner,idempotencyKey:key,expectedTotalMinor:input.expectedTotalMinor,request:normalizeCheckout(input)});
+    const existing = await repository.findExistingOrder({customerId:owner,idempotencyKey:key,expectedTotalMinor:input.expectedTotalMinor,request:normalized});
     if (existing) {
       const order=normalizeOrderSummary(existing);
       if(existing.customer_profile_id!==owner||order.total_minor!==input.expectedTotalMinor)throw new CheckoutError('Order response needs reconciliation.',503);
@@ -55,7 +58,7 @@ export async function createCheckoutOrder(input, customerId, { repository, payme
   const review = await reviewCheckout(input, reviewDependencies);
   if (review.totalMinor === null) throw new CheckoutError('Shipping and tax must be calculated before placing an order.',503);
   if (review.summary.lines.some(line=>line.unitAmountMinor<=0)) throw new CheckoutError('Order lines require a positive current price.',409);
-  if (!Number.isSafeInteger(input.expectedTotalMinor) || input.expectedTotalMinor !== review.totalMinor) throw new CheckoutError('Prices or delivery charges changed. Review checkout again.',409);
+  if (!Number.isSafeInteger(input.expectedTotalMinor) || input.expectedTotalMinor !== review.totalMinor) throw new CheckoutError('Prices or delivery charges changed. Review checkout again.',409,'price_changed');
   const persisted = await repository.createPendingOrder({ customerId:owner,idempotencyKey:key,lines:review.lines,customer:review.customer,deliveryAddress:review.deliveryAddress,shippingQuote:review.shipping,taxMinor:review.taxMinor,expectedSubtotalMinor:review.summary.subtotalMinor,expectedTotalMinor:review.totalMinor,currencyCode:'INR' });
   const order = normalizeOrderSummary(persisted);
   // The repository owns transition authority; this boundary never marks an order paid.
