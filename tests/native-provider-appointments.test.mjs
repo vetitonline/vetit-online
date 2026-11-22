@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createProviderAppointmentActions,providerBookingActions,providerActionCopy} from '../mobile/src/provider-appointment-actions.js';
+import {createProviderAppointmentActions,createNativeAppointmentActions,providerBookingActions,customerBookingActions,providerActionCopy,customerActionCopy} from '../mobile/src/provider-appointment-actions.js';
 import {sendAppointmentCommand} from '../src/lib/services/appointment-lifecycle-client.js';
 import * as appointments from '../mobile/src/appointments.js';
 import {mountNativeComponent,drainNativeTasks} from './native-component-harness.mjs';
@@ -52,7 +52,7 @@ test('timeout remains uncertain after late completion and resolves only through 
 test('actual native provider UI requires confirmation, preserves appointments on back and verifies the refreshed result',async()=>{
  let status='requested',revision=1,writes=0;
  const read=async options=>({bookings:[{id,service_listing_id:service,status,lifecycle_revision:revision,requested_start:'2026-10-19T10:00:00Z',requested_end:'2026-10-19T10:30:00Z',price_minor:10000,currency_code:'INR'}],providerBusinesses:[{id:business,display_name:'Synthetic provider'}],services:options.businessId?[{id:service,title:'Synthetic consultation'}]:[],slots:[],policies:[],truncated:false});
- const modules={'./appointments.js':{...appointments,createNativeAppointments:options=>appointments.createNativeAppointments({...options,read})},'./provider-appointment-actions.js':{createProviderAppointmentActions:options=>createProviderAppointmentActions({...options,send:async()=>{writes++;status='confirmed';revision++;return{bookingId:id,status};}}),providerBookingActions,providerActionCopy}};
+ const modules={'./appointments.js':{...appointments,createNativeAppointments:options=>appointments.createNativeAppointments({...options,read})},'./provider-appointment-actions.js':{createNativeAppointmentActions:options=>createNativeAppointmentActions({...options,send:async()=>{writes++;status='confirmed';revision++;return{bookingId:id,status};}}),providerBookingActions,customerBookingActions,providerActionCopy,customerActionCopy}};
  const ui=mountNativeComponent('NativeAppointments.tsx','NativeAppointments',{...origins,session:session(),language:'ta'},modules);await drainNativeTasks();ui.render();assert.equal(ui.button('Confirm appointment'),undefined);ui.button('Provider schedule: Synthetic provider').props.onPress();await drainNativeTasks();ui.render();ui.button('Confirm appointment').props.onPress();ui.render();assert.equal(writes,0);assert.match(ui.text(),/Apply this provider action/);ui.button('Keep appointment unchanged').props.onPress();ui.render();assert.equal(writes,0);
  ui.button('Confirm appointment').props.onPress();ui.render();ui.button('Apply appointment action').props.onPress();await drainNativeTasks();await drainNativeTasks();ui.render();assert.equal(writes,1);assert.match(ui.text(),/verified in refreshed records/);ui.appState('background');assert.ok(!ui.text().includes('Synthetic consultation'));ui.unmount();assert.notEqual(providerActionCopy('hi-IN').confirm,providerActionCopy('en').confirm);
 });

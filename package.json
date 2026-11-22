@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test:admin-orders": "node --test tests/admin-orders.test.mjs tests/admin-migration-readiness.test.mjs",
-    "test:appointment-account": "node --test tests/appointment-account-binding.test.mjs tests/appointment-page-account.test.mjs tests/native-provider-appointments.test.mjs",
+    "test:appointment-account": "node --test tests/appointment-account-binding.test.mjs tests/appointment-page-account.test.mjs tests/native-provider-appointments.test.mjs tests/native-customer-appointments.test.mjs",
     "test:appointments-db": "node scripts/run-appointment-db.mjs",
     "test:account": "node --test tests/account-profile.test.mjs tests/account-page.test.mjs",
     "test:addresses": "node --test tests/address-book.test.mjs",
@@ -54,7 +54,7 @@
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@astrojs/vercel": "^11.0.12",
-    "astro": "^7.3.7",
+    "astro": "^7.4.13",
     "typescript": "6.0.3"
   },
   "dependencies": {
