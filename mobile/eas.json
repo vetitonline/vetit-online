@@ -1,0 +1,18 @@
+{
+  "cli": {"appVersionSource": "local", "requireCommit": true},
+  "build": {
+    "base": {"credentialsSource": "local"},
+    "internal": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {"buildType": "apk"},
+      "ios": {"simulator": false}
+    },
+    "release-candidate": {
+      "extends": "base",
+      "distribution": "store",
+      "android": {"buildType": "app-bundle"},
+      "ios": {"simulator": false}
+    }
+  }
+}

@@ -6,8 +6,20 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "vetit",
-    "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true },
-    "android": { "adaptiveIcon": { "backgroundColor": "#f6f2fc" } }
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vetitonline.app",
+      "buildNumber": "1"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f6f2fc"
+      },
+      "package": "com.vetitonline.app",
+      "versionCode": 1
+    }
   }
 }

@@ -8,7 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test:notification-delivery": "node --test tests/notification-delivery.test.mjs tests/mobile-release-readiness.test.mjs",
+    "test:notification-delivery": "node --test tests/notification-delivery.test.mjs tests/mobile-release-readiness.test.mjs tests/notification-reconciliation.test.mjs tests/mobile-release-profiles.test.mjs",
     "check:mobile-release": "node scripts/check-mobile-release-readiness.mjs",
     "test:admin-orders": "node --test tests/admin-orders.test.mjs tests/admin-migration-readiness.test.mjs",
     "test:appointment-account": "node --test tests/appointment-account-binding.test.mjs tests/appointment-page-account.test.mjs tests/native-provider-appointments.test.mjs tests/native-customer-appointments.test.mjs tests/native-rescheduling.test.mjs tests/native-new-booking.test.mjs tests/native-offer-acceptance.test.mjs tests/native-notification-read.test.mjs",
@@ -55,7 +55,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "@astrojs/vercel": "^11.0.12",
+    "@astrojs/vercel": "^11.0.22",
     "astro": "^7.4.13",
     "typescript": "6.0.3"
   },
