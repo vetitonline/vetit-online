@@ -4,6 +4,7 @@ import {ModerationWorkspace,type ModerationWorkspaceProps} from './src/Moderatio
 import {NativeModeration,type NativeModerationProps} from './src/NativeModeration';
 import {NativeBuyerOrders} from './src/NativeBuyerOrders';
 import {NativeCheckoutReview} from './src/NativeCheckoutReview';
+import {NativeCustomerBooking} from './src/NativeCustomerBooking';
 import {NativeAppointments} from './src/NativeAppointments';
 import {NativeSellerCatalogue} from './src/NativeSellerCatalogue';
 import { canAddPreviewProduct, changePreviewCart, previewCartSubtotal } from '../src/lib/marketplace/preview-cart.js';
@@ -319,10 +320,11 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
         {service.distanceKm !== null && <Text style={styles.muted}>{service.distanceKm} km away</Text>}
         <Pressable disabled={availability[service.id]?.loading} onPress={() => void checkAvailability(service.id)} style={[styles.secondaryButton, availability[service.id]?.loading && styles.buttonDisabled]} accessibilityRole="button" accessibilityLabel={`Check appointment availability for ${service.title}`}><Text style={styles.secondaryButtonText}>Check availability</Text></Pressable>
         {!!availability[service.id]?.message && <Text style={styles.muted} accessibilityLiveRegion="polite">{availability[service.id].message}</Text>}
+        {nativeModeration&&<NativeCustomerBooking session={nativeModeration.session} apiBaseUrl={API_BASE_URL} testApiOrigin={API_BASE_URL} serviceId={service.id} language={language}/>}
         <Pressable onPress={() => openWeb(`/appointments?service=${encodeURIComponent(service.id)}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Appointments and waiting list online</Text></Pressable>
         <Pressable onPress={() => openWeb(`/providers/${encodeURIComponent(service.providerSlug || service.businessId)}`)} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>View provider</Text></Pressable>
       </View>)}</View>}
-    <Text style={styles.note}>Availability can be checked here. Booking, changes and waiting-list offers use your signed-in web account and require appointment management to be enabled.</Text>
+    <Text style={styles.note}>Native Test sign-in supports booking requests and joining/leaving waiting lists. Changes and offers remain subject to current policy and availability; waiting-list offers can be reviewed online.</Text>
     <Pressable onPress={() => openWeb('/services')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Use device location online</Text></Pressable>
   </>;
 
