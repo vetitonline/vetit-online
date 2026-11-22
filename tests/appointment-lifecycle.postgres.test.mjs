@@ -3,6 +3,8 @@
  * Creates test schema only there; no remote/Supabase host or automatic cleanup.
  */
 import test from 'node:test';
+import {randomUUID} from 'node:crypto';
+import {createSandboxNotificationWorker} from '../src/lib/services/notification-delivery.server.js';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { executePostgresSql } from './appointment-postgres-runner.mjs';
@@ -74,6 +76,7 @@ test('appointment lifecycle: isolated PostgreSQL transactions, FIFO, security an
     'test-project/20261009110000_vetit_service_booking_transaction.sql',
     'test-project/appointment-lifecycle.proposal.sql',
   ] : ['test-project/20261009000000_vetit_marketplace_baseline.sql','test-project/20261009110000_vetit_service_booking_transaction.sql','test-project/appointment-lifecycle.proposal.sql'];
+  files.push('test-project/appointment-notification-sandbox.proposal.sql');
   for (const file of files) {
     const source=await readFile(new URL(`../supabase/${file}`,import.meta.url),'utf8');
     if(fullMarketplace && file.endsWith('appointment-lifecycle.proposal.sql')) {
@@ -230,4 +233,27 @@ test('appointment lifecycle: isolated PostgreSQL transactions, FIFO, security an
     await assert.rejects(()=>sql(`set role authenticated; select public.appointment_lifecycle_tick();`));
   });
   if(process.env.VETIT_APPOINTMENT_OPERATIONS_TESTS==='1') await testAppointmentOperations(t,sql,command);
+  await t.test('sandbox outbox claims are service-only, concurrent, receipt-bound and never reclaim unknown sends',async()=>{
+    const literal=value=>"'"+String(value).replaceAll("'","''")+"'";
+    const invoke=async(name,args)=>{assert.ok(['queue_sandbox_appointment_notification','claim_sandbox_appointment_notifications','finish_sandbox_appointment_notification'].includes(name));return sql(`set role service_role;select public.${name}(${Object.values(args).map(value=>typeof value==='number'?String(value):literal(value)).join(',')});`);};
+    const ids=JSON.parse(await sql("select json_agg(id) from (select id from vetit_appointments.notification_outbox where status='disabled' order by id limit 3) r"));assert.equal(ids.length,3);
+    for(const role of ['anon','authenticated'])await assert.rejects(()=>sql(`set role ${role};select public.queue_sandbox_appointment_notification('${ids[0]}','synthetic:recipient')`));
+    await assert.rejects(()=>invoke('queue_sandbox_appointment_notification',{id:ids[0],target:'person@example.invalid'}),/Synthetic target/);
+    for(const id of ids.slice(0,2))await invoke('queue_sandbox_appointment_notification',{id,target:'synthetic:recipient'});
+    const tokens=[randomUUID(),randomUUID()];const claims=await Promise.all(tokens.map(token=>invoke('claim_sandbox_appointment_notifications',{token,limit:1}).then(JSON.parse)));
+    const claimed=claims.flat();assert.equal(claimed.length,2);assert.equal(new Set(claimed.map(row=>row.id)).size,2);assert.ok(claimed.every(row=>row.targetReference==='synthetic:recipient'));
+    await assert.rejects(()=>invoke('finish_sandbox_appointment_notification',{id:claimed[0].id,token:randomUUID(),state:'sent',receipt:'mock'}),/Claim not found/);
+    const finish={id:claimed[0].id,token:claimed[0].claimToken,state:'sent',receipt:'mock-confirmed'};
+    assert.equal(await invoke('finish_sandbox_appointment_notification',finish),'sent');assert.equal(await invoke('finish_sandbox_appointment_notification',finish),'sent');
+    assert.equal(await sql(`select count(*) from vetit_appointments.sandbox_notification_receipts where outbox_id='${claimed[0].id}'`),'1');
+    await assert.rejects(()=>invoke('queue_sandbox_appointment_notification',{id:claimed[1].id,target:'synthetic:recipient'}),/cannot be queued/);
+    assert.deepEqual(JSON.parse(await invoke('claim_sandbox_appointment_notifications',{token:randomUUID(),limit:100})),[]);
+    await invoke('queue_sandbox_appointment_notification',{id:ids[2],target:'synthetic:recipient'});
+    const client={rpc:async(name,args)=>{try{const result=await invoke(name,args);return{data:name==='claim_sandbox_appointment_notifications'?JSON.parse(result):result};}catch{return{error:{code:'TEST_ERROR'}};}}};
+    let sends=0;const worker=createSandboxNotificationWorker({approved:true,client,provider:{name:'synthetic',mode:'sandbox',idempotent:true,send:async command=>{sends++;assert.equal(command.targetReference,'synthetic:recipient');return{...command,verified:true,mode:'sandbox',provider:'synthetic',status:'accepted',reference:'mock-worker'};}}});
+    const result=await worker.run();assert.equal(result.sent,1);assert.equal(sends,1);assert.equal((await worker.run()).scanned,0);assert.equal(sends,1);
+    assert.equal(await sql("select count(*) from vetit_appointments.notification_outbox where sandbox_target_reference is null and status<>'disabled'"),'0');
+    for(const role of ['anon','authenticated'])await assert.rejects(()=>sql(`set role ${role};select * from vetit_appointments.sandbox_notification_receipts`));
+  });
+
 });

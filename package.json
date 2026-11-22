@@ -8,6 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "test:notification-delivery": "node --test tests/notification-delivery.test.mjs tests/mobile-release-readiness.test.mjs",
+    "check:mobile-release": "node scripts/check-mobile-release-readiness.mjs",
     "test:admin-orders": "node --test tests/admin-orders.test.mjs tests/admin-migration-readiness.test.mjs",
     "test:appointment-account": "node --test tests/appointment-account-binding.test.mjs tests/appointment-page-account.test.mjs tests/native-provider-appointments.test.mjs tests/native-customer-appointments.test.mjs tests/native-rescheduling.test.mjs tests/native-new-booking.test.mjs tests/native-offer-acceptance.test.mjs tests/native-notification-read.test.mjs",
     "test:appointments-db": "node scripts/run-appointment-db.mjs",
