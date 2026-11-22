@@ -14,7 +14,7 @@ function project(data,businessId){
  if(businessId&&!businesses.some(x=>x.id===businessId))throw new AppointmentLifecycleError('Provider access unavailable.',403);
  const bookings=rows(data.bookings,200).map(x=>{
   if(!Number.isSafeInteger(x.price_minor)||x.price_minor<0||typeof x.currency_code!=='string'||!/^[A-Z]{3}$/.test(x.currency_code)||!Number.isSafeInteger(x.lifecycle_revision)||x.lifecycle_revision<1||x.lifecycle_revision>2147483647)throw new AppointmentLifecycleError('Invalid appointment price or revision.',503);
-  return{id:appointmentId(x.id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),revision:x.lifecycle_revision,...interval(x.requested_start,x.requested_end),priceMinor:x.price_minor,currency:x.currency_code,cancellationPolicy:x.lifecycle_policy_snapshot?normalizeAppointmentPolicy(x.lifecycle_policy_snapshot):null};
+  return{id:appointmentId(x.id),slotId:x.appointment_slot_id==null?null:appointmentId(x.appointment_slot_id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),revision:x.lifecycle_revision,...interval(x.requested_start,x.requested_end),priceMinor:x.price_minor,currency:x.currency_code,cancellationPolicy:x.lifecycle_policy_snapshot?normalizeAppointmentPolicy(x.lifecycle_policy_snapshot):null};
  });
  const services=rows(data.services,200).map(x=>({id:appointmentId(x.id),title:label(x.title)}));
  const slots=rows(data.slots,200).map(x=>({id:appointmentId(x.id),serviceId:appointmentId(x.service_listing_id),status:label(x.status),resourceKey:normalizeAppointmentResourceKey(x.lifecycle_resource_key??'default'),...interval(x.starts_at,x.ends_at)}));

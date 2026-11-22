@@ -4,7 +4,7 @@ import {createNativeAppointments,appointmentCopy,appointmentStatus,appointmentTi
 import {NativeProviderSchedule} from './NativeProviderSchedule';
 import type {NativeModerationSession} from './moderation-session.js';
 import {formatWorkspaceMoney} from '../../src/lib/marketplace/workspace-copy.js';
-import {createNativeAppointmentActions,providerBookingActions,customerBookingActions,providerActionCopy,customerActionCopy,type ProviderActionState} from './provider-appointment-actions.js';
+import {createNativeAppointmentActions,providerBookingActions,customerBookingActions,customerCanReschedule,providerActionCopy,customerActionCopy,type ProviderActionState} from './provider-appointment-actions.js';
 export function NativeAppointments({session,apiBaseUrl,testApiOrigin,language='en'}:{session:NativeModerationSession;apiBaseUrl:string;testApiOrigin:string;language?:string}){
  const copy=appointmentCopy(language),sourceKey=apiBaseUrl+'|'+testApiOrigin;
  const blank:NativeAppointmentsState={phase:'idle',businessId:null,businesses:[],bookings:[],services:[],slots:[],policies:[],truncated:false};
@@ -36,6 +36,7 @@ export function NativeAppointments({session,apiBaseUrl,testApiOrigin,language='e
   {state.businesses.map(b=><View key={b.id}>{button(`${copy.provider}: ${b.name}`,()=>{actions.current?.clear();void host.current?.load(b.id);})}</View>)}
   {!!(state.bookings.length||state.slots.length)&&<Text>{copy.zone}</Text>}
   {state.bookings.map(b=><View key={b.id}><Text>{title(b.serviceId)}</Text><Text>{appointmentStatus(b.status,language)}</Text><Text>{appointmentTime(b.startsAt,language)} – {appointmentTime(b.endsAt,language)}</Text><Text>{formatWorkspaceMoney(b.priceMinor,b.currency,language)}</Text>
+   {!state.businessId&&customerCanReschedule(b)&&button(actionCopy.reschedule,()=>void actions.current?.loadReplacements(b.id))}
    {(state.businessId?providerBookingActions(b):customerBookingActions(b)).map(kind=><View key={kind}>{button(actionCopy[kind],()=>{actions.current?.prepare(kind,b.id);})}</View>)}
   </View>)}
   {!!state.notifications?.length&&<Text accessibilityRole="header">{copy.notifications}</Text>}
@@ -44,9 +45,11 @@ export function NativeAppointments({session,apiBaseUrl,testApiOrigin,language='e
   {state.slots.map(s=><View key={s.id}><Text>{title(s.serviceId)}</Text><Text>{appointmentStatus(s.status,language)}</Text><Text>{appointmentTime(s.startsAt,language)} – {appointmentTime(s.endsAt,language)}</Text></View>)}
   <NativeProviderSchedule session={session} apiBaseUrl={apiBaseUrl} testApiOrigin={testApiOrigin} view={state} getView={()=>liveView.current} refresh={()=>host.current?.refresh()??Promise.resolve()} bookingBusy={!['idle','success'].includes(action.phase)} onBusy={setScheduleBusy} language={language}/>
   {state.truncated&&<Text>{copy.partial}</Text>}
-  {action.phase==='confirm'&&<View><Text accessibilityRole="header">{actionCopy.question}</Text><Text>{action.action&&actionCopy[action.action]}</Text>{state.bookings.filter(b=>b.id===action.bookingId).map(b=><Text key={b.id}>{title(b.serviceId)} · {appointmentTime(b.startsAt,language)}</Text>)}{action.action==='cancel'&&<Text>{actionCopy.warning}</Text>}{button(actionCopy.apply,()=>void actions.current?.confirm(),true)}{button(actionCopy.back,()=>actions.current?.cancel(),true)}</View>}
+  {action.phase==='loading_slots'&&button(actionCopy.back,()=>actions.current?.cancel(),true)}
+  {action.phase==='choosing'&&<View><Text>{actionCopy.choosing}</Text>{!action.slots?.length&&<Text>No replacement times are currently available.</Text>}{action.slots?.map(slot=><View key={slot.id}>{button(`${appointmentTime(slot.startsAt,language)} – ${appointmentTime(slot.endsAt,language)}`,()=>{if(action.bookingId)actions.current?.prepare('reschedule',action.bookingId,slot.id);},true)}</View>)}{button(actionCopy.back,()=>actions.current?.cancel(),true)}</View>}
+  {action.phase==='confirm'&&<View><Text accessibilityRole="header">{actionCopy.question}</Text><Text>{action.action&&actionCopy[action.action]}</Text>{state.bookings.filter(b=>b.id===action.bookingId).map(b=><Text key={b.id}>{title(b.serviceId)} · {appointmentTime(b.startsAt,language)}</Text>)}{action.replacement&&<Text>{appointmentTime(action.replacement.startsAt,language)} – {appointmentTime(action.replacement.endsAt,language)}</Text>}{action.action==='reschedule'&&<Text>{language==='hi'?'सेवा की सहेजी गई कीमत नहीं बदलेगी।':'The saved service price is retained. The server checks final availability.'}</Text>}{action.action==='cancel'&&<Text>{actionCopy.warning}</Text>}{button(actionCopy.apply,()=>void actions.current?.confirm(),true)}{button(actionCopy.back,()=>actions.current?.cancel(),true)}</View>}
   {action.phase!=='idle'&&action.phase!=='confirm'&&<Text accessibilityRole={['uncertain','conflict','denied','signin'].includes(action.phase)?'alert':undefined} accessibilityLiveRegion="polite">{actionCopy[action.phase]}</Text>}
-  {blocked&&action.phase!=='confirm'&&action.phase!=='saving'&&button(actionCopy.check,()=>void actions.current?.reconcile(),true)}
+  {blocked&&!['confirm','saving','loading_slots','choosing'].includes(action.phase)&&button(actionCopy.check,()=>void actions.current?.reconcile(),true)}
   {button(copy.refresh,()=>void actions.current?.reconcile())}
  </View>;
 }
