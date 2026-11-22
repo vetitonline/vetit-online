@@ -20,3 +20,7 @@ jobs:
           node-version: '22'
       - name: Test browser cart and checkout selections
         run: node --test tests/journey-browser-cart.test.mjs tests/checkout-cart.test.mjs
+      - name: Test offline device and release readiness without credentials
+        run: node --test tests/device-testing-readiness.test.mjs tests/fingerprint-input-policy.test.mjs tests/mobile-icon-signing.test.mjs tests/provider-fingerprint-readiness.test.mjs tests/mobile-release-readiness.test.mjs tests/mobile-release-profiles.test.mjs
+      - name: Check reviewed project fingerprint inputs
+        run: node scripts/check-fingerprint-inputs.mjs

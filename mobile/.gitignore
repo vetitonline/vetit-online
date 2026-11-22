@@ -14,3 +14,11 @@ credentials/
 *.p12
 *.mobileprovision
 *.p8
+
+# Device screenshots/evidence can contain personal test-account data.
+device-evidence/
+
+# Signed build artifacts belong in private evidence/download storage.
+*.apk
+*.aab
+*.ipa
