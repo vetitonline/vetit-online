@@ -5,3 +5,12 @@ web-build/
 .env
 .env.*
 !.env.example
+
+# Local signing material: never commit real credentials or private keys.
+credentials.json
+credentials/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.p8

@@ -1,0 +1,8 @@
+# Trusted short project patterns; private signing material must not be fingerprinted.
+credentials.json
+credentials/**
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.p8

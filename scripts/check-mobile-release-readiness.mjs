@@ -1,5 +1,6 @@
 import {readFile} from 'node:fs/promises';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
+import {assessMobileIcon} from './mobile-icon-readiness.mjs';
 /** Offline manifest inspection only. No credentials, signing, networking or build upload. */
 export function assessMobileReleaseReadiness(manifest){
  const config=manifest?.expo;
@@ -17,5 +18,7 @@ export function assessMobileReleaseReadiness(manifest){
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
  const manifest=JSON.parse(await readFile(new URL('../mobile/app.json',import.meta.url),'utf8'));
- process.stdout.write(JSON.stringify(assessMobileReleaseReadiness(manifest),null,2)+'\n');
+ const report=assessMobileReleaseReadiness(manifest),assets=await assessMobileIcon(manifest,fileURLToPath(new URL('../mobile/',import.meta.url)));
+ if(!assets.iconSourceVerified){report.blockers.push(assets.blocker);report.localConfigurationComplete=false;}
+ process.stdout.write(JSON.stringify({...report,...assets},null,2)+'\n');
 }

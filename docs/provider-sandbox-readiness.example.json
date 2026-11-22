@@ -1,0 +1,8 @@
+{
+  "mode":"sandbox",
+  "providers":{
+    "payment":{"providerAccountAvailable":false,"idempotentCreate":false,"independentStatusLookup":false,"amountCurrencyBinding":false,"boundedRequests":false},
+    "delivery":{"providerAccountAvailable":false,"syntheticRecipientsOnly":false,"idempotentSend":false,"independentStatusLookup":false,"receiptBinding":false,"boundedRequests":false},
+    "charges":{"providerAccountAvailable":false,"serverPriceSellerBinding":false,"quoteExpiry":false,"inrMinorUnits":false,"coverageReviewed":false,"taxPolicyReviewed":false,"boundedRequests":false}
+  }
+}
