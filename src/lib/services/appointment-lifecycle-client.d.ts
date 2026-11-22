@@ -5,7 +5,7 @@ export type AppointmentDashboard = {
   profileId?:string;
   bookings: Booking[]; events: Array<{ id: string; booking_id: string; event_type: string; created_at: string; details: Record<string, unknown> }>;
   waitlist: Array<{ id: string; service_listing_id: string; status: string; starts_at: string; ends_at: string }>;
-  offers: Array<{ id: string; slot_id: string; expires_at: string; status: string; starts_at: string; ends_at: string; price_minor: number; currency_code: string; policy_snapshot: AppointmentPolicy }>;
+  offers: Array<{ id: string; entry_id:string; customer_profile_id:string; booking_id:string|null; slot_id: string; expires_at: string; status: string; starts_at: string; ends_at: string; price_minor: number; currency_code: string; policy_snapshot: AppointmentPolicy }>;
   notifications: Array<{ id: string; event_type: string; created_at: string; read_at: string | null; payload: Record<string, unknown> }>;
   providerBusinesses: Array<{ id: string; display_name: string }>;
   services: Array<{ id: string; title: string }>;

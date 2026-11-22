@@ -324,7 +324,7 @@ export default function App({moderation,nativeModeration}: {moderation?:Moderati
         <Pressable onPress={() => openWeb(`/appointments?service=${encodeURIComponent(service.id)}`)} style={styles.secondaryButton} accessibilityRole="button"><Text style={styles.secondaryButtonText}>Appointments and waiting list online</Text></Pressable>
         <Pressable onPress={() => openWeb(`/providers/${encodeURIComponent(service.providerSlug || service.businessId)}`)} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>View provider</Text></Pressable>
       </View>)}</View>}
-    <Text style={styles.note}>Native Test sign-in supports booking requests and joining/leaving waiting lists. Changes and offers remain subject to current policy and availability; waiting-list offers can be reviewed online.</Text>
+    <Text style={styles.note}>Native Test sign-in supports booking requests, waiting-list offers and joining/leaving waiting lists. Your account appointments provide changes and notifications. All actions remain subject to current policy and availability.</Text>
     <Pressable onPress={() => openWeb('/services')} style={styles.secondaryButton}><Text style={styles.secondaryButtonText}>Use device location online</Text></Pressable>
   </>;
 

@@ -153,9 +153,30 @@ test('appointment lifecycle: isolated PostgreSQL transactions, FIFO, security an
     assert.equal(await sql(`select customer_profile_id from vetit_appointments.offers where id='${offerId}';`),bob);
     await assert.rejects(()=>command(charlie,{action:'acceptOffer',offerId}));
     await assert.rejects(()=>command(charlie,{action:'book',slotId:s.id}));
-    await command(bob,{action:'acceptOffer',offerId});
+    const accepted=await command(bob,{action:'acceptOffer',offerId});
+    assert.equal(await sql(`select (b.price_minor=o.price_minor and b.currency_code=o.currency_code and (b.lifecycle_policy_snapshot - 'marketCode')=o.policy_snapshot)::text from public.bookings b join vetit_appointments.offers o on o.booking_id=b.id where b.id='${accepted.bookingId}'`),'true');
     const retry=await command(bob,{action:'acceptOffer',offerId}); assert.ok(retry.bookingId);
     assert.equal(await sql(`select count(*) from public.bookings where appointment_slot_id='${s.id}';`),'1');
+  });
+  await t.test('declining an owned offer leaves its entry and offers the held slot to the next customer',async()=>{
+    for(const actor of [bob,charlie]){const existing=await sql(`select id from vetit_appointments.waitlist where customer_profile_id='${actor}' and service_listing_id='${service}' and status in ('waiting','offered')`);if(existing)await command(actor,{action:'leaveWaitlist',entryId:existing});}
+    const s=await slot();const {bookingId}=await command(alice,{action:'book',slotId:s.id});
+    const startsAt=new Date(Date.parse(s.startsAt)-1000).toISOString(),endsAt=new Date(Date.parse(s.endsAt)+1000).toISOString();
+    await command(bob,{action:'joinWaitlist',serviceListingId:service,startsAt,endsAt});await command(charlie,{action:'joinWaitlist',serviceListingId:service,startsAt,endsAt});await command(alice,{action:'cancel',bookingId});
+    const first=await sql(`select id from vetit_appointments.offers where slot_id='${s.id}' and customer_profile_id='${bob}' and status='offered'`);
+    await assert.rejects(()=>command(charlie,{action:'declineOffer',offerId:first}));
+    assert.equal((await command(bob,{action:'declineOffer',offerId:first})).status,'declined');
+    assert.equal(await sql(`select status from vetit_appointments.waitlist where id=(select entry_id from vetit_appointments.offers where id='${first}')`),'left');
+    assert.equal(await sql(`select customer_profile_id from vetit_appointments.offers where slot_id='${s.id}' and status='offered'`),charlie);
+    assert.equal(await sql(`select status from public.appointment_slots where id='${s.id}'`),'held');
+  });
+  await t.test('notification read is recipient-owned and idempotent without enabling outbox delivery',async()=>{
+    const notification=await sql(`select id from vetit_appointments.notifications where recipient_profile_id='${bob}' order by created_at desc,id limit 1`);assert.ok(notification);
+    await assert.rejects(()=>command(alice,{action:'readNotification',notificationId:notification}));
+    assert.equal((await command(bob,{action:'readNotification',notificationId:notification})).status,'read');
+    const first=await sql(`select read_at from vetit_appointments.notifications where id='${notification}'`);assert.ok(first);
+    await command(bob,{action:'readNotification',notificationId:notification});assert.equal(await sql(`select read_at from vetit_appointments.notifications where id='${notification}'`),first);
+    assert.equal(await sql("select count(*) from vetit_appointments.notification_outbox where status <> 'disabled'"),'0');
   });
   await t.test('concurrent rescheduling uses booking revisions so only one move can succeed',async()=>{
     const original=await slot(), first=await slot(), second=await slot();
