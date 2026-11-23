@@ -22,6 +22,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       const mobile = fileURLToPath(new URL('../mobile/', import.meta.url));
       const cli = fileURLToPath(new URL('../mobile/node_modules/expo/bin/cli', import.meta.url));
       if (!existsSync(cli)) throw Error('Install the pinned mobile dependencies first.');
+      if (!existsSync(new URL('../mobile/index.js', import.meta.url))) throw Error('The Vetit mobile entry is missing. Check your repository folder.');
+      console.log(`Starting Vetit Online from ${mobile}\nEntry: mobile/index.js → mobile/App.tsx\nExpected tabs: Home, Shop, Services, Cart, Account. Close any Hello, world! project in Expo Go and scan this terminal’s new QR code.`);
       const fixture = fork(fileURLToPath(new URL('./run-device-preview.mjs', import.meta.url)), ['--lan'], {stdio: ['inherit', 'inherit', 'inherit', 'ipc']});
       let metro;
       let stopping = false;

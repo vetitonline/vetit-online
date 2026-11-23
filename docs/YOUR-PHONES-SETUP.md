@@ -93,3 +93,15 @@ node scripts/device-acceptance.mjs --file mobile/device-evidence/YOUR-PRIVATE-PH
 ```
 
 Keep reports and screenshots under ignored `mobile/device-evidence/` or another private folder. Preview passes cannot stand in for authenticated or signed acceptance. For later signing, hosted and provider acceptance, follow `ANDROID-IPHONE-TESTING.md` sections 4–6 and the existing approval packages. No signing upload, hosted migration, deployment, real payment or store submission is authorized by these instructions.
+
+## If Expo Go shows “Hello, world!”
+
+This repository's native app registers `mobile/index.js` → `mobile/App.tsx`; it uses the existing Home, Shop, Services, Cart and Account tabs, not Expo Router file routes. There is no Hello-world screen in this app.
+
+1. Stop only your previous preview terminal with Ctrl+C. Leave other work intact.
+2. In the correct existing Vetit checkout, update the feature branch without resetting local work (`git pull --ff-only` only when your working tree is clean).
+3. Run the launcher above **from the Vetit repository root**, not a newly created Expo starter project. Its output must identify **Vetit Online**, the `mobile` project directory and `mobile/index.js → mobile/App.tsx`.
+4. Return to Expo Go's project list and scan this terminal's **new** QR code; do not reopen the old recent project. On iPhone use Camera → Open in Expo Go; on Android use Expo Go's QR scanner.
+5. Expect Vetit's logo, marketplace and five tabs. If Hello-world remains, send the project name shown in Expo Go, the terminal's project path and the exact screen/error (redact personal folder names). If needed, use Expo Go's Reload control or press `r` in the correct Metro terminal. No reinstall, dependency upgrade or cache deletion is required for these steps.
+
+Only synthetic public catalogue/cart/services are enabled by this launcher. Native account/booking controls still require the trusted Test session host; opening the correct UI does not authorize or activate hosted operations.
