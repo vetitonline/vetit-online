@@ -8,7 +8,7 @@ test('Windows-compatible preview uses fixture-only session settings and offline 
   assert.equal(plan.origin, 'http://192.168.1.20:4324');
   assert.equal(plan.env.EXPO_PUBLIC_VETIT_API_BASE_URL, plan.env.EXPO_PUBLIC_VETIT_TEST_API_ORIGIN);
   assert.equal(plan.env.REACT_NATIVE_PACKAGER_HOSTNAME, '192.168.1.20');
-  assert.deepEqual(plan.args, ['start', '--lan', '--offline', '--go']);
+  assert.deepEqual(plan.args, ['start', '--offline', '--go']);
 });
 test('preview rejects public, loopback, ambiguous and credential-bearing addresses', () => {
   for (const host of ['127.0.0.1', '8.8.8.8', 'vetit.online', 'https://192.168.1.20', '192.168.1.20@evil.com', '192.168.1.256', '192.168.001.20', '172.32.0.1', '']) assert.throws(() => phonePreviewPlan(host));

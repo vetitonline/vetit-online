@@ -8,7 +8,8 @@ export function phonePreviewPlan(host) {
   const origin = `http://${host}:4324`;
   resolveMobileApiBase(origin, origin);
   if (host.startsWith('127.') || new URL(origin).hostname !== host) throw Error('Phones need the computer private LAN address, not localhost.');
-  return {origin, env: {EXPO_PUBLIC_VETIT_API_BASE_URL: origin, EXPO_PUBLIC_VETIT_TEST_API_ORIGIN: origin, EXPO_NO_TELEMETRY: '1', REACT_NATIVE_PACKAGER_HOSTNAME: host}, args: ['start', '--lan', '--offline', '--go']};
+  // SDK 57 offline mode already selects LAN; --lan together with --offline is rejected.
+  return {origin, env: {EXPO_PUBLIC_VETIT_API_BASE_URL: origin, EXPO_PUBLIC_VETIT_TEST_API_ORIGIN: origin, EXPO_NO_TELEMETRY: '1', REACT_NATIVE_PACKAGER_HOSTNAME: host}, args: ['start', '--offline', '--go']};
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

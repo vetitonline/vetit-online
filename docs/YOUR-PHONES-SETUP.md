@@ -39,7 +39,7 @@ In PowerShell at the repository root, run `ipconfig`. Find the IPv4 address for 
 node scripts/start-phone-preview.mjs --host 192.168.1.20
 ```
 
-This starts both the read-only synthetic fixture API and Expo Go Metro preview, using session-only environment settings. No config file is edited, dependency installed or hosted backend contacted by the launcher. The API rejects credentials and all writes. Keep the terminal open; Ctrl+C stops its child processes. For a dry run, add `--check`.
+This starts both the read-only synthetic fixture API and Expo Go Metro preview, using session-only environment settings. No config file is edited, dependency installed or hosted backend contacted by the launcher. The API rejects credentials and all writes. Keep the terminal open; Ctrl+C stops its child processes. For a dry run, add `--check`. SDK 57 offline mode already selects LAN; do not add `--lan` alongside `--offline`.
 
 In Chrome on the Galaxy and Safari on the iPhone, open `http://YOUR-COMPUTER-WIFI-IP:4324/__device/health`. Expect `fixtureOnly: true`, `databaseAccess: false`, `providerAccess: false`, `mutationsEnabled: false`.
 
