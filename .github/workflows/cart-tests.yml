@@ -40,3 +40,10 @@ jobs:
           node-version: '22'
       - name: Test native entry and phone startup without dependencies or credentials
         run: node --test tests/mobile-entry.test.mjs tests/phone-preview-launcher.test.mjs
+      - name: Validate safe Windows bootstrap script
+        shell: pwsh
+        run: ./tests/windows-phone-bootstrap.tests.ps1
+      - name: Validate Windows PowerShell 5.1 compatibility
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./tests/windows-phone-bootstrap.tests.ps1
