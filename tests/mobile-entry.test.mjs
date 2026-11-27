@@ -16,8 +16,11 @@ test('Expo explicitly registers the existing Vetit App for both native platforms
   const component = {};
   let registered;
   // Exercise the registration body without booting native modules in Node.
-  new Function('registerRootComponent', 'App', entry.replace(/^import .*;\n/gm, ''))(value => {registered = value;}, component);
-  assert.equal(registered, component);
+  for (const source of [entry, entry.replace(/\r?\n/g, '\r\n')]) {
+    registered = undefined;
+    new Function('registerRootComponent', 'App', source.replace(/^import .*;\r?\n/gm, ''))(value => {registered = value;}, component);
+    assert.equal(registered, component);
+  }
   const app = await read('../mobile/App.tsx');
   for (const label of ['Home', 'Shop', 'Services', 'Cart', 'Account']) assert.ok(app.includes(`label: '${label}'`));
   assert.doesNotMatch(app, /Hello,? world!/i);

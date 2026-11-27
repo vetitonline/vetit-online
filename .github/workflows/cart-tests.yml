@@ -24,3 +24,19 @@ jobs:
         run: node --test tests/device-testing-readiness.test.mjs tests/fingerprint-input-policy.test.mjs tests/mobile-icon-signing.test.mjs tests/provider-fingerprint-readiness.test.mjs tests/mobile-release-readiness.test.mjs tests/mobile-release-profiles.test.mjs
       - name: Check reviewed project fingerprint inputs
         run: node scripts/check-fingerprint-inputs.mjs
+
+  phone-launcher:
+    name: Phone launcher (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test native entry and phone startup without dependencies or credentials
+        run: node --test tests/mobile-entry.test.mjs tests/phone-preview-launcher.test.mjs

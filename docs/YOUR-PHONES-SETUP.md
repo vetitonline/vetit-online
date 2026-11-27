@@ -33,13 +33,15 @@ pnpm install --frozen-lockfile
 pnpm --ignore-workspace --dir mobile install --frozen-lockfile
 ```
 
-In PowerShell at the repository root, run `ipconfig`. Find the IPv4 address for the Wi-Fi adapter actually connected to your private network. Replace the example below with that address:
+In PowerShell at the repository root, let the launcher detect your current private address (including after a Wi-Fi change):
 
 ```powershell
-node scripts/start-phone-preview.mjs --host 192.168.1.20
+node scripts/start-phone-preview.mjs --host auto
 ```
 
-This starts both the read-only synthetic fixture API and Expo Go Metro preview, using session-only environment settings. No config file is edited, dependency installed or hosted backend contacted by the launcher. The API rejects credentials and all writes. Keep the terminal open; Ctrl+C stops its child processes. For a dry run, add `--check`. SDK 57 offline mode already selects LAN; do not add `--lan` alongside `--offline`.
+If multiple adapters are active, the launcher lists eligible addresses and starts nothing. Run `ipconfig`, choose the connected Wi-Fi adapter and rerun with `--host YOUR-CURRENT-IP`. Do not reuse the previously reported `192.168.1.35` unless it is still assigned. Automatic selection does not prove phone reachability: both phones must share that private network. The QR code and `exp://` link appear in the **same PowerShell window**, after Metro starts. Scan that new QR; an old recent project can reopen a different app.
+
+This starts both the read-only synthetic fixture API and Expo Go Metro preview, using session-only environment settings. No config file is edited, dependency installed or hosted backend contacted by the launcher. The API rejects credentials and all writes. Keep the terminal open; Ctrl+C stops its child processes. For a dry run, add `--check`. If Metro’s port is occupied, select another free port explicitly, for example `--port 8090`; fixture port 4324 remains unchanged. SDK 57 offline mode already selects LAN; do not add `--lan` alongside `--offline`.
 
 In Chrome on the Galaxy and Safari on the iPhone, open `http://YOUR-COMPUTER-WIFI-IP:4324/__device/health`. Expect `fixtureOnly: true`, `databaseAccess: false`, `providerAccess: false`, `mutationsEnabled: false`.
 
